@@ -1,0 +1,11 @@
+[package]
+name = "hive"
+version = "0.1.0"
+edition = "2021"
+authors = ["Konglig Datasektionen"]
+description = "Group and permissions management system"
+repository = "https://github.com/datasektionen/hive"
+license = "MIT"
+publish = false
+
+[dependencies]
