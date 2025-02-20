@@ -58,6 +58,7 @@ impl Config {
 // clap since we only want to override configs if the user explicitly
 // requests it
 #[derive(Parser, Serialize, Deserialize, Debug)]
+#[command(version, about, long_about = None)]
 pub struct CliArgs {
     /// IP address to listen for connections on [default: 0.0.0.0]
     #[arg(short, long)]
