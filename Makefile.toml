@@ -1,0 +1,7 @@
+# run with `cargo make <task>`
+
+[tasks.fmt-unstable]
+script = """
+#!/usr/bin/env bash
+cargo fmt -- --config "$(cat rustfmt.toml | sed -e '1,/@@UNSTABLE_BELOW@@/ d' -e 's/^# //' | tr --delete ' "' | paste -s -d',')"
+"""
