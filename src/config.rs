@@ -48,6 +48,17 @@ impl Config {
             }
         }
     }
+
+    pub fn get_rocket_config(&self) -> rocket::Config {
+        let ident = rocket::config::Ident::try_new("hive").unwrap();
+
+        rocket::Config {
+            address: self.listen_addr,
+            port: self.port,
+            ident, // HTTP `Server` header
+            ..Default::default()
+        }
+    }
 }
 
 // sadly must be a separate struct from Config because otherwise
