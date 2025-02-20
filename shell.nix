@@ -7,6 +7,7 @@ pkgs.mkShellNoCC {
     rustc
     cargo
     rustfmt
+    gcc # serde needs cc linker
 
     rust-analyzer
     cargo-make
