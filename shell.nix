@@ -11,6 +11,7 @@ pkgs.mkShellNoCC {
 
     rust-analyzer
     cargo-make
+    sqlx-cli
   ];
 
   shellHook = ''

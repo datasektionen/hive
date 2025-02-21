@@ -1,4 +1,5 @@
 use log::*;
+use sqlx::PgPool;
 
 mod config;
 mod dto;
@@ -15,5 +16,20 @@ async fn rocket() -> _ {
 
     debug!("{config:?}");
 
-    rocket::custom(config.get_rocket_config()).mount("/", &web::tree())
+    let db = PgPool::connect(&config.db_url)
+        .await
+        .expect("Failed to connect to the database");
+
+    debug!("Initialized database connection pool");
+
+    sqlx::migrate!("./migrations")
+        .run(&db)
+        .await
+        .expect("Failed to apply database migrations");
+
+    info!("Database migrations successfully applied");
+
+    rocket::custom(config.get_rocket_config())
+        .manage(db)
+        .mount("/", &web::tree())
 }

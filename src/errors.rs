@@ -8,7 +8,7 @@ pub type AppResult<T> = Result<T, AppError>;
 #[derive(thiserror::Error, Debug)]
 pub enum AppError {
     #[error("database error: {0}")]
-    DbError(#[from] std::io::Error), // FIXME: proper inner type
+    DbError(#[from] sqlx::Error),
 }
 
 impl AppError {
