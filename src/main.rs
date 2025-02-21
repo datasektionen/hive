@@ -5,6 +5,7 @@ mod config;
 mod dto;
 mod errors;
 mod logging;
+mod models;
 mod routing;
 mod web;
 
