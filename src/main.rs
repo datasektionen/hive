@@ -4,6 +4,7 @@ use sqlx::PgPool;
 mod config;
 mod dto;
 mod errors;
+mod guards;
 mod logging;
 mod models;
 mod routing;
