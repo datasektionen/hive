@@ -1,0 +1,4 @@
+_version: 2
+test.message:
+  en: Hello there, %{x}!
+  sv: Hej och välkomma, %{x}!

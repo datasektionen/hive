@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{borrow::Cow, fmt};
 
 use rocket::{
     request::{FromRequest, Outcome},
@@ -34,6 +34,24 @@ impl Language {
         } else {
             None
         }
+    }
+
+    fn i18n_locale(&self) -> &str {
+        match self {
+            Self::Swedish => "sv",
+            Self::English => "en",
+        }
+    }
+
+    pub fn t<'a>(&self, key: &'a str) -> Cow<'a, str> {
+        rust_i18n::t!(key, locale = self.i18n_locale())
+    }
+
+    // since this isn't a macro, we can't accept an arbitrary # of arguments...
+    // (it also shouldn't be a macro because askama doesn't replace variables)
+    // https://github.com/rinja-rs/askama/blob/704f8/book/src/template_syntax.md#calling-rust-macros
+    pub fn t1<'a, T: fmt::Display>(&self, key: &'a str, x: T) -> Cow<'a, str> {
+        rust_i18n::t!(key, locale = self.i18n_locale(), x = x)
     }
 }
 

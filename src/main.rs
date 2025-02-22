@@ -10,6 +10,8 @@ mod models;
 mod routing;
 mod web;
 
+rust_i18n::i18n!("./locales");
+
 #[rocket::launch]
 async fn rocket() -> _ {
     let config = config::Config::get();
@@ -30,6 +32,11 @@ async fn rocket() -> _ {
         .expect("Failed to apply database migrations");
 
     info!("Database migrations successfully applied");
+
+    info!(
+        "Available i18n locales: {:?}",
+        rust_i18n::available_locales!()
+    );
 
     rocket::custom(config.get_rocket_config())
         .manage(db)
