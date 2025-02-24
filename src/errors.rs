@@ -1,7 +1,7 @@
 use log::*;
 use rocket::{http::Status, response, response::Responder, serde::json::Json, Request, Response};
 
-use crate::dto::errors::AppErrorDto;
+use crate::{dto::errors::AppErrorDto, perms::HivePermission};
 
 pub type AppResult<T> = Result<T, AppError>;
 
@@ -9,12 +9,16 @@ pub type AppResult<T> = Result<T, AppError>;
 pub enum AppError {
     #[error("database error: {0}")]
     DbError(#[from] sqlx::Error),
+
+    #[error("user lacks permissions to perform action (minimum needed: {0})")]
+    NotAllowed(HivePermission),
 }
 
 impl AppError {
     fn status(&self) -> Status {
         match self {
             AppError::DbError(..) => Status::InternalServerError,
+            AppError::NotAllowed(..) => Status::Forbidden,
         }
     }
 }

@@ -9,3 +9,10 @@ pub struct Group {
     pub description_sv: String,
     pub description_en: String,
 }
+
+#[derive(FromRow)]
+pub struct BasePermissionAssignment {
+    pub system_id: String,
+    pub perm_id: String,
+    pub scope: Option<String>,
+}

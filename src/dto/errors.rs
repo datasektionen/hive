@@ -7,12 +7,16 @@ use crate::errors::AppError;
 enum InnerAppErrorDto {
     #[serde(rename = "db")]
     DbError,
+
+    #[serde(rename = "forbidden")]
+    NotAllowed,
 }
 
 impl From<AppError> for InnerAppErrorDto {
     fn from(err: AppError) -> Self {
         match err {
             AppError::DbError(..) => Self::DbError,
+            AppError::NotAllowed(..) => Self::NotAllowed,
         }
     }
 }

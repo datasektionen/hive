@@ -7,6 +7,7 @@ mod errors;
 mod guards;
 mod logging;
 mod models;
+mod perms;
 mod routing;
 mod web;
 

@@ -12,6 +12,7 @@ publish = false
 anyhow = "1.0.96"
 askama = { version = "0.12.1", features = ["with-rocket"] }
 askama_rocket = "0.12.0"
+chrono = "0.4.39"
 clap = { version = "4.5.30", features = ["derive"] }
 figment = { version = "0.10.19", features = ["env", "toml"] }
 log = "0.4.25"
@@ -24,6 +25,7 @@ sqlx = { version = "0.8.3", features = [
     "postgres",
     "uuid",
     "json",
+    "chrono",
 ] }
 thiserror = "2.0.11"
 
