@@ -192,7 +192,7 @@ impl PartialOrd for SystemsScope {
     }
 }
 
-pub async fn require(min: HivePermission, db: &PgPool) -> AppResult<()> {
+pub async fn require(min: HivePermission, username: &str, db: &PgPool) -> AppResult<()> {
     let today = Local::now().date_naive();
 
     let mut perms = sqlx::query_as::<_, BasePermissionAssignment>(
@@ -205,7 +205,7 @@ pub async fn require(min: HivePermission, db: &PgPool) -> AppResult<()> {
         WHERE system_id = 'hive'
         AND perm_id = $3",
     )
-    .bind("dummy") // TODO: don't hardcode user
+    .bind(username)
     .bind(today)
     .bind(min.key())
     .fetch(db);

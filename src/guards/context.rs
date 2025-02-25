@@ -6,10 +6,11 @@ use rocket::{
     Request,
 };
 
-use super::lang::Language;
+use super::{lang::Language, user::User};
 
 pub struct PageContext {
     pub lang: Language,
+    pub user: Option<User>,
 }
 
 // Convenience aliases to prevent having to ctx.lang.t
@@ -34,7 +35,14 @@ impl<'r> FromRequest<'r> for PageContext {
 
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         if let Outcome::Success(lang) = req.guard::<Language>().await {
-            Outcome::Success(Self { lang })
+            if let Outcome::Success(user) = req.guard::<User>().await {
+                Outcome::Success(Self {
+                    lang,
+                    user: Some(user),
+                })
+            } else {
+                todo!("no user")
+            }
         } else {
             Outcome::Error((
                 Status::InternalServerError,
