@@ -1,4 +1,5 @@
 use log::*;
+use rocket::fs::{relative, FileServer};
 use sqlx::PgPool;
 
 mod config;
@@ -42,4 +43,5 @@ async fn rocket() -> _ {
     rocket::custom(config.get_rocket_config())
         .manage(db)
         .mount("/", &web::tree())
+        .mount("/static", FileServer::from(relative!("./static")))
 }

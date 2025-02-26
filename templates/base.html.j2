@@ -3,19 +3,56 @@
 
 <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>
         {%- block full_title -%}
         {%- block title -%}{%- endblock title %} | Hive
         {%- endblock full_title -%}
     </title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/picocss/2.0.6/pico.amber.min.css"
+        integrity="sha512-kvYLueAc7RD0XOfxhjiaUKbXBmh5JTZdyJo/12oY/zpT0l6o82H2Ap5f27CrAa16VgvXj02Rsb0Prwtq7oYOSw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="/static/styles.css" />
 </head>
 
 <body>
-    <main>
+    <header>
+        <div style="border-bottom: 0.2rem solid var(--pico-primary-border)">
+            <nav class="container">
+                <ul>
+                    <li>
+                        <a href="/" style="--pico-text-decoration: none">
+                            <h1 class="primary" style="margin-bottom: 0">Hive</h1>
+                        </a>
+                    </li>
+                </ul>
+                <ul>
+                    <!-- use class="secondary" instead if route matches; .current: bool, or aria-current=false -->
+                    <li><a href="/groups" class="contrast">{{ ctx.t("nav.link.groups")}}</a></li>
+                    <li><a href="/systems" class="contrast">{{ ctx.t("nav.link.systems")}}</a></li>
+                    <li><a href="/fake-use-perms" class="contrast">Fake</a></li>
+                    <li>
+                        {% if let Some(user) = ctx.user %}
+                        <details class="dropdown">
+                            <summary>{{ user.username }}</summary>
+                            <ul dir="rtl">
+                                <li><a href="/user/{{ user.username }}">{{ ctx.t("nav.user.profile")}}</a></li>
+                                <li><a href="/auth/logout">{{ ctx.t("nav.user.logout")}}</a></li>
+                            </ul>
+                        </details>
+                        {% else %}
+                        <button class="secondary">{{ ctx.t("nav.user.login") }}</button>
+                        {% endif %}
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
         {%- block content -%}
         {%- endblock content -%}
     </main>
-    <span>{{ ctx.t1("test.message", "John") }}</span>
 </body>
 
 </html>
