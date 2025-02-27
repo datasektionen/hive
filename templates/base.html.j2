@@ -9,10 +9,12 @@
         {%- block title -%}{%- endblock title %} | Hive
         {%- endblock full_title -%}
     </title>
+    <script async src="/static/main.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/picocss/2.0.6/pico.amber.min.css"
         integrity="sha512-kvYLueAc7RD0XOfxhjiaUKbXBmh5JTZdyJo/12oY/zpT0l6o82H2Ap5f27CrAa16VgvXj02Rsb0Prwtq7oYOSw=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons&display=block" />
 </head>
 
 <body>
@@ -43,6 +45,12 @@
                         {% else %}
                         <button class="secondary">{{ ctx.t("nav.user.login") }}</button>
                         {% endif %}
+                    </li>
+                    <li>
+                        <a href="javascript:toggleTheme()" class="contrast material-icons"
+                            title='{{ ctx.t("nav.theme.toggle") }}'>
+                            contrast
+                        </a>
                     </li>
                 </ul>
             </nav>

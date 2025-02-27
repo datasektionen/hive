@@ -14,3 +14,6 @@ nav.user.logout:
 nav.user.profile:
   en: My Profile
   sv: Profilen
+nav.theme.toggle:
+  en: Toggle UI theme
+  sv: Växla UI-tema

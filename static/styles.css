@@ -1,3 +1,9 @@
 .primary {
   color: var(--pico-primary);
 }
+
+a.material-icons:hover {
+  --pico-text-decoration: none !important;
+  --pico-font-weight: 700;
+  font-weight: var(--pico-font-weight);
+}
