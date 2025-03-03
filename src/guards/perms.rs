@@ -1,3 +1,5 @@
+use std::collections::{HashMap, HashSet};
+
 use log::*;
 use rocket::{
     futures::lock::Mutex,
@@ -24,39 +26,41 @@ pub struct PermsEvaluator {
 }
 
 struct HivePermissionsCache {
-    perms: Vec<HivePermission>,
+    entries: HashMap<&'static str, HashSet<HivePermission>>,
+    // ^ empty Vec if we need to cache a user having *no* permissions for a key
 }
 
 impl HivePermissionsCache {
     fn new() -> Self {
-        Self { perms: Vec::new() }
+        Self {
+            entries: HashMap::new(),
+        }
     }
 
     fn satisfies_cached(&self, min: &HivePermission) -> Option<bool> {
-        let mut found_related = false;
-
-        for perm in &self.perms {
-            if perm >= min {
-                return Some(true);
-            } else if perm.key() == min.key() {
-                found_related = true;
+        if let Some(perms) = self.entries.get(min.key()) {
+            for perm in perms {
+                if perm >= min {
+                    return Some(true);
+                }
             }
+        } else {
+            return None;
         }
 
-        if found_related {
-            // since other perms with the same key are cached, we can infer
-            // that the user doesn't have the required permission, since
-            // otherwise we would have found it somewhere in the cache
-            // (assuming that all permissions with the same key are always
-            // cached together at the same time)
-            Some(false)
-        } else {
-            None
-        }
+        // assumes that all permissions with the same key (i.e., different
+        // scopes) are always cached together -- meaning that we can infer
+        // "not-allowed" if the key is in the cache and no matching perm
+        // was found
+        Some(false)
     }
 
-    fn insert(&mut self, perms: Vec<HivePermission>) {
-        self.perms.extend(perms);
+    fn insert<I: IntoIterator<Item = HivePermission>>(&mut self, key: &'static str, perms: I) {
+        let set = HashSet::from_iter(perms);
+
+        if self.entries.insert(key, set).is_some() {
+            warn!("Overwriting permissions cache key {key}; this should not be possible!");
+        }
     }
 }
 
@@ -89,7 +93,7 @@ impl PermsEvaluator {
                 .filter_map(Result::ok)
                 .collect::<Vec<_>>();
 
-            cache.insert(perms.clone());
+            cache.insert(min.key(), perms.clone());
 
             for perm in perms {
                 if perm >= min {

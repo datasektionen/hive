@@ -5,7 +5,7 @@ use sqlx::PgPool;
 
 use crate::{errors::AppResult, models::BasePermissionAssignment};
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum HivePermission {
     ViewLogs,
     ManageGroups(GroupsScope),
@@ -99,7 +99,7 @@ impl TryFrom<BasePermissionAssignment> for HivePermission {
     }
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum GroupsScope {
     Wildcard,
     Tag(String),
@@ -146,7 +146,7 @@ impl PartialOrd for GroupsScope {
     }
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum SystemsScope {
     Wildcard,
     Id(String),
