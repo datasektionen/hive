@@ -1,5 +1,11 @@
 use log::*;
-use rocket::{http::Status, response, response::Responder, serde::json::Json, Request, Response};
+use rocket::{
+    http::Status,
+    request::Outcome,
+    response::{self, Responder},
+    serde::json::Json,
+    Request, Response,
+};
 
 use crate::{dto::errors::AppErrorDto, perms::HivePermission};
 
@@ -34,5 +40,11 @@ impl<'r> Responder<'r, 'static> for AppError {
         let base = Json(AppErrorDto::from(self)).respond_to(req)?;
 
         Ok(Response::build_from(base).status(status).finalize())
+    }
+}
+
+impl<T> From<AppError> for Outcome<T, AppError> {
+    fn from(err: AppError) -> Self {
+        Outcome::Error((err.status(), err))
     }
 }

@@ -1,16 +1,11 @@
 use std::{cmp::Ordering, fmt};
 
 use chrono::Local;
-use log::*;
-use rocket::futures::TryStreamExt;
 use sqlx::PgPool;
 
-use crate::{
-    errors::{AppError, AppResult},
-    models::BasePermissionAssignment,
-};
+use crate::{errors::AppResult, models::BasePermissionAssignment};
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum HivePermission {
     ViewLogs,
     ManageGroups(GroupsScope),
@@ -21,7 +16,7 @@ pub enum HivePermission {
 }
 
 impl HivePermission {
-    const fn key(&self) -> &'static str {
+    pub const fn key(&self) -> &'static str {
         match self {
             Self::ViewLogs => "view-logs",
             Self::ManageGroups(..) => "manage-groups",
@@ -104,7 +99,7 @@ impl TryFrom<BasePermissionAssignment> for HivePermission {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum GroupsScope {
     Wildcard,
     Tag(String),
@@ -151,7 +146,7 @@ impl PartialOrd for GroupsScope {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum SystemsScope {
     Wildcard,
     Id(String),
@@ -192,31 +187,35 @@ impl PartialOrd for SystemsScope {
     }
 }
 
-pub async fn require(min: HivePermission, username: &str, db: &PgPool) -> AppResult<()> {
+pub async fn get_assignments(
+    username: &str,
+    system_id: &str,
+    perm_id: &str,
+    db: &PgPool,
+) -> AppResult<Vec<BasePermissionAssignment>> {
     let today = Local::now().date_naive();
 
-    let mut perms = sqlx::query_as::<_, BasePermissionAssignment>(
+    let assignments = sqlx::query_as::<_, BasePermissionAssignment>(
         "
         SELECT *
         FROM permission_assignments pa
         JOIN all_groups_of($1, $2) gs
             ON pa.group_id = gs.id
             AND pa.group_domain = gs.domain
-        WHERE system_id = 'hive'
-        AND perm_id = $3",
+        WHERE system_id = $3
+        AND perm_id = $4",
     )
     .bind(username)
     .bind(today)
-    .bind(min.key())
-    .fetch(db);
+    .bind(system_id)
+    .bind(perm_id)
+    .fetch_all(db)
+    .await?;
 
-    while let Some(assignment) = perms.try_next().await? {
-        match HivePermission::try_from(assignment) {
-            Ok(perm) if perm >= min => return Ok(()),
-            Ok(_) => {}
-            Err(err) => warn!("Got invalid Hive permission: {err:?}"),
-        }
-    }
+    // can't use `fetch` instead of `fetch_all` (which would avoid deserializing
+    // unless needed) because we want to cache *all* permission assignments;
+    // this is fine under the assumption that there will be very few assignments
+    // for the same (user, system, perm) triplet -- i.e., different scopes
 
-    Err(AppError::NotAllowed(min))
+    Ok(assignments)
 }

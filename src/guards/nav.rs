@@ -1,10 +1,12 @@
 use rocket::{
-    http::uri::{Path, Uri},
+    http::uri::Path,
     request::{FromRequest, Outcome},
-    uri, Request,
+    Request,
 };
 
-use super::{user::User, Infallible};
+use crate::{errors::AppError, perms::HivePermission};
+
+use super::{perms::PermsEvaluator, user::User};
 
 // pub type Nav = Vec<NavLink> not allowed because of orphan rule, impl FromRequest
 pub struct Nav {
@@ -29,7 +31,7 @@ impl NavLink {
 
 #[rocket::async_trait]
 impl<'r> FromRequest<'r> for Nav {
-    type Error = Infallible;
+    type Error = AppError;
 
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         let mut links = Vec::new();
@@ -39,13 +41,17 @@ impl<'r> FromRequest<'r> for Nav {
         if let Outcome::Success(user) = req.guard::<User>().await {
             links.push(NavLink::new("groups", "/groups", &path));
 
+            let perms = req.guard::<&PermsEvaluator>().await.unwrap();
+
             // TODO: perms
             if true {
                 links.push(NavLink::new("systems", "/systems", &path))
             }
 
-            if true {
-                links.push(NavLink::new("logs", "/logs", &path))
+            match perms.satisfies(HivePermission::ViewLogs).await {
+                Ok(true) => links.push(NavLink::new("logs", "/logs", &path)),
+                Ok(_) => {}
+                Err(err) => return err.into(),
             }
         }
 

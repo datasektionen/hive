@@ -21,6 +21,7 @@ impl<'r> FromRequest<'r> for User {
         // TODO: properly, plus:
         // use https://rocket.rs/guide/v0.5/state/#request-local-state to cache
         // (ensure user is only computed once per request)
+        // (maybe use Arc?)
         Outcome::Success(Self {
             username: "dummy".to_owned(),
             display_name: "John Doe".to_owned(),
