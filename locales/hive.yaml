@@ -5,6 +5,9 @@ nav.lang.switch:
 nav.link.groups:
   en: Groups
   sv: Grupper
+nav.link.logs:
+  en: Logs
+  sv: Loggar
 nav.link.systems:
   en: Systems
   sv: System

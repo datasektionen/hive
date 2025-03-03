@@ -1,16 +1,16 @@
 use std::{borrow::Cow, fmt};
 
 use rocket::{
-    http::Status,
     request::{FromRequest, Outcome},
     Request,
 };
 
-use super::{lang::Language, user::User};
+use super::{lang::Language, nav::Nav, user::User, Infallible};
 
 pub struct PageContext {
     pub lang: Language,
     pub user: Option<User>,
+    pub nav: Nav,
 }
 
 // Convenience aliases to prevent having to ctx.lang.t
@@ -24,30 +24,15 @@ impl PageContext {
     }
 }
 
-#[derive(Debug)]
-pub enum PageContextError {
-    UnidentifiableLanguage,
-}
-
 #[rocket::async_trait]
 impl<'r> FromRequest<'r> for PageContext {
-    type Error = PageContextError;
+    type Error = Infallible;
 
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        if let Outcome::Success(lang) = req.guard::<Language>().await {
-            if let Outcome::Success(user) = req.guard::<User>().await {
-                Outcome::Success(Self {
-                    lang,
-                    user: Some(user),
-                })
-            } else {
-                todo!("no user")
-            }
-        } else {
-            Outcome::Error((
-                Status::InternalServerError,
-                PageContextError::UnidentifiableLanguage,
-            ))
-        }
+        let lang = req.guard::<Language>().await.unwrap();
+        let user = req.guard::<User>().await.succeeded();
+        let nav = req.guard::<Nav>().await.unwrap();
+
+        Outcome::Success(Self { lang, user, nav })
     }
 }

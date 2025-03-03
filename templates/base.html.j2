@@ -38,14 +38,17 @@
                     </li>
                 </ul>
                 <ul>
-                    <!-- use class="secondary" instead if route matches; .current: bool, or aria-current=false -->
-                    <li><a href="/groups" class="contrast">{{ ctx.t("nav.link.groups")}}</a></li>
-                    <li><a href="/systems" class="contrast">{{ ctx.t("nav.link.systems")}}</a></li>
-                    <li><a href="/fake-use-perms" class="contrast">Fake</a></li>
+                    {% for link in ctx.nav.links %}
+                    <li>
+                        <a href="{{ link.target }}" aria-current="{{ link.current }}" class="secondary">
+                            {{ ctx.t(format!("nav.link.{}", link.key)) }}
+                        </a>
+                    </li>
+                    {% endfor %}
                     <li>
                         {% if let Some(user) = ctx.user %}
                         <details class="dropdown">
-                            <summary>{{ user.username }}</summary>
+                            <summary>{{ user.display_name }}</summary>
                             <ul dir="rtl">
                                 <li><a href="/user/{{ user.username }}">{{ ctx.t("nav.user.profile")}}</a></li>
                                 <li><a href="/auth/logout">{{ ctx.t("nav.user.logout")}}</a></li>

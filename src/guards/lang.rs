@@ -6,7 +6,7 @@ use rocket::{
     Request,
 };
 
-use super::headers::AcceptLanguage;
+use super::{headers::AcceptLanguage, Infallible};
 
 const DEFAULT_LANG: Language = Language::Swedish;
 const LANG_COOKIE_NAME: &str = "Hive-Lang"; // set by frontend on lang change
@@ -79,7 +79,7 @@ fn negotiate_language(accept_language: &str) -> Option<Language> {
 
 #[rocket::async_trait]
 impl<'r> FromRequest<'r> for Language {
-    type Error = ();
+    type Error = Infallible;
 
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         if let Outcome::Success(jar) = req.guard::<&CookieJar>().await {
