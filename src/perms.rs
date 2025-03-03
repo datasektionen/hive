@@ -104,6 +104,7 @@ pub enum GroupsScope {
     Wildcard,
     Tag(String),
     Domain(String),
+    Any, // pseudo-scope meaning "any of the above"
 }
 
 impl TryFrom<&str> for GroupsScope {
@@ -119,6 +120,7 @@ impl TryFrom<&str> for GroupsScope {
         } else {
             Err(InvalidHivePermissionError::Scope)
         }
+        // intentionally not handling ? => Any since it's not a real scope
     }
 }
 
@@ -128,6 +130,7 @@ impl fmt::Display for GroupsScope {
             Self::Wildcard => write!(f, "*"),
             Self::Tag(tag) => write!(f, "#hive:{tag}"),
             Self::Domain(domain) => write!(f, "@{domain}"),
+            Self::Any => write!(f, "?"),
         }
     }
 }
@@ -141,6 +144,8 @@ impl PartialOrd for GroupsScope {
         match (self, other) {
             (Self::Wildcard, _) => Some(Ordering::Greater),
             (_, Self::Wildcard) => Some(Ordering::Less),
+            (Self::Any, _) => Some(Ordering::Less),
+            (_, Self::Any) => Some(Ordering::Greater),
             _ => None,
         }
     }
@@ -150,6 +155,7 @@ impl PartialOrd for GroupsScope {
 pub enum SystemsScope {
     Wildcard,
     Id(String),
+    Any, // pseudo-scope meaning "any of the above"
 }
 
 impl TryFrom<&str> for SystemsScope {
@@ -161,6 +167,7 @@ impl TryFrom<&str> for SystemsScope {
         } else {
             Ok(Self::Id(scope.to_owned()))
         }
+        // intentionally not handling ? => Any since it's not a real scope
     }
 }
 
@@ -169,6 +176,7 @@ impl fmt::Display for SystemsScope {
         match self {
             Self::Wildcard => write!(f, "*"),
             Self::Id(id) => write!(f, "{id}"),
+            Self::Any => write!(f, "?"),
         }
     }
 }
@@ -182,6 +190,8 @@ impl PartialOrd for SystemsScope {
         match (self, other) {
             (Self::Wildcard, _) => Some(Ordering::Greater),
             (_, Self::Wildcard) => Some(Ordering::Less),
+            (Self::Any, _) => Some(Ordering::Less),
+            (_, Self::Any) => Some(Ordering::Greater),
             _ => None,
         }
     }
