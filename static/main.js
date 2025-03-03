@@ -22,3 +22,8 @@ function toggleTheme() {
   document.documentElement.dataset.theme = other;
   localStorage.setItem("theme", other);
 }
+
+function switchLang(target) {
+  document.cookie = `Hive-Lang=${target}; Secure`;
+  window.location.reload();
+}

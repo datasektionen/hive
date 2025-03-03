@@ -1,4 +1,7 @@
 _version: 2
+nav.lang.switch:
+  en: Switch to Swedish
+  sv: Byta till engelska
 nav.link.groups:
   en: Groups
   sv: Grupper
