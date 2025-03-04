@@ -2,6 +2,9 @@ _version: 2
 control.manage:
   en: Manage
   sv: Hantera
+control.search:
+  en: Search
+  sv: Sök
 listing.n-results:
   en: Showing a total of %{x} results.
   sv: Visar totalt 4 resultat.

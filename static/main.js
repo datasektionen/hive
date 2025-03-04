@@ -27,3 +27,15 @@ function switchLang(target) {
   document.cookie = `Hive-Lang=${target}; Secure`;
   window.location.reload();
 }
+
+// these 2 handlers make hx-indicator automatically work with Pico loading
+document.body.addEventListener("htmx:beforeSend", () => {
+  document
+    .querySelectorAll(".htmx-request")
+    .forEach((el) => el.setAttribute("aria-busy", "true"));
+});
+document.body.addEventListener("htmx:beforeOnLoad", () => {
+  document
+    .querySelectorAll(".htmx-request")
+    .forEach((el) => el.removeAttribute("aria-busy"));
+});

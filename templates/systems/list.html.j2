@@ -3,7 +3,12 @@
 {% block title %}{{ ctx.t("systems.list.title") }}{% endblock title %}
 
 {% block content %}
-<div>
+<input type="search" name="q" value='{{ q.unwrap_or("") }}' placeholder=' {{ ctx.t("control.search") }}'
+    aria-label='{{ ctx.t("control.search") }}' hx-get="/systems"
+    hx-trigger="input changed delay:500ms, search, keyup[key=='Enter']" hx-target="#listing-block"
+    hx-indicator="#listing-block" hx-push-url="true" />
+
+<div id="listing-block" class="htmx-anti-indicator">
     {% for system in systems %}
     <article>
         <header class="header-flex">
@@ -16,6 +21,6 @@
         {{ system.description }}
     </article>
     {% endfor %}
+    <p><em>{{ ctx.t1("listing.n-results", systems.len()) }}</em></p>
 </div>
-<p><em>{{ ctx.t1("listing.n-results", systems.len()) }}</em></p>
 {% endblock content %}

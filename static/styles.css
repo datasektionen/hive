@@ -30,3 +30,18 @@ button {
   --pico-form-element-spacing-vertical: 0.5rem;
   --pico-form-element-spacing-horizontal: 0.75rem;
 }
+
+/* opposite of .htmx-indicator; hidden if a request is being sent */
+.htmx-anti-indicator {
+  visibility: visible;
+}
+.htmx-request.htmx-anti-indicator,
+.htmx-request .htmx-anti-indicator {
+  visibility: hidden;
+  text-align: center;
+}
+/* Pico loading spinner */
+.htmx-anti-indicator[aria-busy="true"]::before {
+  visibility: visible;
+  font-size: 3rem;
+}
