@@ -1,0 +1,21 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ ctx.t("systems.list.title") }}{% endblock title %}
+
+{% block content %}
+<div>
+    {% for system in systems %}
+    <article>
+        <header class="header-flex">
+            <h3>{{ system.id }}</h3>
+            <a href="/system/{{ system.id }}" role="button">
+                {{ ctx.t("control.manage") }}
+                <span class="material-icons">arrow_forward</span>
+            </a>
+        </header>
+        {{ system.description }}
+    </article>
+    {% endfor %}
+</div>
+<p><em>{{ ctx.t1("listing.n-results", systems.len()) }}</em></p>
+{% endblock content %}

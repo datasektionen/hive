@@ -7,3 +7,26 @@ a.material-icons:hover {
   --pico-font-weight: 700;
   font-weight: var(--pico-font-weight);
 }
+
+.material-icons {
+  vertical-align: text-bottom;
+  /* unclear why this is needed, or if even the best value */
+}
+
+.header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  --pico-typography-spacing-vertical: 0;
+}
+
+[role="button"],
+[type="button"],
+[type="file"]::file-selector-button,
+[type="reset"],
+[type="submit"],
+button {
+  /* a little less padding */
+  --pico-form-element-spacing-vertical: 0.5rem;
+  --pico-form-element-spacing-horizontal: 0.75rem;
+}

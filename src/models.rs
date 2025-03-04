@@ -11,6 +11,12 @@ pub struct Group {
 }
 
 #[derive(FromRow)]
+pub struct System {
+    pub id: String,
+    pub description: String,
+}
+
+#[derive(FromRow)]
 pub struct BasePermissionAssignment {
     pub system_id: String,
     pub perm_id: String,

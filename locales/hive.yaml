@@ -1,4 +1,10 @@
 _version: 2
+control.manage:
+  en: Manage
+  sv: Hantera
+listing.n-results:
+  en: Showing a total of %{x} results.
+  sv: Visar totalt 4 resultat.
 nav.lang.switch:
   en: Switch to Swedish
   sv: Byta till engelska
@@ -23,3 +29,6 @@ nav.user.profile:
 nav.theme.toggle:
   en: Toggle UI theme
   sv: Växla UI-tema
+systems.list.title:
+  en: Systems
+  sv: System
