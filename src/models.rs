@@ -22,3 +22,24 @@ pub struct BasePermissionAssignment {
     pub perm_id: String,
     pub scope: Option<String>,
 }
+
+#[derive(sqlx::Type)]
+#[sqlx(type_name = "action_kind", rename_all = "snake_case")]
+pub enum ActionKind {
+    Create,
+    Update,
+    Delete,
+}
+
+#[derive(sqlx::Type)]
+#[sqlx(type_name = "target_kind", rename_all = "snake_case")]
+pub enum TargetKind {
+    Group,
+    Membership,
+    System,
+    ApiToken,
+    Tag,
+    TagAssignment,
+    Permission,
+    PermissionAssignment,
+}

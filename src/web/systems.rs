@@ -5,13 +5,14 @@ use rocket::{
     response::content::RawHtml,
     State,
 };
+use serde_json::json;
 use sqlx::PgPool;
 
 use crate::{
     dto::systems::CreateSystemDto,
     errors::AppResult,
-    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator},
-    models::System,
+    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
+    models::{ActionKind, System, TargetKind},
     perms::HivePermission,
     routing::RouteTree,
     sanitizers::SearchTerm,
@@ -102,6 +103,7 @@ async fn create_system<'v>(
     db: &State<PgPool>,
     ctx: PageContext,
     perms: &PermsEvaluator,
+    user: User,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<RenderedTemplate> {
     perms.require(HivePermission::ManageSystems).await?;
@@ -111,15 +113,29 @@ async fn create_system<'v>(
     if let Some(dto) = &form.value {
         // validation passed
 
-        // TODO: add to audit logs in same transaction
+        let mut txn = db.begin().await?;
 
         let id: String = sqlx::query_scalar(
             "INSERT INTO systems (id, description) VALUES ($1, $2) RETURNING id",
         )
         .bind(dto.id)
         .bind(dto.description)
-        .fetch_one(db.inner())
+        .fetch_one(&mut *txn)
         .await?;
+
+        sqlx::query(
+            "INSERT INTO audit_logs (action_kind, target_kind, target_id, actor, details) VALUES \
+             ($1, $2, $3, $4, $5)",
+        )
+        .bind(ActionKind::Create)
+        .bind(TargetKind::System)
+        .bind(&id)
+        .bind(user.username)
+        .bind(json!({"new": {"description": dto.description}}))
+        .execute(&mut *txn)
+        .await?;
+
+        txn.commit().await?;
 
         // TODO: redirect to get_system, maybe both htmx and normal if easy
         Ok(RawHtml(format!("<b>New ID:</b> {id}")))
