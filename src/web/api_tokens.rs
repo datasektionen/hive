@@ -10,7 +10,7 @@ use crate::{
     routing::RouteTree,
 };
 
-use super::RenderedTemplate;
+use super::{filters, RenderedTemplate};
 
 pub fn routes() -> RouteTree {
     rocket::routes![list_api_tokens].into()

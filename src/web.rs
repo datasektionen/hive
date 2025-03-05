@@ -27,6 +27,7 @@ async fn favicon() -> Redirect {
 }
 
 mod filters {
+    use chrono::{DateTime, Local, TimeZone};
     use regex::RegexBuilder;
     use rinja::filters::Safe;
 
@@ -45,5 +46,12 @@ mod filters {
         };
 
         Ok(Safe(result))
+    }
+
+    pub fn timestamp<Tz: TimeZone>(stamp: &DateTime<Tz>) -> rinja::Result<String> {
+        Ok(format!(
+            "{}",
+            stamp.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S")
+        ))
     }
 }

@@ -1,6 +1,6 @@
 {% macro tz_or_never(option) -%}
 {%- if let Some(val) = option -%}
-{{ val }}
+{{ val|timestamp }}
 {%- else -%}
 <i>{{ ctx.t("api-tokens.list.never") }}</i>
 {%- endif -%}
