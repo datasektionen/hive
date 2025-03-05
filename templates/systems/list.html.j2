@@ -9,6 +9,7 @@
     hx-indicator="#listing-block" hx-push-url="true" />
 
 <div id="listing-block" class="htmx-anti-indicator">
+    {% block partial %}
     {% for system in systems %}
     <article>
         <header class="header-flex">
@@ -22,5 +23,6 @@
     </article>
     {% endfor %}
     <p><em>{{ ctx.t1("listing.n-results", systems.len()) }}</em></p>
+    {% endblock partial %}
 </div>
 {% endblock content %}

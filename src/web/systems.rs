@@ -4,7 +4,7 @@ use sqlx::PgPool;
 
 use crate::{
     errors::AppResult,
-    guards::{context::PageContext, perms::PermsEvaluator},
+    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator},
     models::System,
     perms::HivePermission,
     routing::RouteTree,
@@ -25,12 +25,23 @@ struct ListSystemsView<'q> {
     q: Option<&'q str>,
 }
 
+// FIXME: separate Partial struct is only needed until the next Askama/Rinja
+// release; after that use new attr `blocks` (feature-gated) to impl many
+// methods for the same template struct
+#[derive(Template)]
+#[template(path = "systems/list.html.j2", block = "partial")]
+struct PartialListSystemsView {
+    ctx: PageContext,
+    systems: Vec<System>,
+}
+
 #[rocket::get("/systems?<q>")]
 async fn list_systems(
     q: Option<&str>,
     db: &State<PgPool>,
     ctx: PageContext,
     perms: &PermsEvaluator,
+    partial: Option<HxRequest<'_>>,
 ) -> AppResult<RenderedTemplate> {
     perms.require(HivePermission::ManageSystems).await?;
 
@@ -52,7 +63,13 @@ async fn list_systems(
 
     let systems = query.build_query_as().fetch_all(db.inner()).await?;
 
-    let template = ListSystemsView { ctx, systems, q };
+    if partial.is_some() {
+        let template = PartialListSystemsView { ctx, systems };
 
-    Ok(RawHtml(template.render()?))
+        Ok(RawHtml(template.render()?))
+    } else {
+        let template = ListSystemsView { ctx, systems, q };
+
+        Ok(RawHtml(template.render()?))
+    }
 }

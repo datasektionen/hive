@@ -8,11 +8,12 @@ use rocket::{
 // `Header<const NAME: &str>` because &str is a
 // forbidden const type; instead, we use an index
 // to this array
-const HEADER_NAMES: &[&str] = &["Accept-Language"];
+const HEADER_NAMES: &[&str] = &["Accept-Language", "HX-Request"];
 
 pub struct Header<'r, const N: usize>(&'r str);
 
 pub type AcceptLanguage<'r> = Header<'r, 0>;
+pub type HxRequest<'r> = Header<'r, 1>;
 
 #[derive(Debug)]
 pub struct MissingHeader;
