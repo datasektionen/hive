@@ -24,7 +24,7 @@ function toggleTheme() {
 }
 
 function switchLang(target) {
-  document.cookie = `Hive-Lang=${target}; Secure`;
+  document.cookie = `Hive-Lang=${target}; Secure; Path=/`;
   window.location.reload();
 }
 
