@@ -13,13 +13,13 @@
     {% for system in systems %}
     <article>
         <header class="header-flex">
-            <h3>{{ system.id }}</h3>
+            <h3>{{ system.id|e|highlight(q.unwrap_or("")) }}</h3>
             <a href="/system/{{ system.id }}" role="button">
                 {{ ctx.t("control.manage") }}
                 <span class="material-icons">arrow_forward</span>
             </a>
         </header>
-        {{ system.description }}
+        {{ system.description|e|highlight(q.unwrap_or("")) }}
     </article>
     {% endfor %}
     <p><em>{{ ctx.t1("listing.n-results", systems.len()) }}</em></p>

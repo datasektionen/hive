@@ -30,9 +30,10 @@ struct ListSystemsView<'q> {
 // methods for the same template struct
 #[derive(Template)]
 #[template(path = "systems/list.html.j2", block = "partial")]
-struct PartialListSystemsView {
+struct PartialListSystemsView<'q> {
     ctx: PageContext,
     systems: Vec<System>,
+    q: Option<&'q str>,
 }
 
 #[rocket::get("/systems?<q>")]
@@ -64,12 +65,34 @@ async fn list_systems(
     let systems = query.build_query_as().fetch_all(db.inner()).await?;
 
     if partial.is_some() {
-        let template = PartialListSystemsView { ctx, systems };
+        let template = PartialListSystemsView { ctx, systems, q };
 
         Ok(RawHtml(template.render()?))
     } else {
         let template = ListSystemsView { ctx, systems, q };
 
         Ok(RawHtml(template.render()?))
+    }
+}
+
+mod filters {
+    use regex::RegexBuilder;
+    use rinja::filters::Safe;
+
+    pub fn highlight<T: ToString>(s: Safe<T>, term: &str) -> rinja::Result<Safe<String>> {
+        let s = s.0.to_string();
+
+        let result = if term.is_empty() {
+            s
+        } else {
+            let re = RegexBuilder::new(&regex::escape(term))
+                .case_insensitive(true)
+                .build()
+                .unwrap();
+
+            re.replace_all(&s, "<mark>$0</mark>").to_string()
+        };
+
+        Ok(Safe(result))
     }
 }

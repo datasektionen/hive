@@ -14,6 +14,7 @@ chrono = "0.4.39"
 clap = { version = "4.5.30", features = ["derive"] }
 figment = { version = "0.10.19", features = ["env", "toml"] }
 log = "0.4.25"
+regex = "1.11.1"
 rinja = "0.3.5" # will be replaced with askama next release
 rocket = { version = "0.5.1", features = ["json"] }
 rust-i18n = "3.1.3"
