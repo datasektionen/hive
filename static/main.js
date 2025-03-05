@@ -53,12 +53,20 @@ function closeModal(id) {
 
 // these 2 handlers make hx-indicator automatically work with Pico loading
 document.body.addEventListener("htmx:beforeSend", () => {
-  document
-    .querySelectorAll(".htmx-request")
-    .forEach((el) => el.setAttribute("aria-busy", "true"));
+  for (const el of document.getElementsByClassName("htmx-request")) {
+    el.setAttribute("aria-busy", "true");
+
+    if (el.type === "submit" && el.form) {
+      el.form.setAttribute("inert", "true");
+    }
+  }
 });
 document.body.addEventListener("htmx:beforeOnLoad", () => {
-  document
-    .querySelectorAll(".htmx-request")
-    .forEach((el) => el.removeAttribute("aria-busy"));
+  for (const el of document.getElementsByClassName("htmx-request")) {
+    el.removeAttribute("aria-busy");
+
+    if (el.type === "submit" && el.form) {
+      el.form.removeAttribute("inert");
+    }
+  }
 });
