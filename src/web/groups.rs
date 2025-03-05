@@ -2,9 +2,8 @@ use rinja::Template;
 use rocket::{response::content::RawHtml, State};
 use sqlx::PgPool;
 
-use crate::{errors::AppResult, guards::context::PageContext, models::Group, routing::RouteTree};
-
 use super::RenderedTemplate;
+use crate::{errors::AppResult, guards::context::PageContext, models::Group, routing::RouteTree};
 
 pub fn routes() -> RouteTree {
     rocket::routes![list_groups].into()

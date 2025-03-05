@@ -8,12 +8,11 @@ use rocket::{
 };
 use sqlx::PgPool;
 
+use super::{user::User, Infallible};
 use crate::{
     errors::{AppError, AppResult},
     perms::{self, HivePermission},
 };
-
-use super::{user::User, Infallible};
 
 const HIVE_SYSTEM_ID: &str = "hive";
 

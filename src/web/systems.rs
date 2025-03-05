@@ -8,6 +8,7 @@ use rocket::{
 use serde_json::json;
 use sqlx::PgPool;
 
+use super::RenderedTemplate;
 use crate::{
     dto::systems::CreateSystemDto,
     errors::AppResult,
@@ -17,8 +18,6 @@ use crate::{
     routing::RouteTree,
     sanitizers::SearchTerm,
 };
-
-use super::RenderedTemplate;
 
 pub fn routes() -> RouteTree {
     rocket::routes![list_systems, create_system].into()

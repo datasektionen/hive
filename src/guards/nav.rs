@@ -4,11 +4,11 @@ use rocket::{
     Request,
 };
 
+use super::{perms::PermsEvaluator, user::User};
 use crate::{errors::AppError, perms::HivePermission};
 
-use super::{perms::PermsEvaluator, user::User};
-
-// pub type Nav = Vec<NavLink> not allowed because of orphan rule, impl FromRequest
+// pub type Nav = Vec<NavLink> not allowed because of orphan rule;
+// need to impl FromRequest
 pub struct Nav {
     pub links: Vec<NavLink>,
 }
