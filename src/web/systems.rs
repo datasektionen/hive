@@ -8,7 +8,7 @@ use rocket::{
 use serde_json::json;
 use sqlx::PgPool;
 
-use super::RenderedTemplate;
+use super::{filters, RenderedTemplate};
 use crate::{
     dto::systems::CreateSystemDto,
     errors::AppResult,
@@ -164,27 +164,5 @@ async fn create_system<'v>(
 
             Ok(RawHtml(template.render()?))
         }
-    }
-}
-
-mod filters {
-    use regex::RegexBuilder;
-    use rinja::filters::Safe;
-
-    pub fn highlight<T: ToString>(s: Safe<T>, term: &str) -> rinja::Result<Safe<String>> {
-        let s = s.0.to_string();
-
-        let result = if term.is_empty() {
-            s
-        } else {
-            let re = RegexBuilder::new(&regex::escape(term))
-                .case_insensitive(true)
-                .build()
-                .unwrap();
-
-            re.replace_all(&s, "<mark>$0</mark>").to_string()
-        };
-
-        Ok(Safe(result))
     }
 }
