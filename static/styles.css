@@ -29,12 +29,15 @@ button {
   --pico-form-element-spacing-horizontal: 0.75rem;
 }
 
+article header {
+  --pico-typography-spacing-vertical: 0;
+}
+
 .header-flex {
   display: flex;
   justify-content: space-between;
   align-items: center;
   /* ^ baseline might be more correct, but center looks best with short text far apart */
-  --pico-typography-spacing-vertical: 0;
 }
 
 /* opposite of .htmx-indicator; hidden if a request is being sent */
@@ -46,8 +49,12 @@ button {
   visibility: hidden;
   text-align: center;
 }
-/* Pico loading spinner */
-.htmx-anti-indicator[aria-busy="true"]::before {
-  visibility: visible;
+
+/* Pico loading spinner in a div with no children */
+div[aria-busy="true"]:not(:has(*))::before {
+  visibility: visible; /* counter-act .htmx-anti-indicator, if applicable */
   font-size: 3rem;
+}
+div[aria-busy="true"]:not(:has(*)) {
+  text-align: center;
 }

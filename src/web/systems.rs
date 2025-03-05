@@ -11,16 +11,16 @@ use sqlx::PgPool;
 use super::{filters, RenderedTemplate};
 use crate::{
     dto::systems::CreateSystemDto,
-    errors::AppResult,
+    errors::{AppError, AppResult},
     guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
     models::{ActionKind, System, TargetKind},
-    perms::HivePermission,
+    perms::{HivePermission, SystemsScope},
     routing::RouteTree,
     sanitizers::SearchTerm,
 };
 
 pub fn routes() -> RouteTree {
-    rocket::routes![list_systems, create_system].into()
+    rocket::routes![list_systems, create_system, system_details].into()
 }
 
 #[derive(Template)]
@@ -49,6 +49,14 @@ struct PartialListSystemsView<'q> {
 struct PartialCreateSystemView<'f, 'v> {
     ctx: PageContext,
     create_form: &'f form::Context<'v>,
+}
+
+#[derive(Template)]
+#[template(path = "systems/details.html.j2")]
+struct SystemDetailsView {
+    ctx: PageContext,
+    system: System,
+    fully_authorized: bool,
 }
 
 #[rocket::get("/systems?<q>")]
@@ -165,4 +173,35 @@ async fn create_system<'v>(
             Ok(RawHtml(template.render()?))
         }
     }
+}
+
+#[rocket::get("/system/<id>")]
+async fn system_details(
+    id: &str,
+    db: &State<PgPool>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+) -> AppResult<RenderedTemplate> {
+    let fully_authorized = perms.satisfies(HivePermission::ManageSystems).await?;
+
+    if !fully_authorized {
+        let scope = SystemsScope::Id(id.to_owned());
+        perms.require(HivePermission::ManageSystem(scope)).await?;
+    }
+
+    let system = sqlx::query_as("SELECT * FROM systems WHERE id = $1")
+        .bind(id)
+        .fetch_optional(db.inner())
+        .await?
+        .ok_or_else(|| AppError::NoSuchSystem(id.to_owned()))?;
+    // ^ note: there is no enumeration vulnerability in returning 404 here
+    // because we already checked that the user has perms to see all systems
+
+    let template = SystemDetailsView {
+        ctx,
+        system,
+        fully_authorized,
+    };
+
+    Ok(RawHtml(template.render()?))
 }

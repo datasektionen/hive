@@ -81,7 +81,9 @@
 
     <main class="container">
         <section class="header-flex">
+            {% block heading %}
             <h1>{% block title %}Untitled Page{% endblock title %}</h1>
+            {% endblock heading %}
             <div>{% block action_buttons %}{% endblock action_buttons %}</div>
         </section>
         {%- block content -%}

@@ -80,6 +80,18 @@ systems.create.field.id.placeholder:
 systems.create.field.id.tip:
   en: Use only lowercase letters, numbers, or dashes
   sv: Använd endast små bokstäver, siffror eller bindestreck
+systems.details.action.delete:
+  en: Delete
+  sv: Ta bort
+systems.details.action.edit:
+  en: Edit
+  sv: Redigera
+systems.details.title:
+  en: "System: %{x}"
+  sv: "System: %{x}"
+systems.details.api-tokens.title:
+  en: API Tokens
+  sv: API-tokens
 systems.list.action.create:
   en: Create
   sv: Skapa ny

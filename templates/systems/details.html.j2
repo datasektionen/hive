@@ -1,0 +1,32 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ ctx.t1("systems.details.title", system.id) }}{% endblock title %}
+
+{% block heading %}
+<hgroup>
+    <h1>{{ ctx.t1("systems.details.title", system.id) }}</h1>
+    <h3>{{ system.description }}</h3>
+</hgroup>
+{% endblock heading %}
+
+{% block action_buttons %}
+{% if fully_authorized %}
+<button>
+    <span class="material-icons">edit</span>
+    {{ ctx.t("systems.details.action.edit") }}
+</button>
+<button>
+    <span class="material-icons">delete</span>
+    {{ ctx.t("systems.details.action.delete") }}
+</button>
+{% endif %}
+{% endblock action_buttons %}
+
+{% block content %}
+<article class="overflow-auto">
+    <h2>{{ ctx.t("systems.details.api-tokens.title") }}</h2>
+    <div hx-get="/system/{{ system.id }}/api-tokens" hx-trigger="load delay:100ms">
+        {# delay is to give event listener time to be set, for aria-busy=true #}
+    </div>
+</article>
+{% endblock content %}
