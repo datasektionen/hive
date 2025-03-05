@@ -12,6 +12,9 @@ enum InnerAppErrorDto {
 
     #[serde(rename = "forbidden")]
     NotAllowed,
+
+    #[serde(rename = "system.unknown")]
+    NoSuchSystem { id: String },
 }
 
 impl From<AppError> for InnerAppErrorDto {
@@ -20,6 +23,7 @@ impl From<AppError> for InnerAppErrorDto {
             AppError::DbError(..) => Self::DbError,
             AppError::RenderError(..) => Self::PipelineError,
             AppError::NotAllowed(..) => Self::NotAllowed,
+            AppError::NoSuchSystem(id) => Self::NoSuchSystem { id },
         }
     }
 }

@@ -1,0 +1,32 @@
+{% macro tz_or_never(option) -%}
+{%- if let Some(val) = option -%}
+{{ val }}
+{%- else -%}
+<i>{{ ctx.t("api-tokens.list.never") }}</i>
+{%- endif -%}
+{%- endmacro %}
+
+<table class="striped">
+    <thead>
+        <tr>
+            <th scope="col">{{ ctx.t("api-tokens.list.col.id") }}</th>
+            <th scope="col">{{ ctx.t("api-tokens.list.col.description") }}</th>
+            <th scope="col">{{ ctx.t("api-tokens.list.col.expiration") }}</th>
+            <th scope="col">{{ ctx.t("api-tokens.list.col.last-used") }}</th>
+            <th scope="col">{{ ctx.t("api-tokens.list.col.actions") }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for token in api_tokens %}
+        <tr>
+            <td>{{ token.id }}</td>
+            <td>{{ token.description }}</td>
+            <td>{% call tz_or_never(token.expires_at) %}</td>
+            <td>{% call tz_or_never(token.last_used_at) %}</td>
+            <td>
+                <button class="secondary">Test</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

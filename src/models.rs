@@ -1,4 +1,6 @@
+use chrono::{DateTime, Local};
 use sqlx::FromRow;
+use uuid::Uuid;
 
 #[derive(FromRow)]
 pub struct Group {
@@ -14,6 +16,14 @@ pub struct Group {
 pub struct System {
     pub id: String,
     pub description: String,
+}
+
+#[derive(FromRow)]
+pub struct ApiToken {
+    pub id: Uuid,
+    pub description: String,
+    pub expires_at: Option<DateTime<Local>>,
+    pub last_used_at: Option<DateTime<Local>>,
 }
 
 #[derive(FromRow)]

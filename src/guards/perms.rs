@@ -111,6 +111,21 @@ impl PermsEvaluator {
             Err(AppError::NotAllowed(min))
         }
     }
+
+    pub async fn require_any_of(&self, possibilities: &[HivePermission]) -> AppResult<()> {
+        for min in possibilities {
+            if self.satisfies(min.clone()).await? {
+                return Ok(());
+            }
+        }
+
+        Err(AppError::NotAllowed(
+            possibilities
+                .last()
+                .expect("Empty possible permissions array")
+                .clone(),
+        ))
+    }
 }
 
 #[rocket::async_trait]
