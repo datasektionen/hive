@@ -2,6 +2,13 @@
 
 {% block title %}{{ ctx.t("systems.list.title") }}{% endblock title %}
 
+{% block action_buttons %}
+<button onclick="openModal('create-system')">
+    <span class="material-icons">add</span>
+    {{ ctx.t("systems.list.action.create") }}
+</button>
+{% endblock action_buttons %}
+
 {% block content %}
 <input type="search" name="q" value='{{ q.unwrap_or("") }}' placeholder=' {{ ctx.t("control.search") }}'
     aria-label='{{ ctx.t("control.search") }}' hx-get="/systems"
@@ -9,12 +16,12 @@
     hx-indicator="#listing-block" hx-push-url="true" />
 
 <div id="listing-block" class="htmx-anti-indicator">
-    {% block partial %}
+    {% block inner_systems_listing %}
     {% for system in systems %}
     <article>
         <header class="header-flex">
             <h3>{{ system.id|e|highlight(q.unwrap_or("")) }}</h3>
-            <a href="/system/{{ system.id }}" role="button">
+            <a href="/system/{{ system.id }}" role="button" class="secondary">
                 {{ ctx.t("control.manage") }}
                 <span class="material-icons">arrow_forward</span>
             </a>
@@ -23,6 +30,8 @@
     </article>
     {% endfor %}
     <p><em>{{ ctx.t1("listing.n-results", systems.len()) }}</em></p>
-    {% endblock partial %}
+    {% endblock inner_systems_listing %}
 </div>
+
+{% include "create.html.j2" %}
 {% endblock content %}

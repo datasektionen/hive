@@ -1,4 +1,10 @@
 _version: 2
+control.cancel:
+  en: Cancel
+  sv: Avbryt
+control.create:
+  en: Create
+  sv: Skapa
 control.manage:
   en: Manage
   sv: Hantera
@@ -32,6 +38,33 @@ nav.user.profile:
 nav.theme.toggle:
   en: Toggle UI theme
   sv: Växla UI-tema
+systems.create.description:
+  en: Add a new system to be managed by Hive
+  sv: Lägg till ett nytt system som ska hanteras av Hive
+systems.create.title:
+  en: Create New System
+  sv: Skapa ny system
+systems.create.field.description.label:
+  en: Description
+  sv: Beskrivning
+systems.create.field.description.placeholder:
+  en: e.g., Receipt and reimbursement management
+  sv: t.ex. Hantering av kvitto och ersättning
+systems.create.field.description.tip:
+  en: Choose something clear and descriptive
+  sv: Välj något tydligt och beskrivande
+systems.create.field.id.label:
+  en: System ID
+  sv: System-ID
+systems.create.field.id.placeholder:
+  en: e.g., cashflow
+  sv: t.ex. cashflow
+systems.create.field.id.tip:
+  en: Use only lowercase letters, numbers, or dashes
+  sv: Använd endast små bokstäver, siffror eller bindestreck
+systems.list.action.create:
+  en: Create
+  sv: Skapa ny
 systems.list.title:
   en: Systems
   sv: System

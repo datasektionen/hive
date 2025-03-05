@@ -1,0 +1,41 @@
+{%- import "utils.html.j2" as utils -%}
+
+<dialog id="create-system">
+    <article>
+        <h2>{{ ctx.t("systems.create.title") }}</h2>
+        <p>{{ ctx.t("systems.create.description") }}</p>
+        <form id="create-system-form" method="post" action="/systems" hx-boost="true" hx-target="this"
+            hx-indicator="#create-system-submit">
+            {% block inner_create_form %}
+            <label>
+                {{ ctx.t("systems.create.field.id.label") }}
+                <input {% call utils::field(create_form, "id" ) %}
+                    placeholder='{{ ctx.t("systems.create.field.id.placeholder") }}' required
+                    pattern="^[a-z0-9]+(-[a-z0-9]+)*$" aria-describedby="id-tip" />
+                <small id="id-tip">{{ ctx.t("systems.create.field.id.tip") }}</small>
+            </label>
+            <label>
+                {{ ctx.t("systems.create.field.description.label") }}
+                <input {% call utils::field(create_form, "description" ) %}
+                    placeholder='{{ ctx.t("systems.create.field.description.placeholder") }}' required minlength="3"
+                    aria-describedby="description-tip" />
+                <small id="id-tip">{{ ctx.t("systems.create.field.description.tip") }}</small>
+            </label>
+            {% endblock inner_create_form %}
+        </form>
+        <footer>
+            <button form="create-system-form" type="reset" class="secondary" onclick="closeModal('create-system')">
+                {{ ctx.t("control.cancel") }}
+            </button>
+            <button form="create-system-form" id="create-system-submit">
+                {{ ctx.t("control.create") }}
+            </button>
+        </footer>
+    </article>
+</dialog>
+
+{% if create_modal_open %}
+<script>
+    window.addEventListener("load", () => openModal("create-system"));
+</script>
+{% endif %}

@@ -80,7 +80,10 @@
     </header>
 
     <main class="container">
-        <h1>{% block title %}Untitled Page{% endblock title %}</h1>
+        <section class="header-flex">
+            <h1>{% block title %}Untitled Page{% endblock title %}</h1>
+            <div>{% block action_buttons %}{% endblock action_buttons %}</div>
+        </section>
         {%- block content -%}
         {%- endblock content -%}
     </main>

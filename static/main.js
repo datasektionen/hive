@@ -28,6 +28,29 @@ function switchLang(target) {
   window.location.reload();
 }
 
+function openModal(id) {
+  const modal = document.getElementById(id);
+  const html = document.documentElement;
+  const scrollbarWidth = window.innerWidth - html.clientWidth;
+  if (scrollbarWidth) {
+    html.style.setProperty("--pico-scrollbar-width", `${scrollbarWidth}px`);
+  }
+  html.classList.add("modal-is-open", "modal-is-opening");
+  setTimeout(() => html.classList.remove("modal-is-opening"), 300);
+  modal.showModal();
+}
+
+function closeModal(id) {
+  const modal = document.getElementById(id);
+  const html = document.documentElement;
+  html.classList.add("modal-is-closing");
+  setTimeout(() => {
+    html.classList.remove("modal-is-closing", "modal-is-open");
+    html.style.removeProperty("--pico-scrollbar-width");
+    modal.close();
+  }, 300);
+}
+
 // these 2 handlers make hx-indicator automatically work with Pico loading
 document.body.addEventListener("htmx:beforeSend", () => {
   document

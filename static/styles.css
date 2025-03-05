@@ -8,16 +8,14 @@ a.material-icons:hover {
   font-weight: var(--pico-font-weight);
 }
 
-.material-icons {
-  vertical-align: text-bottom;
-  /* unclear why this is needed, or if even the best value */
-}
-
-.header-flex {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  --pico-typography-spacing-vertical: 0;
+[role="button"]:has(> .material-icons),
+[type="button"]:has(> .material-icons),
+[type="reset"]:has(> .material-icons),
+[type="submit"]:has(> .material-icons),
+button:has(> .material-icons) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
 }
 
 [role="button"],
@@ -29,6 +27,14 @@ button {
   /* a little less padding */
   --pico-form-element-spacing-vertical: 0.5rem;
   --pico-form-element-spacing-horizontal: 0.75rem;
+}
+
+.header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  /* ^ baseline might be more correct, but center looks best with short text far apart */
+  --pico-typography-spacing-vertical: 0;
 }
 
 /* opposite of .htmx-indicator; hidden if a request is being sent */

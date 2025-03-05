@@ -1,0 +1,10 @@
+{% macro field(form, name) -%}
+name="{{ name }}"
+{%- let value = form.field_value(name) -%}
+value='{{ value.unwrap_or("") }}'
+{%- if form.field_errors(name).next().is_some() -%}
+aria-invalid="true"
+{%- else if value.is_some() -%}
+aria-invalid="false"
+{%- endif -%}
+{%- endmacro field %}
