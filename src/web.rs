@@ -1,9 +1,14 @@
-use rocket::{response::Redirect, uri};
+use rocket::{
+    response::{content::RawHtml, Redirect},
+    uri,
+};
 
 use crate::routing::RouteTree;
 
 mod groups;
 mod systems;
+
+type RenderedTemplate = RawHtml<String>;
 
 pub fn tree() -> RouteTree {
     RouteTree::Branch(vec![

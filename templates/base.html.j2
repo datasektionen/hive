@@ -45,7 +45,7 @@
                     {% for link in ctx.nav.links %}
                     <li>
                         <a href="{{ link.target }}" aria-current="{{ link.current }}" class="secondary">
-                            {{ ctx.t(format!("nav.link.{}", link.key)) }}
+                            {{ ctx.t(format!("nav.link.{}", link.key).as_str()) }}
                         </a>
                     </li>
                     {% endfor %}

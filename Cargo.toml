@@ -10,12 +10,11 @@ publish = false
 
 [dependencies]
 anyhow = "1.0.96"
-askama = { version = "0.12.1", features = ["with-rocket"] }
-askama_rocket = "0.12.0"
 chrono = "0.4.39"
 clap = { version = "4.5.30", features = ["derive"] }
 figment = { version = "0.10.19", features = ["env", "toml"] }
 log = "0.4.25"
+rinja = "0.3.5" # will be replaced with askama next release
 rocket = { version = "0.5.1", features = ["json"] }
 rust-i18n = "3.1.3"
 serde = { version = "1.0.218", features = ["derive"] }
@@ -29,5 +28,5 @@ sqlx = { version = "0.8.3", features = [
 ] }
 thiserror = "2.0.11"
 
-[profile.dev.package.askama_derive]
+[profile.dev.package.rinja_derive]
 opt-level = 3 # faster incremental compiles

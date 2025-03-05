@@ -1,5 +1,5 @@
-use askama_rocket::Template;
-use rocket::State;
+use rinja::Template;
+use rocket::{response::content::RawHtml, State};
 use sqlx::PgPool;
 
 use crate::{
@@ -10,6 +10,8 @@ use crate::{
     routing::RouteTree,
     sanitizers::SearchTerm,
 };
+
+use super::RenderedTemplate;
 
 pub fn routes() -> RouteTree {
     rocket::routes![list_systems].into()
@@ -24,12 +26,12 @@ struct ListSystemsView<'q> {
 }
 
 #[rocket::get("/systems?<q>")]
-async fn list_systems<'q>(
-    q: Option<&'q str>,
+async fn list_systems(
+    q: Option<&str>,
     db: &State<PgPool>,
     ctx: PageContext,
     perms: &PermsEvaluator,
-) -> AppResult<ListSystemsView<'q>> {
+) -> AppResult<RenderedTemplate> {
     perms.require(HivePermission::ManageSystems).await?;
 
     // TODO: support partial listing; ManageSystem(something)
@@ -50,5 +52,7 @@ async fn list_systems<'q>(
 
     let systems = query.build_query_as().fetch_all(db.inner()).await?;
 
-    Ok(ListSystemsView { ctx, systems, q })
+    let template = ListSystemsView { ctx, systems, q };
+
+    Ok(RawHtml(template.render()?))
 }

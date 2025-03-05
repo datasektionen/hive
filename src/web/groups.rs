@@ -1,8 +1,10 @@
-use askama_rocket::Template;
-use rocket::State;
+use rinja::Template;
+use rocket::{response::content::RawHtml, State};
 use sqlx::PgPool;
 
 use crate::{errors::AppResult, guards::context::PageContext, models::Group, routing::RouteTree};
+
+use super::RenderedTemplate;
 
 pub fn routes() -> RouteTree {
     rocket::routes![list_groups].into()
@@ -16,10 +18,12 @@ struct ListGroupsView {
 }
 
 #[rocket::get("/groups")]
-async fn list_groups(db: &State<PgPool>, ctx: PageContext) -> AppResult<ListGroupsView> {
+async fn list_groups(db: &State<PgPool>, ctx: PageContext) -> AppResult<RenderedTemplate> {
     let groups = sqlx::query_as("SELECT * FROM groups")
         .fetch_all(db.inner())
         .await?;
 
-    Ok(ListGroupsView { ctx, groups })
+    let template = ListGroupsView { ctx, groups };
+
+    Ok(RawHtml(template.render()?))
 }

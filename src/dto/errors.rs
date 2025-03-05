@@ -7,6 +7,8 @@ use crate::errors::AppError;
 enum InnerAppErrorDto {
     #[serde(rename = "db")]
     DbError,
+    #[serde(rename = "pipeline")]
+    PipelineError, // anything related to handling requests/responses (500)
 
     #[serde(rename = "forbidden")]
     NotAllowed,
@@ -16,6 +18,7 @@ impl From<AppError> for InnerAppErrorDto {
     fn from(err: AppError) -> Self {
         match err {
             AppError::DbError(..) => Self::DbError,
+            AppError::RenderError(..) => Self::PipelineError,
             AppError::NotAllowed(..) => Self::NotAllowed,
         }
     }
