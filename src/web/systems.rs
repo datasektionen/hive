@@ -220,6 +220,12 @@ pub async fn delete_system(
 ) -> AppResult<GracefulRedirect> {
     perms.require(HivePermission::ManageSystems).await?;
 
+    if id == "hive" {
+        // shouldn't delete ourselves
+        warn!("Disallowing self-deletion from {}", user.username);
+        return Err(AppError::SelfPreservation);
+    }
+
     let mut txn = db.begin().await?;
 
     let system: System = sqlx::query_as("DELETE FROM systems WHERE id = $1 RETURNING *")

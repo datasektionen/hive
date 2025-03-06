@@ -9,6 +9,8 @@ enum InnerAppErrorDto {
     DbError,
     #[serde(rename = "pipeline")]
     PipelineError, // anything related to handling requests/responses (500)
+    #[serde(rename = "self-preservation")]
+    SelfPreservation,
 
     #[serde(rename = "forbidden")]
     NotAllowed,
@@ -23,6 +25,7 @@ impl From<AppError> for InnerAppErrorDto {
             AppError::DbError(..) => Self::DbError,
             AppError::RenderError(..) => Self::PipelineError,
             AppError::NotAllowed(..) => Self::NotAllowed,
+            AppError::SelfPreservation => Self::SelfPreservation,
             AppError::NoSuchSystem(id) => Self::NoSuchSystem { id },
         }
     }

@@ -20,6 +20,8 @@ pub enum AppError {
 
     #[error("user lacks permissions to perform action (minimum needed: {0})")]
     NotAllowed(HivePermission),
+    #[error("action disallowed because it compromises system integrity")]
+    SelfPreservation,
 
     #[error("could not find system with ID `{0}`")]
     NoSuchSystem(String),
@@ -31,6 +33,7 @@ impl AppError {
             AppError::DbError(..) => Status::InternalServerError,
             AppError::RenderError(..) => Status::InternalServerError,
             AppError::NotAllowed(..) => Status::Forbidden,
+            AppError::SelfPreservation => Status::UnavailableForLegalReasons,
             AppError::NoSuchSystem(..) => Status::NotFound,
         }
     }

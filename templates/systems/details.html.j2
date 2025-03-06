@@ -15,10 +15,12 @@
     <span class="material-icons">edit</span>
     {{ ctx.t("control.edit") }}
 </button>
+{% if system.id != "hive" %}
 <button class="btn-danger" onclick="openModal('delete-system')">
     <span class="material-icons">delete</span>
     {{ ctx.t("control.delete") }}
 </button>
+{% endif %}
 {% endif %}
 {% endblock action_buttons %}
 
