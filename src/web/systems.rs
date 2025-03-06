@@ -2,8 +2,9 @@ use log::*;
 use rinja::Template;
 use rocket::{
     form::{self, Contextual, Form},
-    response::content::RawHtml,
-    State,
+    http::Header,
+    response::{content::RawHtml, Redirect},
+    uri, Responder, State,
 };
 use serde_json::json;
 use sqlx::PgPool;
@@ -104,6 +105,13 @@ async fn list_systems(
     }
 }
 
+#[derive(Responder)]
+enum CreateSystemResponse {
+    HtmxRedirect((), Header<'static>),
+    HttpRedirect(Box<Redirect>), // large variant size difference
+    ValidationError(RenderedTemplate),
+}
+
 #[rocket::post("/systems", data = "<form>")]
 async fn create_system<'v>(
     form: Form<Contextual<'v, CreateSystemDto<'v>>>,
@@ -112,7 +120,7 @@ async fn create_system<'v>(
     perms: &PermsEvaluator,
     user: User,
     partial: Option<HxRequest<'_>>,
-) -> AppResult<RenderedTemplate> {
+) -> AppResult<CreateSystemResponse> {
     perms.require(HivePermission::ManageSystems).await?;
 
     // TODO: anti-CSRF
@@ -144,8 +152,14 @@ async fn create_system<'v>(
 
         txn.commit().await?;
 
-        // TODO: redirect to get_system, maybe both htmx and normal if easy
-        Ok(RawHtml(format!("<b>New ID:</b> {id}")))
+        let target = uri!(system_details(id));
+        if partial.is_some() {
+            let header = Header::new("HX-Redirect", target.to_string());
+            Ok(CreateSystemResponse::HtmxRedirect((), header))
+        } else {
+            let redirect = Redirect::to(target);
+            Ok(CreateSystemResponse::HttpRedirect(Box::new(redirect)))
+        }
     } else {
         // some errors are present; show the form again
         debug!("Create system form errors: {:?}", &form.context);
@@ -156,7 +170,9 @@ async fn create_system<'v>(
                 create_form: &form.context,
             };
 
-            Ok(RawHtml(template.render()?))
+            Ok(CreateSystemResponse::ValidationError(RawHtml(
+                template.render()?,
+            )))
         } else {
             let systems = sqlx::query_as("SELECT * FROM systems ORDER BY id")
                 .fetch_all(db.inner())
@@ -170,7 +186,9 @@ async fn create_system<'v>(
                 create_modal_open: true,
             };
 
-            Ok(RawHtml(template.render()?))
+            Ok(CreateSystemResponse::ValidationError(RawHtml(
+                template.render()?,
+            )))
         }
     }
 }
