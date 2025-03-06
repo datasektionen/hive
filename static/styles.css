@@ -2,6 +2,14 @@
   color: var(--pico-primary);
 }
 
+.success {
+  color: var(--pico-form-element-valid-focus-color);
+}
+
+.material-icons {
+  vertical-align: middle;
+}
+
 a.material-icons:hover {
   --pico-text-decoration: none !important;
   --pico-font-weight: 700;
@@ -38,6 +46,11 @@ article header {
   justify-content: space-between;
   align-items: center;
   /* ^ baseline might be more correct, but center looks best with short text far apart */
+}
+
+.flex-end {
+  display: flex;
+  justify-content: end;
 }
 
 /* opposite of .htmx-indicator; hidden if a request is being sent */

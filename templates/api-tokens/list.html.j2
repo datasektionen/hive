@@ -1,6 +1,6 @@
 {%- import "utils.html.j2" as utils -%}
 
-<table class="striped">
+<table id="api-tokens-table" class="striped">
     <thead>
         <tr>
             <th scope="col">{{ ctx.t("api-tokens.list.col.id") }}</th>
@@ -13,13 +13,7 @@
     <tbody>
         {% for token in api_tokens %}
         <tr>
-            <td>{{ token.id }}</td>
-            <td>{{ token.description }}</td>
-            <td>{% call utils::stamp_or_never(token.expires_at) %}</td>
-            <td>{% call utils::stamp_or_never(token.last_used_at) %}</td>
-            <td>
-                <button class="secondary">Test</button>
-            </td>
+            {% include "row-cells.html.j2" %}
         </tr>
         {% endfor %}
     </tbody>

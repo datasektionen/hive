@@ -54,10 +54,11 @@ struct PartialCreateSystemView<'f, 'v> {
 
 #[derive(Template)]
 #[template(path = "systems/details.html.j2")]
-struct SystemDetailsView {
+struct SystemDetailsView<'f, 'v> {
     ctx: PageContext,
     system: System,
     fully_authorized: bool,
+    api_token_create_form: &'f form::Context<'v>,
 }
 
 #[rocket::get("/systems?<q>")]
@@ -219,6 +220,7 @@ pub async fn system_details(
         ctx,
         system,
         fully_authorized,
+        api_token_create_form: &form::Context::default(),
     };
 
     Ok(RawHtml(template.render()?))

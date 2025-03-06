@@ -1,0 +1,44 @@
+{%- import "utils.html.j2" as utils -%}
+
+{% extends "base.html.j2" %}
+
+{% block title %}{{ ctx.t1("systems.details.title", system_id) }}{% endblock title %}
+
+{% block content %}
+<h4>{{ ctx.t("api-tokens.created.heading") }}</h4>
+
+{% block api_token_created_partial %}
+<template>
+    <tr hx-swap-oob="beforeend:#api-tokens-table tbody">
+        {% include "row-cells.html.j2" %}
+    </tr>
+</template>
+
+<div hx-swap-oob="outerHTML:#create-api-token-form">
+    <p>
+        <strong class="success">
+            <span class="material-icons">task_alt</span>
+            {{ ctx.t("api-tokens.created.success") }}
+        </strong>
+        <em>
+            {{ ctx.t("api-tokens.created.secret.explanation") }}
+        </em>
+    </p>
+    <ul>
+        <li>
+            <strong>{{ ctx.t("api-tokens.created.id.label") }}</strong>
+            <samp>{{ token.id }}</samp>
+        </li>
+        <li>
+            <strong>{{ ctx.t("api-tokens.created.secret.label") }}</strong>
+            <samp>{{ secret }}</samp>
+        </li>
+    </ul>
+</div>
+{% endblock api_token_created_partial %}
+
+<a role="button" href="/system/{{ system_id }}">
+    <span class="material_icons">arrow_back</span>
+    {{ ctx.t("control.back") }}
+</a>
+{% endblock content %}

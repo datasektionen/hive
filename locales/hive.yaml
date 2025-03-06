@@ -1,4 +1,34 @@
 _version: 2
+api-tokens.create.field.description.label:
+  en: Description
+  sv: Beskrivning
+api-tokens.create.field.description.placeholder:
+  en: e.g., Daily backup script
+  sv: t.ex. Daglig backup script
+api-tokens.create.field.description.tip:
+  en: Where, how and why will this token be used?
+  sv: Var, hur och varför kommer denna token att användas?
+api-tokens.create.field.expiration.label:
+  en: Expiration (Optional)
+  sv: Utgång (Frivillig)
+api-tokens.create.field.expiration.tip:
+  en: Until when can it be used? Empty = does not expire
+  sv: Tills när kan den användas? Tom = går inte ut
+api-tokens.created.heading:
+  en: New API Token
+  sv: Ny API-token
+api-tokens.created.id.label:
+  en: "Token ID:"
+  sv: "Token-ID:"
+api-tokens.created.secret.explanation:
+  en: For security reasons, the token secret below will never be shown again.
+  sv: Av säkerhetsskäl kommer tokenhemligheten nedan aldrig att visas igen.
+api-tokens.created.secret.label:
+  en: "Token Secret:"
+  sv: "Tokenhemlighet:"
+api-tokens.created.success:
+  en: Token created successfully!
+  sv: Token skapades framgångsrikt!
 api-tokens.list.col.actions:
   en: Actions
   sv: Åtgärder
@@ -14,6 +44,9 @@ api-tokens.list.col.id:
 api-tokens.list.col.last-used:
   en: Last Used
   sv: Senast använd
+control.back:
+  en: Back
+  sv: Tillbaka
 control.cancel:
   en: Cancel
   sv: Avbryt
@@ -89,6 +122,9 @@ systems.details.action.edit:
 systems.details.title:
   en: "System: %{x}"
   sv: "System: %{x}"
+systems.details.api-tokens.heading.create:
+  en: Create new API token
+  sv: Skapa nytt API-token
 systems.details.api-tokens.title:
   en: API Tokens
   sv: API-tokens

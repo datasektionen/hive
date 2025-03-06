@@ -1,0 +1,7 @@
+<td>{{ token.id }}</td>
+<td>{{ token.description }}</td>
+<td>{% call utils::stamp_or_never(token.expires_at) %}</td>
+<td>{% call utils::stamp_or_never(token.last_used_at) %}</td>
+<td>
+    <button class="secondary">Test</button>
+</td>

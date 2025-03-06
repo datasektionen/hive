@@ -25,8 +25,12 @@
 {% block content %}
 <article class="overflow-auto">
     <h2>{{ ctx.t("systems.details.api-tokens.title") }}</h2>
-    <div hx-get="/system/{{ system.id }}/api-tokens" hx-trigger="load delay:100ms">
+    <div hx-get="/system/{{ system.id }}/api-tokens" hx-trigger="load delay:100ms" hx-swap="outerHTML">
         {# delay is to give event listener time to be set, for aria-busy=true #}
     </div>
+    <footer>
+        <h4>{{ ctx.t("systems.details.api-tokens.heading.create") }}</h4>
+        {% include "api-tokens/create.html.j2" %}
+    </footer>
 </article>
 {% endblock content %}
