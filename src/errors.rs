@@ -45,6 +45,8 @@ impl<'r> Responder<'r, 'static> for AppError {
         if status.code >= 500 {
             // debug prints enum variant name, display shows thiserror message
             error!("While handling [{req}], encountered {self:?}: {self}");
+        } else {
+            debug!("While handling [{req}], encountered {self:?}: {self}")
         }
 
         let base = Json(AppErrorDto::from(self)).respond_to(req)?;
