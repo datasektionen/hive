@@ -53,6 +53,12 @@ control.cancel:
 control.create:
   en: Create
   sv: Skapa
+control.delete:
+  en: Delete
+  sv: Radera
+control.edit:
+  en: Edit
+  sv: Redigera
 control.manage:
   en: Manage
   sv: Hantera
@@ -113,12 +119,27 @@ systems.create.field.id.placeholder:
 systems.create.field.id.tip:
   en: Use only lowercase letters, numbers, or dashes
   sv: Använd endast små bokstäver, siffror eller bindestreck
-systems.details.action.delete:
-  en: Delete
-  sv: Ta bort
-systems.details.action.edit:
-  en: Edit
-  sv: Redigera
+systems.delete.title:
+  en: Delete System
+  sv: Radera system
+systems.delete.description:
+  en: |
+    This will <strong>permanently and irrecoverably</strong> delete
+    system <strong><samp>%{x}</samp></strong>!
+    All associated items such as API tokens, tags, and permissions
+    will also be deleted.
+    <em>Please confirm your intentions by typing the system's ID
+    below.</em>
+  sv: |
+    Detta kommer att <strong>permanent och oåterkalleligt</strong>
+    ta bort system <strong><samp>%{x}</samp></strong>!
+    Alla associerade objekt som API-tokens, taggar och behörigheter
+    kommer också att raderas.
+    <em>Vänligen bekräfta dina avsikter genom att skriva in systemets
+    ID nedan.</em>
+systems.delete.confirmation.placeholder:
+  en: System ID
+  sv: System-ID
 systems.details.title:
   en: "System: %{x}"
   sv: "System: %{x}"

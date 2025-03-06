@@ -70,3 +70,12 @@ document.body.addEventListener("htmx:beforeOnLoad", () => {
     }
   }
 });
+
+// make button disabled while form is invalid; force re-validation on input
+for (const btn of document.querySelectorAll("[data-require-validity]")) {
+  btn.form.addEventListener("input", (event) => {
+    event.target.setAttribute("aria-invalid", !event.target.validity.valid);
+    btn.disabled = !btn.form.checkValidity();
+  });
+  btn.disabled = !btn.form.checkValidity();
+}

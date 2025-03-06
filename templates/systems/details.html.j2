@@ -11,13 +11,13 @@
 
 {% block action_buttons %}
 {% if fully_authorized %}
-<button>
+<button class="secondary">
     <span class="material-icons">edit</span>
-    {{ ctx.t("systems.details.action.edit") }}
+    {{ ctx.t("control.edit") }}
 </button>
-<button>
+<button class="btn-danger" onclick="openModal('delete-system')">
     <span class="material-icons">delete</span>
-    {{ ctx.t("systems.details.action.delete") }}
+    {{ ctx.t("control.delete") }}
 </button>
 {% endif %}
 {% endblock action_buttons %}
@@ -37,4 +37,6 @@
         </details>
     </footer>
 </article>
+
+{% include "delete.html.j2" %}
 {% endblock content %}

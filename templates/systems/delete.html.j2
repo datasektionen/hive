@@ -1,0 +1,29 @@
+{%- import "utils.html.j2" as utils -%}
+
+<dialog id="delete-system">
+    <article>
+        <h2>{{ ctx.t("systems.delete.title") }}</h2>
+        <p>{{ ctx.t1("systems.delete.description", system.id)|safe }}</p>
+        {# input must be in a form to trigger browser validation #}
+        <form id="delete-system-confirmation-form" onsubmit="event.preventDefault()">
+            <input placeholder='{{ ctx.t("systems.delete.confirmation.placeholder") }}' required
+                pattern="{{ system.id }}" />
+            {#
+            previously pattern was `regex::escape(system.id)` but this doesn't
+            work because it escapes dashes `some\-example` and browser rejects
+            the entire pattern due to "invalid escape"; since we control what
+            values ID can take, it should be fine not to escape, so we don't
+            #}
+        </form>
+        <footer>
+            <button form="delete-system-confirmation-form" type="reset" class="secondary"
+                onclick="closeModal('delete-system')">
+                {{ ctx.t("control.cancel") }}
+            </button>
+            <button form="delete-system-confirmation-form" data-require-validity class="btn-danger"
+                hx-delete="/system/{{ system.id }}">
+                {{ ctx.t("control.delete") }}
+            </button>
+        </footer>
+    </article>
+</dialog>

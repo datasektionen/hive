@@ -11,7 +11,7 @@
                 {{ ctx.t("systems.create.field.id.label") }}
                 <input {% call utils::field(create_form, "id" ) %}
                     placeholder='{{ ctx.t("systems.create.field.id.placeholder") }}' required
-                    pattern="^[a-z0-9]+(-[a-z0-9]+)*$" aria-describedby="id-tip" />
+                    pattern="[a-z0-9]+(-[a-z0-9]+)*" aria-describedby="id-tip" />
                 <small id="id-tip">{{ ctx.t("systems.create.field.id.tip") }}</small>
             </label>
             <label>

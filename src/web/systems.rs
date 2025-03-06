@@ -20,7 +20,7 @@ use crate::{
 };
 
 pub fn routes() -> RouteTree {
-    rocket::routes![list_systems, create_system, system_details].into()
+    rocket::routes![list_systems, create_system, system_details, delete_system].into()
 }
 
 #[derive(Template)]
@@ -208,6 +208,44 @@ pub async fn system_details(
     };
 
     Ok(RawHtml(template.render()?))
+}
+
+#[rocket::delete("/system/<id>")]
+pub async fn delete_system(
+    id: &str,
+    db: &State<PgPool>,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<GracefulRedirect> {
+    perms.require(HivePermission::ManageSystems).await?;
+
+    let mut txn = db.begin().await?;
+
+    let system: System = sqlx::query_as("DELETE FROM systems WHERE id = $1 RETURNING *")
+        .bind(id)
+        .fetch_optional(&mut *txn)
+        .await?
+        .ok_or_else(|| AppError::NoSuchSystem(id.to_owned()))?;
+
+    sqlx::query(
+        "INSERT INTO audit_logs (action_kind, target_kind, target_id, actor, details) VALUES \
+             ($1, $2, $3, $4, $5)",
+    )
+    .bind(ActionKind::Delete)
+    .bind(TargetKind::System)
+    .bind(system.id)
+    .bind(user.username)
+    .bind(json!({"old": {"description": system.description}}))
+    .execute(&mut *txn)
+    .await?;
+
+    txn.commit().await?;
+
+    Ok(GracefulRedirect::to(
+        uri!(list_systems(None::<&str>)),
+        partial.is_some(),
+    ))
 }
 
 pub async fn ensure_exists<'a, X>(id: &str, db: X) -> AppResult<()>

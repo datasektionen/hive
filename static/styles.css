@@ -3,7 +3,29 @@
 }
 
 .success {
+  /* some light hijacking to get dark/light theme variants for free */
   color: var(--pico-form-element-valid-focus-color);
+}
+
+.btn-danger {
+  --pico-background-color: var(--pico-form-element-invalid-focus-color);
+  --pico-border-color: var(--pico-form-element-invalid-border-color);
+  --pico-color: var(--pico-secondary-inverse);
+}
+.btn-danger:is(:hover, :active, :focus) {
+  --pico-background-color: var(--pico-form-element-invalid-border-color);
+  --pico-border-color: var(--pico-form-element-invalid-border-color);
+  --pico-color: var(--pico-secondary-inverse);
+}
+.btn-danger:focus {
+  --pico-box-shadow: var(--pico-button-hover-box-shadow, 0 0 0 rgba(0, 0, 0, 0)),
+    0 0 0 var(--pico-outline-width)
+      var(--pico-form-element-invalid-border-color);
+}
+
+[data-require-validity] {
+  /* disabled transition */
+  transition: opacity ease-in 100ms;
 }
 
 .material-icons {
