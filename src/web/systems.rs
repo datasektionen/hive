@@ -223,3 +223,16 @@ pub async fn system_details(
 
     Ok(RawHtml(template.render()?))
 }
+
+pub async fn ensure_exists<'a, X>(id: &str, db: X) -> AppResult<()>
+where
+    X: sqlx::Executor<'a, Database = sqlx::Postgres>,
+{
+    sqlx::query("SELECT COUNT(*) FROM systems WHERE id = $1")
+        .bind(id)
+        .fetch_optional(db)
+        .await?
+        .ok_or_else(|| AppError::NoSuchSystem(id.to_owned()))?;
+
+    Ok(())
+}

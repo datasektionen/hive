@@ -6,14 +6,14 @@ use rocket::{
 use sqlx::PgPool;
 
 use crate::{
-    errors::{AppError, AppResult},
+    errors::AppResult,
     guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator},
     models::ApiToken,
     perms::{HivePermission, SystemsScope},
     routing::RouteTree,
 };
 
-use super::{filters, RenderedTemplate};
+use super::{filters, systems, RenderedTemplate};
 
 pub fn routes() -> RouteTree {
     rocket::routes![list_api_tokens].into()
@@ -61,13 +61,8 @@ async fn list_api_tokens(
     .fetch_all(db.inner())
     .await?;
 
-    // ensure system exists
     if api_tokens.is_empty() {
-        sqlx::query("SELECT COUNT(*) FROM systems WHERE id = $1")
-            .bind(system_id)
-            .fetch_optional(db.inner())
-            .await?
-            .ok_or_else(|| AppError::NoSuchSystem(system_id.to_owned()))?;
+        systems::ensure_exists(system_id, db.inner()).await?;
     }
 
     let template = ListApiTokensView { ctx, api_tokens };
