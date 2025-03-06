@@ -29,8 +29,12 @@
         {# delay is to give event listener time to be set, for aria-busy=true #}
     </div>
     <footer>
-        <h4>{{ ctx.t("systems.details.api-tokens.heading.create") }}</h4>
-        {% include "api-tokens/create.html.j2" %}
+        <details>
+            <summary role="button" class="secondary">
+                {{ ctx.t("systems.details.api-tokens.heading.create") }}
+            </summary>
+            {% include "api-tokens/create.html.j2" %}
+        </details>
     </footer>
 </article>
 {% endblock content %}

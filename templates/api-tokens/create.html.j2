@@ -1,7 +1,7 @@
 {%- import "utils.html.j2" as utils -%}
 
 <form id="create-api-token-form" method="post" action="/system/{{ system.id }}/api-tokens" hx-boost="true"
-    hx-target="#create-api-token-inner-form" hx-indicator="#create-api-token-submit">
+    hx-target="#create-api-token-inner-form" hx-indicator="#create-api-token-submit" class="container-fluid">
     <div id="create-api-token-inner-form" class="grid">
         {% block inner_create_api_token_form %}
         <label>

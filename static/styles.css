@@ -37,7 +37,8 @@ button {
   --pico-form-element-spacing-horizontal: 0.75rem;
 }
 
-article header {
+article header,
+article footer {
   --pico-typography-spacing-vertical: 0;
 }
 
