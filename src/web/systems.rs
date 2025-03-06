@@ -176,7 +176,7 @@ async fn create_system<'v>(
 }
 
 #[rocket::get("/system/<id>")]
-async fn system_details(
+pub async fn system_details(
     id: &str,
     db: &State<PgPool>,
     ctx: PageContext,

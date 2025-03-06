@@ -1,10 +1,13 @@
 use rinja::Template;
-use rocket::{response::content::RawHtml, State};
+use rocket::{
+    response::{content::RawHtml, Redirect},
+    uri, State,
+};
 use sqlx::PgPool;
 
 use crate::{
     errors::{AppError, AppResult},
-    guards::{context::PageContext, perms::PermsEvaluator},
+    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator},
     models::ApiToken,
     perms::{HivePermission, SystemsScope},
     routing::RouteTree,
@@ -29,8 +32,20 @@ async fn list_api_tokens(
     db: &State<PgPool>,
     ctx: PageContext,
     perms: &PermsEvaluator,
-) -> AppResult<RenderedTemplate> {
-    // TODO: redirect to system details if not partial
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<Result<RenderedTemplate, Redirect>> {
+    // note on return type: the inner Result is just to make it
+    // easier to have 2 possible response types without defining
+    // a separate enum just for this
+    // See: https://rocket.rs/guide/v0.5/faq/#multiple-responses
+
+    if partial.is_none() {
+        // we only know how to render a table, not a full page;
+        // redirect to system details
+
+        let target = uri!(super::systems::system_details(system_id));
+        return Ok(Err(Redirect::to(target)));
+    }
 
     perms
         .require_any_of(&[
@@ -57,5 +72,5 @@ async fn list_api_tokens(
 
     let template = ListApiTokensView { ctx, api_tokens };
 
-    Ok(RawHtml(template.render()?))
+    Ok(Ok(RawHtml(template.render()?)))
 }
