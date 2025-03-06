@@ -21,6 +21,7 @@ pub struct System {
 #[derive(FromRow)]
 pub struct ApiToken {
     pub id: Uuid,
+    pub system_id: String,
     pub description: String,
     pub expires_at: Option<DateTime<Local>>,
     pub last_used_at: Option<DateTime<Local>>,

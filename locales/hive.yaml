@@ -29,6 +29,16 @@ api-tokens.created.secret.label:
 api-tokens.created.success:
   en: Token created successfully!
   sv: Token skapades framgångsrikt!
+api-tokens.list.action.delete.confirm:
+  en: >
+    Are you sure you want to delete API token "%{x}"? This action is permanent
+    and cannot be undone.
+  sv: >
+    Är du säker på att du vill ta bort API-token "%{x}"? Denna åtgärd är
+    permanent och kan inte ångras.
+api-tokens.list.action.delete.tooltip:
+  en: Delete API Token
+  sv: Radera API-token
 api-tokens.list.col.actions:
   en: Actions
   sv: Åtgärder
@@ -123,14 +133,14 @@ systems.delete.title:
   en: Delete System
   sv: Radera system
 systems.delete.description:
-  en: |
+  en: >
     This will <strong>permanently and irrecoverably</strong> delete
     system <strong><samp>%{x}</samp></strong>!
     All associated items such as API tokens, tags, and permissions
     will also be deleted.
     <em>Please confirm your intentions by typing the system's ID
     below.</em>
-  sv: |
+  sv: >
     Detta kommer att <strong>permanent och oåterkalleligt</strong>
     ta bort system <strong><samp>%{x}</samp></strong>!
     Alla associerade objekt som API-tokens, taggar och behörigheter

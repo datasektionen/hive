@@ -16,7 +16,7 @@ figment = { version = "0.10.19", features = ["env", "toml"] }
 log = "0.4.25"
 regex = "1.11.1"
 rinja = "0.3.5" # will be replaced with askama next release
-rocket = { version = "0.5.1", features = ["json"] }
+rocket = { version = "0.5.1", features = ["json", "uuid"] }
 rust-i18n = "3.1.3"
 serde = { version = "1.0.218", features = ["derive"] }
 serde_json = "1.0.140"

@@ -12,7 +12,7 @@ use uuid::Uuid;
 use super::{filters, systems, Either, RenderedTemplate};
 use crate::{
     dto::api_tokens::CreateApiTokenDto,
-    errors::AppResult,
+    errors::{AppError, AppResult},
     guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
     models::{ActionKind, ApiToken, TargetKind},
     perms::{HivePermission, SystemsScope},
@@ -20,7 +20,7 @@ use crate::{
 };
 
 pub fn routes() -> RouteTree {
-    rocket::routes![list_api_tokens, create_api_token].into()
+    rocket::routes![list_api_tokens, create_api_token, delete_api_token].into()
 }
 
 #[derive(Template)]
@@ -193,5 +193,61 @@ async fn create_api_token<'v>(
             let target = uri!(systems::system_details(system_id));
             Ok(Either::Right(Redirect::to(target)))
         }
+    }
+}
+
+#[rocket::delete("/api-token/<id>")]
+pub async fn delete_api_token(
+    id: Uuid,
+    db: &State<PgPool>,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<Either<(), Redirect>> {
+    // perms can only be checked later because they depend on the system
+
+    let mut txn = db.begin().await?;
+
+    let token: ApiToken = sqlx::query_as("DELETE FROM api_tokens WHERE id = $1 RETURNING *")
+        .bind(id)
+        .fetch_optional(&mut *txn)
+        .await?
+        .ok_or_else(|| AppError::NotAllowed(HivePermission::ManageSystems))?;
+    // error is 403 instead of 404 to prevent enumeration; we haven't checked
+    // any permissions yet
+
+    perms
+        .require_any_of(&[
+            HivePermission::ManageSystems,
+            HivePermission::ManageSystem(SystemsScope::Id(token.system_id.to_owned())),
+        ])
+        .await?;
+
+    sqlx::query(
+        "INSERT INTO audit_logs (action_kind, target_kind, target_id, actor, details) VALUES \
+             ($1, $2, $3, $4, $5)",
+    )
+    .bind(ActionKind::Delete)
+    .bind(TargetKind::ApiToken)
+    .bind(token.id)
+    .bind(user.username)
+    .bind(json!({
+        "old": {
+            "system_id": token.system_id,
+            "description": token.description,
+            "expires_at": token.expires_at,
+            "last_used_at": token.last_used_at,
+        }
+    }))
+    .execute(&mut *txn)
+    .await?;
+
+    txn.commit().await?;
+
+    if partial.is_some() {
+        Ok(Either::Left(()))
+    } else {
+        let target = uri!(systems::system_details(token.system_id));
+        Ok(Either::Right(Redirect::to(target)))
     }
 }

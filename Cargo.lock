@@ -1864,6 +1864,7 @@ dependencies = [
  "tokio-stream",
  "tokio-util",
  "ubyte",
+ "uuid",
  "version_check",
  "yansi",
 ]
@@ -1910,6 +1911,7 @@ dependencies = [
  "time",
  "tokio",
  "uncased",
+ "uuid",
 ]
 
 [[package]]
@@ -2878,6 +2880,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e0f540e3240398cce6128b64ba83fdbdd86129c16a3aa1a3a252efd66eb3d587"
 dependencies = [
  "getrandom 0.3.1",
+ "serde",
 ]
 
 [[package]]

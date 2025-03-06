@@ -3,5 +3,9 @@
 <td>{% call utils::stamp_or_never(token.expires_at) %}</td>
 <td>{% call utils::stamp_or_never(token.last_used_at) %}</td>
 <td>
-    <button class="secondary">Test</button>
+    <button class="btn-danger" data-tooltip='{{ ctx.t("api-tokens.list.action.delete.tooltip") }}'
+        hx-delete="/api-token/{{ token.id }}" hx-swap="delete" hx-target="closest tr"
+        hx-confirm='{{ ctx.t1("api-tokens.list.action.delete.confirm", token.description) }}'>
+        <span class="material-icons">delete</span>
+    </button>
 </td>
