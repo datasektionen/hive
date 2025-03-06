@@ -8,3 +8,11 @@ aria-invalid="true"
 aria-invalid="false"
 {%- endif -%}
 {%- endmacro field %}
+
+{% macro stamp_or_never(option) -%}
+{%- if let Some(val) = option -%}
+{{ val|timestamp }}
+{%- else -%}
+<i>{{ ctx.t("indicator.datetime.never") }}</i>
+{%- endif -%}
+{%- endmacro %}

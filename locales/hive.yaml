@@ -14,9 +14,6 @@ api-tokens.list.col.id:
 api-tokens.list.col.last-used:
   en: Last Used
   sv: Senast använd
-api-tokens.list.never:
-  en: Never
-  sv: Aldrig
 control.cancel:
   en: Cancel
   sv: Avbryt
@@ -29,6 +26,9 @@ control.manage:
 control.search:
   en: Search
   sv: Sök
+indicator.datetime.never:
+  en: Never
+  sv: Aldrig
 listing.n-results:
   en: Showing a total of %{x} results.
   sv: Visar totalt 4 resultat.

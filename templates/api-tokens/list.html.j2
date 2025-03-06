@@ -1,10 +1,4 @@
-{% macro tz_or_never(option) -%}
-{%- if let Some(val) = option -%}
-{{ val|timestamp }}
-{%- else -%}
-<i>{{ ctx.t("api-tokens.list.never") }}</i>
-{%- endif -%}
-{%- endmacro %}
+{%- import "utils.html.j2" as utils -%}
 
 <table class="striped">
     <thead>
@@ -21,8 +15,8 @@
         <tr>
             <td>{{ token.id }}</td>
             <td>{{ token.description }}</td>
-            <td>{% call tz_or_never(token.expires_at) %}</td>
-            <td>{% call tz_or_never(token.last_used_at) %}</td>
+            <td>{% call utils::stamp_or_never(token.expires_at) %}</td>
+            <td>{% call utils::stamp_or_never(token.last_used_at) %}</td>
             <td>
                 <button class="secondary">Test</button>
             </td>
