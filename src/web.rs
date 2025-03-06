@@ -1,6 +1,7 @@
 use rocket::{
+    http::{uri::Reference, Header},
     response::{content::RawHtml, Redirect},
-    uri,
+    uri, Responder,
 };
 
 use crate::routing::RouteTree;
@@ -10,6 +11,32 @@ mod groups;
 mod systems;
 
 type RenderedTemplate = RawHtml<String>;
+
+#[derive(Responder)]
+enum GracefulRedirect {
+    HtmxRedirect((), Header<'static>),
+    HttpRedirect(Box<Redirect>), // boxed due to large variant size difference
+}
+
+impl GracefulRedirect {
+    pub fn to<U>(target: U, partial: bool) -> Self
+    where
+        U: TryInto<Reference<'static>> + ToString,
+    {
+        if partial {
+            let header = Header::new("HX-Redirect", target.to_string());
+            Self::HtmxRedirect((), header)
+        } else {
+            Self::HttpRedirect(Box::new(Redirect::to(target)))
+        }
+    }
+}
+
+#[derive(Responder)]
+enum Either<T, U> {
+    Left(T),
+    Right(U),
+}
 
 pub fn tree() -> RouteTree {
     RouteTree::Branch(vec![

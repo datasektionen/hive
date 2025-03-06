@@ -2,14 +2,13 @@ use log::*;
 use rinja::Template;
 use rocket::{
     form::{self, Contextual, Form},
-    http::Header,
-    response::{content::RawHtml, Redirect},
-    uri, Responder, State,
+    response::content::RawHtml,
+    uri, State,
 };
 use serde_json::json;
 use sqlx::PgPool;
 
-use super::{filters, RenderedTemplate};
+use super::{filters, Either, GracefulRedirect, RenderedTemplate};
 use crate::{
     dto::systems::CreateSystemDto,
     errors::{AppError, AppResult},
@@ -106,13 +105,6 @@ async fn list_systems(
     }
 }
 
-#[derive(Responder)]
-enum CreateSystemResponse {
-    HtmxRedirect((), Header<'static>),
-    HttpRedirect(Box<Redirect>), // large variant size difference
-    ValidationError(RenderedTemplate),
-}
-
 #[rocket::post("/systems", data = "<form>")]
 async fn create_system<'v>(
     form: Form<Contextual<'v, CreateSystemDto<'v>>>,
@@ -121,7 +113,7 @@ async fn create_system<'v>(
     perms: &PermsEvaluator,
     user: User,
     partial: Option<HxRequest<'_>>,
-) -> AppResult<CreateSystemResponse> {
+) -> AppResult<Either<RenderedTemplate, GracefulRedirect>> {
     perms.require(HivePermission::ManageSystems).await?;
 
     // TODO: anti-CSRF
@@ -153,14 +145,10 @@ async fn create_system<'v>(
 
         txn.commit().await?;
 
-        let target = uri!(system_details(id));
-        if partial.is_some() {
-            let header = Header::new("HX-Redirect", target.to_string());
-            Ok(CreateSystemResponse::HtmxRedirect((), header))
-        } else {
-            let redirect = Redirect::to(target);
-            Ok(CreateSystemResponse::HttpRedirect(Box::new(redirect)))
-        }
+        Ok(Either::Right(GracefulRedirect::to(
+            uri!(system_details(id)),
+            partial.is_some(),
+        )))
     } else {
         // some errors are present; show the form again
         debug!("Create system form errors: {:?}", &form.context);
@@ -171,9 +159,7 @@ async fn create_system<'v>(
                 create_form: &form.context,
             };
 
-            Ok(CreateSystemResponse::ValidationError(RawHtml(
-                template.render()?,
-            )))
+            Ok(Either::Left(RawHtml(template.render()?)))
         } else {
             let systems = sqlx::query_as("SELECT * FROM systems ORDER BY id")
                 .fetch_all(db.inner())
@@ -187,9 +173,7 @@ async fn create_system<'v>(
                 create_modal_open: true,
             };
 
-            Ok(CreateSystemResponse::ValidationError(RawHtml(
-                template.render()?,
-            )))
+            Ok(Either::Left(RawHtml(template.render()?)))
         }
     }
 }

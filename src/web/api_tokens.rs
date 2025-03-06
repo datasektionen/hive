@@ -9,7 +9,7 @@ use serde_json::json;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use super::{filters, systems, RenderedTemplate};
+use super::{filters, systems, Either, RenderedTemplate};
 use crate::{
     dto::api_tokens::CreateApiTokenDto,
     errors::AppResult,
@@ -67,18 +67,13 @@ async fn list_api_tokens(
     ctx: PageContext,
     perms: &PermsEvaluator,
     partial: Option<HxRequest<'_>>,
-) -> AppResult<Result<RenderedTemplate, Redirect>> {
-    // note on return type: the inner Result is just to make it
-    // easier to have 2 possible response types without defining
-    // a separate enum just for this
-    // See: https://rocket.rs/guide/v0.5/faq/#multiple-responses
-
+) -> AppResult<Either<RenderedTemplate, Redirect>> {
     if partial.is_none() {
         // we only know how to render a table, not a full page;
         // redirect to system details
 
         let target = uri!(systems::system_details(system_id));
-        return Ok(Err(Redirect::to(target)));
+        return Ok(Either::Right(Redirect::to(target)));
     }
 
     perms
@@ -101,7 +96,7 @@ async fn list_api_tokens(
 
     let template = ListApiTokensView { ctx, api_tokens };
 
-    Ok(Ok(RawHtml(template.render()?)))
+    Ok(Either::Left(RawHtml(template.render()?)))
 }
 
 #[rocket::post("/system/<system_id>/api-tokens", data = "<form>")]
@@ -113,7 +108,7 @@ async fn create_api_token<'v>(
     perms: &PermsEvaluator,
     user: User,
     partial: Option<HxRequest<'_>>,
-) -> AppResult<Result<RenderedTemplate, Redirect>> {
+) -> AppResult<Either<RenderedTemplate, Redirect>> {
     perms
         .require_any_of(&[
             HivePermission::ManageSystems,
@@ -168,7 +163,7 @@ async fn create_api_token<'v>(
         if partial.is_some() {
             let template = PartialApiTokenCreatedView { ctx, token, secret };
 
-            Ok(Ok(RawHtml(template.render()?)))
+            Ok(Either::Left(RawHtml(template.render()?)))
         } else {
             let template = ApiTokenCreatedView {
                 ctx,
@@ -177,7 +172,7 @@ async fn create_api_token<'v>(
                 secret,
             };
 
-            Ok(Ok(RawHtml(template.render()?)))
+            Ok(Either::Left(RawHtml(template.render()?)))
         }
     } else {
         // some errors are present; show the form again
@@ -189,14 +184,14 @@ async fn create_api_token<'v>(
                 api_token_create_form: &form.context,
             };
 
-            Ok(Ok(RawHtml(template.render()?)))
+            Ok(Either::Left(RawHtml(template.render()?)))
         } else {
             // FIXME: this just resets the form without actually showing
             // any validation error indicators... but there isn't a great
             // alternative, and it might be fine for such a tiny form
 
             let target = uri!(systems::system_details(system_id));
-            Ok(Err(Redirect::to(target)))
+            Ok(Either::Right(Redirect::to(target)))
         }
     }
 }
