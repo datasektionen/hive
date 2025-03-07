@@ -7,3 +7,9 @@ pub struct CreateSystemDto<'v> {
     #[field(validate = len(3..))]
     pub description: &'v str,
 }
+
+#[derive(FromForm)]
+pub struct EditSystemDto<'v> {
+    #[field(validate = len(3..))]
+    pub description: &'v str,
+}

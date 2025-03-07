@@ -8,18 +8,18 @@
             hx-indicator="#create-system-submit">
             {% block inner_create_form %}
             <label>
-                {{ ctx.t("systems.create.field.id.label") }}
+                {{ ctx.t("systems.form.field.id.label") }}
                 <input {% call utils::field(create_form, "id" ) %}
-                    placeholder='{{ ctx.t("systems.create.field.id.placeholder") }}' required
+                    placeholder='{{ ctx.t("systems.form.field.id.placeholder") }}' required
                     pattern="[a-z0-9]+(-[a-z0-9]+)*" aria-describedby="id-tip" />
-                <small id="id-tip">{{ ctx.t("systems.create.field.id.tip") }}</small>
+                <small id="id-tip">{{ ctx.t("systems.form.field.id.tip") }}</small>
             </label>
             <label>
-                {{ ctx.t("systems.create.field.description.label") }}
+                {{ ctx.t("systems.form.field.description.label") }}
                 <input {% call utils::field(create_form, "description" ) %}
-                    placeholder='{{ ctx.t("systems.create.field.description.placeholder") }}' required minlength="3"
+                    placeholder='{{ ctx.t("systems.form.field.description.placeholder") }}' required minlength="3"
                     aria-describedby="description-tip" />
-                <small id="id-tip">{{ ctx.t("systems.create.field.description.tip") }}</small>
+                <small id="id-tip">{{ ctx.t("systems.form.field.description.tip") }}</small>
             </label>
             {% endblock inner_create_form %}
         </form>

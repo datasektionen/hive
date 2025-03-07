@@ -5,13 +5,13 @@
 {% block heading %}
 <hgroup>
     <h1>{{ ctx.t1("systems.details.title", system.id) }}</h1>
-    <h3>{{ system.description }}</h3>
+    <h3 id="system-description">{{ system.description }}</h3>
 </hgroup>
 {% endblock heading %}
 
 {% block action_buttons %}
 {% if fully_authorized %}
-<button class="secondary">
+<button class="secondary" onclick="openModal('edit-system')">
     <span class="material-icons">edit</span>
     {{ ctx.t("control.edit") }}
 </button>
@@ -40,5 +40,7 @@
     </footer>
 </article>
 
+{% let system_id = system.id %}
+{% include "edit.html.j2" %}
 {% include "delete.html.j2" %}
 {% endblock content %}

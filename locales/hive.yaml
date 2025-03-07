@@ -72,6 +72,9 @@ control.edit:
 control.manage:
   en: Manage
   sv: Hantera
+control.save:
+  en: Save
+  sv: Spara
 control.search:
   en: Search
   sv: Sök
@@ -111,24 +114,6 @@ systems.create.description:
 systems.create.title:
   en: Create New System
   sv: Skapa ny system
-systems.create.field.description.label:
-  en: Description
-  sv: Beskrivning
-systems.create.field.description.placeholder:
-  en: e.g., Receipt and reimbursement management
-  sv: t.ex. Hantering av kvitto och ersättning
-systems.create.field.description.tip:
-  en: Choose something clear and descriptive
-  sv: Välj något tydligt och beskrivande
-systems.create.field.id.label:
-  en: System ID
-  sv: System-ID
-systems.create.field.id.placeholder:
-  en: e.g., cashflow
-  sv: t.ex. cashflow
-systems.create.field.id.tip:
-  en: Use only lowercase letters, numbers, or dashes
-  sv: Använd endast små bokstäver, siffror eller bindestreck
 systems.delete.title:
   en: Delete System
   sv: Radera system
@@ -159,6 +144,27 @@ systems.details.api-tokens.heading.create:
 systems.details.api-tokens.title:
   en: API Tokens
   sv: API-tokens
+systems.edit.title:
+  en: Edit System Details
+  sv: Redigera Systemdetaljer
+systems.form.field.description.label:
+  en: Description
+  sv: Beskrivning
+systems.form.field.description.placeholder:
+  en: e.g., Receipt and reimbursement management
+  sv: t.ex. Hantering av kvitto och ersättning
+systems.form.field.description.tip:
+  en: Choose something clear and descriptive
+  sv: Välj något tydligt och beskrivande
+systems.form.field.id.label:
+  en: System ID
+  sv: System-ID
+systems.form.field.id.placeholder:
+  en: e.g., cashflow
+  sv: t.ex. cashflow
+systems.form.field.id.tip:
+  en: Use only lowercase letters, numbers, or dashes
+  sv: Använd endast små bokstäver, siffror eller bindestreck
 systems.list.action.create:
   en: Create
   sv: Skapa ny

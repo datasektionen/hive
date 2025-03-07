@@ -2,15 +2,16 @@ use log::*;
 use rinja::Template;
 use rocket::{
     form::{self, Contextual, Form},
-    response::content::RawHtml,
-    uri, State,
+    http::Header,
+    response::{content::RawHtml, Redirect},
+    uri, Responder, State,
 };
 use serde_json::json;
 use sqlx::PgPool;
 
 use super::{filters, Either, GracefulRedirect, RenderedTemplate};
 use crate::{
-    dto::systems::CreateSystemDto,
+    dto::systems::{CreateSystemDto, EditSystemDto},
     errors::{AppError, AppResult},
     guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
     models::{ActionKind, System, TargetKind},
@@ -20,7 +21,14 @@ use crate::{
 };
 
 pub fn routes() -> RouteTree {
-    rocket::routes![list_systems, create_system, system_details, delete_system].into()
+    rocket::routes![
+        list_systems,
+        create_system,
+        system_details,
+        delete_system,
+        edit_system
+    ]
+    .into()
 }
 
 #[derive(Template)]
@@ -58,6 +66,22 @@ struct SystemDetailsView<'f, 'v> {
     system: System,
     fully_authorized: bool,
     api_token_create_form: &'f form::Context<'v>,
+    edit_form: &'f form::Context<'v>,
+    edit_modal_open: bool,
+}
+
+#[derive(Template)]
+#[template(path = "systems/edit.html.j2", block = "inner_edit_form")]
+struct PartialEditSystemView<'f, 'v> {
+    ctx: PageContext,
+    system: System,
+    edit_form: &'f form::Context<'v>,
+}
+
+#[derive(Template)]
+#[template(path = "systems/edited.html.j2")]
+struct SystemEditedView<'a> {
+    description: &'a str,
 }
 
 #[rocket::get("/systems?<q>")]
@@ -200,11 +224,15 @@ pub async fn system_details(
     // ^ note: there is no enumeration vulnerability in returning 404 here
     // because we already checked that the user has perms to see all systems
 
+    let empty_form = form::Context::default();
+
     let template = SystemDetailsView {
         ctx,
         system,
         fully_authorized,
-        api_token_create_form: &form::Context::default(),
+        api_token_create_form: &empty_form,
+        edit_form: &empty_form,
+        edit_modal_open: false,
     };
 
     Ok(RawHtml(template.render()?))
@@ -235,8 +263,8 @@ pub async fn delete_system(
         .ok_or_else(|| AppError::NoSuchSystem(id.to_owned()))?;
 
     sqlx::query(
-        "INSERT INTO audit_logs (action_kind, target_kind, target_id, actor, details) VALUES \
-             ($1, $2, $3, $4, $5)",
+        "INSERT INTO audit_logs (action_kind, target_kind, target_id, actor, details) VALUES ($1, \
+         $2, $3, $4, $5)",
     )
     .bind(ActionKind::Delete)
     .bind(TargetKind::System)
@@ -252,6 +280,109 @@ pub async fn delete_system(
         uri!(list_systems(None::<&str>)),
         partial.is_some(),
     ))
+}
+
+#[derive(Responder)]
+pub enum EditSystemResponse<'a> {
+    SuccessPartial(RenderedTemplate, Header<'a>),
+    SuccessFullPage(Redirect),
+    Invalid(RenderedTemplate),
+}
+
+#[rocket::patch("/system/<id>", data = "<form>")]
+pub async fn edit_system<'r, 'v>(
+    id: &str,
+    form: Form<Contextual<'v, EditSystemDto<'v>>>,
+    db: &State<PgPool>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<EditSystemResponse<'r>> {
+    perms.require(HivePermission::ManageSystems).await?;
+
+    // TODO: anti-CSRF
+
+    if let Some(dto) = &form.value {
+        // validation passed
+
+        let mut txn = db.begin().await?;
+
+        // subquery runs before update
+        let old_description: String = sqlx::query_scalar(
+            "UPDATE systems SET description = $1 WHERE id = $2 RETURNING (SELECT description FROM \
+             systems WHERE id = $2)",
+        )
+        .bind(dto.description)
+        .bind(id)
+        .fetch_optional(&mut *txn)
+        .await?
+        .ok_or_else(|| AppError::NoSuchSystem(id.to_owned()))?;
+
+        if dto.description != old_description {
+            sqlx::query(
+                "INSERT INTO audit_logs (action_kind, target_kind, target_id, actor, details) \
+                 VALUES ($1, $2, $3, $4, $5)",
+            )
+            .bind(ActionKind::Update)
+            .bind(TargetKind::System)
+            .bind(id)
+            .bind(user.username)
+            .bind(json!({
+                "old": {"description": old_description},
+                "new": {"description": dto.description},
+            }))
+            .execute(&mut *txn)
+            .await?;
+
+            txn.commit().await?;
+        }
+
+        if partial.is_some() {
+            let template = SystemEditedView {
+                description: dto.description,
+            };
+
+            let header = Header::new("HX-Reswap", "none");
+            Ok(EditSystemResponse::SuccessPartial(
+                RawHtml(template.render()?),
+                header,
+            ))
+        } else {
+            let target = uri!(system_details(id));
+            Ok(EditSystemResponse::SuccessFullPage(Redirect::to(target)))
+        }
+    } else {
+        // some errors are present; show the form again
+        debug!("Edit system form errors: {:?}", &form.context);
+
+        let system = sqlx::query_as("SELECT * FROM systems WHERE id = $1")
+            .bind(id)
+            .fetch_optional(db.inner())
+            .await?
+            .ok_or_else(|| AppError::NoSuchSystem(id.to_owned()))?;
+
+        if partial.is_some() {
+            let template = PartialEditSystemView {
+                ctx,
+                system,
+                edit_form: &form.context,
+            };
+
+            Ok(EditSystemResponse::Invalid(RawHtml(template.render()?)))
+        } else {
+            let template = SystemDetailsView {
+                ctx,
+                system,
+                fully_authorized: true,
+                api_token_create_form: &form::Context::default(),
+                edit_form: &form.context,
+                edit_modal_open: true,
+            };
+
+            Ok(EditSystemResponse::Invalid(RawHtml(template.render()?)))
+        }
+    }
 }
 
 pub async fn ensure_exists<'a, X>(id: &str, db: X) -> AppResult<()>

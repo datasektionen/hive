@@ -224,8 +224,8 @@ pub async fn delete_api_token(
         .await?;
 
     sqlx::query(
-        "INSERT INTO audit_logs (action_kind, target_kind, target_id, actor, details) VALUES \
-             ($1, $2, $3, $4, $5)",
+        "INSERT INTO audit_logs (action_kind, target_kind, target_id, actor, details) VALUES ($1, \
+         $2, $3, $4, $5)",
     )
     .bind(ActionKind::Delete)
     .bind(TargetKind::ApiToken)
