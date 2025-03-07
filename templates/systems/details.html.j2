@@ -40,6 +40,13 @@
     </footer>
 </article>
 
+<article class="overflow-auto">
+    <h2>{{ ctx.t("systems.details.permissions.title") }}</h2>
+    <div hx-get="/system/{{ system.id }}/permissions" hx-trigger="load delay:100ms" hx-swap="outerHTML">
+        {# delay is to give event listener time to be set, for aria-busy=true #}
+    </div>
+</article>
+
 {% let system_id = system.id %}
 {% include "edit.html.j2" %}
 {% include "delete.html.j2" %}

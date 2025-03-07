@@ -1,0 +1,14 @@
+<td>
+    <samp>
+        ${{ permission.system_id }}:<strong>{{ permission.perm_id }}</strong>
+        {%- if permission.has_scope -%}
+        {%- let tooltip = ctx.t("permissions.list.scope.tooltip") -%}
+        {%- let var = ctx.t("permissions.list.scope.var") -%}
+        :<span class="primary" data-tooltip="{{ tooltip }}">&lt;{{ var }}&gt;</span>
+        {%- endif -%}
+    </samp>
+</td>
+<td>{{ permission.description }}</td>
+<td>
+    <button>Test</button>
+</td>

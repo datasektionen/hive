@@ -33,9 +33,9 @@ impl fmt::Display for HivePermission {
         let key = self.key();
 
         match self {
-            Self::ViewLogs | Self::ManageSystems => write!(f, "hive:{key}"),
-            Self::ManageGroups(s) | Self::ManageMembers(s) => write!(f, "hive:{key}:{s}"),
-            Self::ManageSystem(s) | Self::ManagePerms(s) => write!(f, "hive:{key}:{s}"),
+            Self::ViewLogs | Self::ManageSystems => write!(f, "$hive:{key}"),
+            Self::ManageGroups(s) | Self::ManageMembers(s) => write!(f, "$hive:{key}:{s}"),
+            Self::ManageSystem(s) | Self::ManagePerms(s) => write!(f, "$hive:{key}:{s}"),
         }
     }
 }

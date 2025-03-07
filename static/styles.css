@@ -23,6 +23,12 @@
       var(--pico-form-element-invalid-border-color);
 }
 
+[data-tooltip]::before,
+[data-tooltip]::after {
+  /* reset monospace from pre, samp, etc. */
+  font-family: var(--pico-font-family-sans-serif);
+}
+
 [data-require-validity] {
   /* disabled transition */
   transition: opacity ease-in 100ms;

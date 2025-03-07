@@ -1,3 +1,5 @@
+{%- import "utils.html.j2" as utils -%}
+
 <td>{{ token.id }}</td>
 <td>{{ token.description }}</td>
 <td>{% call utils::stamp_or_never(token.expires_at) %}</td>

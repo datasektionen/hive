@@ -1,0 +1,16 @@
+<table id="permissions-table" class="striped">
+    <thead>
+        <tr>
+            <th scope="col">{{ ctx.t("permissions.list.col.id") }}</th>
+            <th scope="col">{{ ctx.t("permissions.list.col.description") }}</th>
+            <th scope="col">{{ ctx.t("col.actions") }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for permission in permissions %}
+        <tr>
+            {% include "row-cells.html.j2" %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

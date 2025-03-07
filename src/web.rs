@@ -8,6 +8,7 @@ use crate::routing::RouteTree;
 
 mod api_tokens;
 mod groups;
+mod permissions;
 mod systems;
 
 type RenderedTemplate = RawHtml<String>;
@@ -42,6 +43,7 @@ pub fn tree() -> RouteTree {
     RouteTree::Branch(vec![
         api_tokens::routes(),
         groups::routes(),
+        permissions::routes(),
         systems::routes(),
         rocket::routes![favicon].into(),
     ])

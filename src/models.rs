@@ -28,6 +28,14 @@ pub struct ApiToken {
 }
 
 #[derive(FromRow)]
+pub struct Permission {
+    pub system_id: String,
+    pub perm_id: String,
+    pub has_scope: bool,
+    pub description: String,
+}
+
+#[derive(FromRow)]
 pub struct BasePermissionAssignment {
     pub system_id: String,
     pub perm_id: String,

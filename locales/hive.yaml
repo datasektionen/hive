@@ -39,9 +39,6 @@ api-tokens.list.action.delete.confirm:
 api-tokens.list.action.delete.tooltip:
   en: Delete API Token
   sv: Radera API-token
-api-tokens.list.col.actions:
-  en: Actions
-  sv: Åtgärder
 api-tokens.list.col.description:
   en: Description
   sv: Beskrivning
@@ -54,6 +51,9 @@ api-tokens.list.col.id:
 api-tokens.list.col.last-used:
   en: Last Used
   sv: Senast använd
+col.actions:
+  en: Actions
+  sv: Åtgärder
 control.back:
   en: Back
   sv: Tillbaka
@@ -108,6 +108,18 @@ nav.user.profile:
 nav.theme.toggle:
   en: Toggle UI theme
   sv: Växla UI-tema
+permissions.list.col.description:
+  en: Description
+  sv: Beskrivning
+permissions.list.col.id:
+  en: ID
+  sv: ID
+permissions.list.scope.tooltip:
+  en: When assigned, this permission is bound to a concrete scope
+  sv: När det tilldelas är detta behörighet bundet till en konkret gräns
+permissions.list.scope.var:
+  en: scope
+  sv: gräns
 systems.create.description:
   en: Add a new system to be managed by Hive
   sv: Lägg till ett nytt system som ska hanteras av Hive
@@ -144,6 +156,9 @@ systems.details.api-tokens.heading.create:
 systems.details.api-tokens.title:
   en: API Tokens
   sv: API-tokens
+systems.details.permissions.title:
+  en: Permissions
+  sv: Behörigheter
 systems.edit.title:
   en: Edit System Details
   sv: Redigera Systemdetaljer
