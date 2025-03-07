@@ -80,8 +80,11 @@ struct PartialEditSystemView<'f, 'v> {
 
 #[derive(Template)]
 #[template(path = "systems/edited.html.j2")]
-struct SystemEditedView<'a> {
-    description: &'a str,
+struct SystemEditedView<'f, 'v> {
+    ctx: PageContext,
+    system: System,
+    edit_form: &'f form::Context<'v>,
+    edit_modal_open: bool,
 }
 
 #[rocket::get("/systems?<q>")]
@@ -283,14 +286,14 @@ pub async fn delete_system(
 }
 
 #[derive(Responder)]
-pub enum EditSystemResponse<'a> {
-    SuccessPartial(RenderedTemplate, Header<'a>),
+pub enum EditSystemResponse {
+    SuccessPartial(RenderedTemplate, Header<'static>, Header<'static>),
     SuccessFullPage(Redirect),
     Invalid(RenderedTemplate),
 }
 
 #[rocket::patch("/system/<id>", data = "<form>")]
-pub async fn edit_system<'r, 'v>(
+pub async fn edit_system<'v>(
     id: &str,
     form: Form<Contextual<'v, EditSystemDto<'v>>>,
     db: &State<PgPool>,
@@ -298,7 +301,7 @@ pub async fn edit_system<'r, 'v>(
     perms: &PermsEvaluator,
     user: User,
     partial: Option<HxRequest<'_>>,
-) -> AppResult<EditSystemResponse<'r>> {
+) -> AppResult<EditSystemResponse> {
     perms.require(HivePermission::ManageSystems).await?;
 
     // TODO: anti-CSRF
@@ -340,13 +343,19 @@ pub async fn edit_system<'r, 'v>(
 
         if partial.is_some() {
             let template = SystemEditedView {
-                description: dto.description,
+                ctx,
+                system: System {
+                    id: id.to_owned(),
+                    description: dto.description.to_owned(),
+                },
+                edit_form: &form::Context::default(),
+                edit_modal_open: false,
             };
 
-            let header = Header::new("HX-Reswap", "none");
             Ok(EditSystemResponse::SuccessPartial(
                 RawHtml(template.render()?),
-                header,
+                Header::new("HX-Retarget", "#edit-system"),
+                Header::new("HX-Reswap", "outerHTML"),
             ))
         } else {
             let target = uri!(system_details(id));
