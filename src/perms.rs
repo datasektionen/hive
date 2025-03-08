@@ -13,6 +13,7 @@ pub enum HivePermission {
     ManageSystems,
     ManageSystem(SystemsScope),
     ManagePerms(SystemsScope),
+    AssignPerms(SystemsScope),
 }
 
 impl HivePermission {
@@ -24,6 +25,7 @@ impl HivePermission {
             Self::ManageSystems => "manage-systems",
             Self::ManageSystem(..) => "manage-system",
             Self::ManagePerms(..) => "manage-perms",
+            Self::AssignPerms(..) => "assign-perms",
         }
     }
 }
@@ -35,7 +37,9 @@ impl fmt::Display for HivePermission {
         match self {
             Self::ViewLogs | Self::ManageSystems => write!(f, "$hive:{key}"),
             Self::ManageGroups(s) | Self::ManageMembers(s) => write!(f, "$hive:{key}:{s}"),
-            Self::ManageSystem(s) | Self::ManagePerms(s) => write!(f, "$hive:{key}:{s}"),
+            Self::ManageSystem(s) | Self::ManagePerms(s) | Self::AssignPerms(s) => {
+                write!(f, "$hive:{key}:{s}")
+            }
         }
     }
 }
