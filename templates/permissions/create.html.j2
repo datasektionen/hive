@@ -1,0 +1,35 @@
+{%- import "utils.html.j2" as utils -%}
+
+<form id="create-permission-form" method="post" action="/system/{{ system.id }}/permissions" hx-boost="true"
+    hx-target="#create-permission-inner-form" hx-indicator="#create-permission-submit" class="container-fluid">
+    <div id="create-permission-inner-form" class="grid">
+        {% block inner_create_permission_form %}
+        <label>
+            {{ ctx.t("permissions.create.field.id.label") }}
+            <input {% call utils::field(permission_create_form, "id" ) %}
+                placeholder='{{ ctx.t("permissions.create.field.id.placeholder") }}' required
+                pattern="[a-z0-9]+(-[a-z0-9]+)*" aria-describedby="permission-id-tip" />
+            <small id="permission-id-tip">{{ ctx.t("permissions.create.field.id.tip") }}</small>
+        </label>
+        <label>
+            {{ ctx.t("permissions.create.field.description.label") }}
+            <input {% call utils::field(permission_create_form, "description" ) %}
+                placeholder='{{ ctx.t("permissions.create.field.description.placeholder") }}' required minlength="3"
+                aria-describedby="permission-description-tip" />
+            <small id="permission-description-tip">{{ ctx.t("permissions.create.field.description.tip") }}</small>
+        </label>
+        <label>
+            {{ ctx.t("permissions.create.field.scoped.label") }}
+            <span class="material-icons" data-tooltip='{{ ctx.t("permissions.create.field.scoped.tip") }}'>info</span>
+            <input {% call utils::checkbox(permission_create_form, "scoped" ) %} />
+        </label>
+        {# TODO: fix this awful layout #}
+        {% endblock inner_create_permission_form %}
+    </div>
+    <div class="flex-end">
+        <button id="create-permission-submit">
+            <span class="material-icons">add</span>
+            {{ ctx.t("control.create") }}
+        </button>
+    </div>
+</form>

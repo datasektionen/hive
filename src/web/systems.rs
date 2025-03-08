@@ -65,7 +65,9 @@ struct SystemDetailsView<'f, 'v> {
     ctx: PageContext,
     system: System,
     fully_authorized: bool,
+    can_manage_permissions: bool,
     api_token_create_form: &'f form::Context<'v>,
+    permission_create_form: &'f form::Context<'v>,
     edit_form: &'f form::Context<'v>,
     edit_modal_open: bool,
 }
@@ -227,13 +229,19 @@ pub async fn system_details(
     // ^ note: there is no enumeration vulnerability in returning 404 here
     // because we already checked that the user has perms to see all systems
 
+    let can_manage_permissions = perms
+        .satisfies(HivePermission::ManagePerms(SystemsScope::Id(id.to_owned())))
+        .await?;
+
     let empty_form = form::Context::default();
 
     let template = SystemDetailsView {
         ctx,
         system,
         fully_authorized,
+        can_manage_permissions,
         api_token_create_form: &empty_form,
+        permission_create_form: &empty_form,
         edit_form: &empty_form,
         edit_modal_open: false,
     };
@@ -380,11 +388,19 @@ pub async fn edit_system<'v>(
 
             Ok(EditSystemResponse::Invalid(RawHtml(template.render()?)))
         } else {
+            let can_manage_permissions = perms
+                .satisfies(HivePermission::ManagePerms(SystemsScope::Id(id.to_owned())))
+                .await?;
+
+            let empty_form = form::Context::default();
+
             let template = SystemDetailsView {
                 ctx,
                 system,
-                fully_authorized: true,
-                api_token_create_form: &form::Context::default(),
+                fully_authorized: true, // checked at the beginning of this fn
+                can_manage_permissions,
+                api_token_create_form: &empty_form,
+                permission_create_form: &empty_form,
                 edit_form: &form.context,
                 edit_modal_open: true,
             };

@@ -3,7 +3,9 @@
         <tr>
             <th scope="col">{{ ctx.t("permissions.list.col.id") }}</th>
             <th scope="col">{{ ctx.t("permissions.list.col.description") }}</th>
+            {% if can_manage %}
             <th scope="col">{{ ctx.t("col.actions") }}</th>
+            {% endif %}
         </tr>
     </thead>
     <tbody>

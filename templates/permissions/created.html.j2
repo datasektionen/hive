@@ -1,0 +1,28 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ ctx.t1("systems.details.title", system_id) }}{% endblock title %}
+
+{% block content %}
+<h4>{{ ctx.t("permissions.created.heading") }}</h4>
+
+{% block permission_created_partial %}
+<template>
+    <tr hx-swap-oob="beforeend:#permissions-table tbody">
+        {% let can_manage = true %}
+        {% include "row-cells.html.j2" %}
+    </tr>
+</template>
+
+<div hx-swap-oob="outerHTML:#create-permission-form">
+    <strong class="success">
+        <span class="material-icons">task_alt</span>
+        {{ ctx.t1("permissions.created.success", permission.full_id())|safe }}
+    </strong>
+</div>
+{% endblock permission_created_partial %}
+
+<a role="button" href="/system/{{ system_id }}">
+    <span class="material-icons">arrow_back</span>
+    {{ ctx.t("control.back") }}
+</a>
+{% endblock content %}

@@ -3,6 +3,7 @@ use rocket::form;
 
 pub mod api_tokens;
 pub mod errors;
+pub mod permissions;
 pub mod systems;
 
 fn valid_slug(s: &str) -> form::Result<()> {

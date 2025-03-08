@@ -108,6 +108,38 @@ nav.user.profile:
 nav.theme.toggle:
   en: Toggle UI theme
   sv: Växla UI-tema
+permissions.create.field.id.label:
+  en: Permission ID
+  sv: Behörighet-ID
+permissions.create.field.id.placeholder:
+  en: e.g., create-posts
+  sv: t.ex. create-posts
+permissions.create.field.id.tip:
+  en: Use only lowercase letters, numbers, or dashes
+  sv: Använd endast små bokstäver, siffror eller bindestreck
+permissions.create.field.description.label:
+  en: Description
+  sv: Beskrivning
+permissions.create.field.description.placeholder:
+  en: e.g., Publish news within a given category ID
+  sv: t.ex. Publicera nyheter inom ett givet kategori-ID
+permissions.create.field.description.tip:
+  en: Choose something concise and clear
+  sv: Välj något kortfattat och tydligt
+permissions.create.field.scoped.label:
+  en: Scoped?
+  sv: Avgränsat?
+permissions.create.field.scoped.tip:
+  en: >
+    If checked, a concrete scope will need to be specified when this
+    permission is assigned
+  sv: Om markerad måste en konkret gräns anges när denna behörighet tilldelas
+permissions.created.heading:
+  en: New Permission
+  sv: Ny behörighet
+permissions.created.success:
+  en: Permission <samp>%{x}</samp> created successfully!
+  sv: Behörighet <samp>%{x}</samp> skapades framgångsrikt!
 permissions.list.col.description:
   en: Description
   sv: Beskrivning
@@ -116,7 +148,7 @@ permissions.list.col.id:
   sv: ID
 permissions.list.scope.tooltip:
   en: When assigned, this permission is bound to a concrete scope
-  sv: När det tilldelas är detta behörighet bundet till en konkret gräns
+  sv: När det tilldelas är denna behörighet bundet till en konkret gräns
 permissions.list.scope.var:
   en: scope
   sv: gräns
@@ -156,6 +188,9 @@ systems.details.api-tokens.heading.create:
 systems.details.api-tokens.title:
   en: API Tokens
   sv: API-tokens
+systems.details.permissions.heading.create:
+  en: Create new permission
+  sv: Skapa ny behörighet
 systems.details.permissions.title:
   en: Permissions
   sv: Behörigheter

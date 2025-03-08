@@ -9,9 +9,25 @@ aria-invalid="false"
 {%- endif -%}
 {%- endmacro field_with_default %}
 
+
 {% macro field(form, name) -%}
 {%- call field_with_default(form, name, "") -%}
 {%- endmacro field %}
+
+
+{% macro checkbox(form, name) -%}
+type="checkbox"
+name="{{ name }}"
+{%- if form.field_value(name).is_some() -%}
+checked
+{%- endif -%}
+{%- if form.field_errors(name).next().is_some() -%}
+aria-invalid="true"
+{%- else if form.errors().next().is_some() -%}
+aria-invalid="false"
+{%- endif -%}
+{%- endmacro checkbox %}
+
 
 {% macro stamp_or_never(option) -%}
 {%- if let Some(val) = option -%}

@@ -35,6 +35,12 @@ pub struct Permission {
     pub description: String,
 }
 
+impl Permission {
+    pub fn full_id(&self) -> String {
+        format!("${}:{}", self.system_id, self.perm_id)
+    }
+}
+
 #[derive(FromRow)]
 pub struct BasePermissionAssignment {
     pub system_id: String,
