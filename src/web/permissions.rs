@@ -74,12 +74,11 @@ async fn list_permissions(
         return Ok(Either::Right(Redirect::to(target)));
     }
 
-    let required_scope = SystemsScope::Id(system_id.to_owned());
     perms
         .require_any_of(&[
             HivePermission::ManageSystems,
-            HivePermission::ManageSystem(required_scope.clone()),
-            HivePermission::ManagePerms(required_scope.clone()),
+            HivePermission::ManageSystem(SystemsScope::Id(system_id.to_owned())),
+            HivePermission::ManagePerms(SystemsScope::Id(system_id.to_owned())),
         ])
         .await?;
 
@@ -93,16 +92,11 @@ async fn list_permissions(
         systems::ensure_exists(system_id, db.inner()).await?;
     }
 
+    let min = HivePermission::ManagePerms(SystemsScope::Id(system_id.to_owned()));
     let template = ListPermissionsView {
         ctx,
         permissions,
-        can_manage: perms
-            .satisfies(HivePermission::ManagePerms(required_scope.clone()))
-            .await?
-            && (perms.satisfies(HivePermission::ManageSystems).await?
-                || perms
-                    .satisfies(HivePermission::ManageSystem(required_scope))
-                    .await?),
+        can_manage: perms.satisfies(min).await?,
     };
 
     Ok(Either::Left(RawHtml(template.render()?)))
@@ -118,17 +112,8 @@ async fn create_permission<'v>(
     user: User,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<Either<RenderedTemplate, Redirect>> {
-    let required_scope = SystemsScope::Id(system_id.to_owned());
-    perms
-        .require(HivePermission::ManagePerms(required_scope.clone()))
-        .await?;
-
-    perms
-        .require_any_of(&[
-            HivePermission::ManageSystems,
-            HivePermission::ManageSystem(required_scope),
-        ])
-        .await?;
+    let min = HivePermission::ManagePerms(SystemsScope::Id(system_id.to_owned()));
+    perms.require(min).await?;
 
     systems::ensure_exists(system_id, db.inner()).await?;
 
