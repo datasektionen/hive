@@ -11,7 +11,7 @@ use sqlx::PgPool;
 use super::{systems, Either, RenderedTemplate};
 use crate::{
     dto::permissions::CreatePermissionDto,
-    errors::AppResult,
+    errors::{AppError, AppResult},
     guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
     models::{ActionKind, Permission, TargetKind},
     perms::{HivePermission, SystemsScope},
@@ -114,6 +114,12 @@ async fn create_permission<'v>(
 ) -> AppResult<Either<RenderedTemplate, Redirect>> {
     let min = HivePermission::ManagePerms(SystemsScope::Id(system_id.to_owned()));
     perms.require(min).await?;
+
+    if system_id == "hive" {
+        // we manage our own permissions via database migrations
+        warn!("Disallowing permissions tampering from {}", user.username);
+        return Err(AppError::SelfPreservation);
+    }
 
     systems::ensure_exists(system_id, db.inner()).await?;
 

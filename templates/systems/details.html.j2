@@ -45,7 +45,7 @@
     <div hx-get="/system/{{ system.id }}/permissions" hx-trigger="load delay:100ms" hx-swap="outerHTML">
         {# delay is to give event listener time to be set, for aria-busy=true #}
     </div>
-    {% if can_manage_permissions %}
+    {% if can_manage_permissions && system.id != "hive" %}
     <footer>
         <details>
             <summary role="button" class="secondary">
@@ -57,7 +57,6 @@
     {% endif %}
 </article>
 
-{% let system_id = system.id %}
 {% include "edit.html.j2" %}
 {% include "delete.html.j2" %}
 {% endblock content %}
