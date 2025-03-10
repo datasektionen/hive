@@ -2,6 +2,7 @@ use log::*;
 use rinja::Template;
 use rocket::{
     form::{self, Contextual, Form},
+    futures::TryStreamExt,
     http::Header,
     response::{content::RawHtml, Redirect},
     uri, Responder, State,
@@ -37,6 +38,7 @@ struct ListSystemsView<'q, 'f, 'v> {
     ctx: PageContext,
     systems: Vec<System>,
     q: Option<&'q str>,
+    fully_authorized: bool,
     create_form: &'f form::Context<'v>,
     create_modal_open: bool,
 }
@@ -97,10 +99,14 @@ async fn list_systems(
     perms: &PermsEvaluator,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<RenderedTemplate> {
-    perms.require(HivePermission::ManageSystems).await?;
+    let fully_authorized = perms.satisfies(HivePermission::ManageSystems).await?;
 
-    // TODO: support partial listing; ManageSystem(something)
-    // (use `let systems = if all { query all } else { query some }`)
+    // check against everything first, without worrying about search query
+    if !fully_authorized {
+        perms
+            .require(HivePermission::ManageSystem(SystemsScope::Any))
+            .await?;
+    }
 
     let mut query = sqlx::QueryBuilder::new("SELECT * FROM systems");
 
@@ -115,7 +121,23 @@ async fn list_systems(
         query.push_bind(term);
     }
 
-    let systems = query.build_query_as().fetch_all(db.inner()).await?;
+    let mut result = query.build_query_as::<System>().fetch(db.inner());
+
+    let systems = if fully_authorized {
+        result.try_collect().await?
+    } else {
+        let mut systems = vec![];
+
+        while let Some(system) = result.try_next().await? {
+            let scope = SystemsScope::Id(system.id.clone());
+
+            if perms.satisfies(HivePermission::ManageSystem(scope)).await? {
+                systems.push(system);
+            }
+        }
+
+        systems
+    };
 
     if partial.is_some() {
         let template = PartialListSystemsView { ctx, systems, q };
@@ -126,6 +148,7 @@ async fn list_systems(
             ctx,
             systems,
             q,
+            fully_authorized,
             create_form: &form::Context::default(),
             create_modal_open: false,
         };
@@ -198,6 +221,7 @@ async fn create_system<'v>(
                 ctx,
                 systems,
                 q: None,
+                fully_authorized: true,
                 create_form: &form.context,
                 create_modal_open: true,
             };

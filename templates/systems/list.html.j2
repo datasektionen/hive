@@ -3,10 +3,12 @@
 {% block title %}{{ ctx.t("systems.list.title") }}{% endblock title %}
 
 {% block action_buttons %}
+{% if fully_authorized %}
 <button onclick="openModal('create-system')">
     <span class="material-icons">add</span>
     {{ ctx.t("systems.list.action.create") }}
 </button>
+{% endif %}
 {% endblock action_buttons %}
 
 {% block content %}
