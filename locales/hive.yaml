@@ -51,6 +51,9 @@ api-tokens.list.col.id:
 api-tokens.list.col.last-used:
   en: Last Used
   sv: Senast använd
+api-tokens.list.empty:
+  en: This system does not have any associated API tokens.
+  sv: Det här systemet har inga associerade API-tokens.
 col.actions:
   en: Actions
   sv: Åtgärder
@@ -146,6 +149,9 @@ permissions.list.col.description:
 permissions.list.col.id:
   en: ID
   sv: ID
+permissions.list.empty:
+  en: This system does not have any associated permissions.
+  sv: Det här systemet har inga associerade behörigheter.
 permissions.list.scope.tooltip:
   en: When assigned, this permission is bound to a concrete scope
   sv: När det tilldelas är denna behörighet bundet till en konkret gräns

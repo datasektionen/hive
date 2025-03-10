@@ -82,6 +82,19 @@ article footer {
   justify-content: end;
 }
 
+/* empty text that automatically goes away if a new row is appended */
+table tbody > .if-table-empty:not(:only-child) {
+  display: none;
+}
+table tbody > .if-table-empty td {
+  text-align: center;
+  font-style: italic;
+  color: var(--pico-secondary);
+}
+table tbody > .if-table-empty td .material-icons {
+  vertical-align: text-bottom;
+}
+
 /* opposite of .htmx-indicator; hidden if a request is being sent */
 .htmx-anti-indicator {
   visibility: visible;

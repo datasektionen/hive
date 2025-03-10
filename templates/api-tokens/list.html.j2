@@ -9,6 +9,12 @@
         </tr>
     </thead>
     <tbody>
+        <tr class="if-table-empty">
+            <td colspan="5">
+                <span class="material-icons">block</span>
+                {{ ctx.t("api-tokens.list.empty") }}
+            </td>
+        </tr>
         {% for token in api_tokens %}
         <tr>
             {% include "row-cells.html.j2" %}

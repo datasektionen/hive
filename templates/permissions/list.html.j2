@@ -9,6 +9,12 @@
         </tr>
     </thead>
     <tbody>
+        <tr class="if-table-empty">
+            <td colspan="3">
+                <span class="material-icons">block</span>
+                {{ ctx.t("permissions.list.empty") }}
+            </td>
+        </tr>
         {% for permission in permissions %}
         <tr>
             {% include "row-cells.html.j2" %}
