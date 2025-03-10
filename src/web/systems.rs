@@ -2,12 +2,10 @@ use log::*;
 use rinja::Template;
 use rocket::{
     form::{self, Contextual, Form},
-    futures::TryStreamExt,
     http::Header,
     response::{content::RawHtml, Redirect},
     uri, Responder, State,
 };
-use serde_json::json;
 use sqlx::PgPool;
 
 use super::{filters, Either, GracefulRedirect, RenderedTemplate};
@@ -15,10 +13,10 @@ use crate::{
     dto::systems::{CreateSystemDto, EditSystemDto},
     errors::{AppError, AppResult},
     guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
-    models::{ActionKind, System, TargetKind},
+    models::System,
     perms::{HivePermission, SystemsScope},
     routing::RouteTree,
-    sanitizers::SearchTerm,
+    services::systems,
 };
 
 pub fn routes() -> RouteTree {
@@ -108,36 +106,7 @@ async fn list_systems(
             .await?;
     }
 
-    let mut query = sqlx::QueryBuilder::new("SELECT * FROM systems");
-
-    if let Some(search) = q {
-        // this will push the same bind twice even though both could be
-        // references to the same $1 param... there doesn't seem to be a
-        // way to avoid this, since push_bind adds $n to the query itself
-        let term = SearchTerm::from(search).anywhere();
-        query.push(" WHERE id ILIKE ");
-        query.push_bind(term.clone());
-        query.push(" OR description ILIKE ");
-        query.push_bind(term);
-    }
-
-    let mut result = query.build_query_as::<System>().fetch(db.inner());
-
-    let systems = if fully_authorized {
-        result.try_collect().await?
-    } else {
-        let mut systems = vec![];
-
-        while let Some(system) = result.try_next().await? {
-            let scope = SystemsScope::Id(system.id.clone());
-
-            if perms.satisfies(HivePermission::ManageSystem(scope)).await? {
-                systems.push(system);
-            }
-        }
-
-        systems
-    };
+    let systems = systems::list_manageable(q, fully_authorized, db.inner(), perms).await?;
 
     if partial.is_some() {
         let template = PartialListSystemsView { ctx, systems, q };
@@ -173,32 +142,10 @@ async fn create_system<'v>(
     if let Some(dto) = &form.value {
         // validation passed
 
-        let mut txn = db.begin().await?;
-
-        let id: String = sqlx::query_scalar(
-            "INSERT INTO systems (id, description) VALUES ($1, $2) RETURNING id",
-        )
-        .bind(dto.id)
-        .bind(dto.description)
-        .fetch_one(&mut *txn)
-        .await?;
-
-        sqlx::query(
-            "INSERT INTO audit_logs (action_kind, target_kind, target_id, actor, details) VALUES \
-             ($1, $2, $3, $4, $5)",
-        )
-        .bind(ActionKind::Create)
-        .bind(TargetKind::System)
-        .bind(&id)
-        .bind(user.username)
-        .bind(json!({"new": {"description": dto.description}}))
-        .execute(&mut *txn)
-        .await?;
-
-        txn.commit().await?;
+        systems::create_new(dto, db.inner(), &user).await?;
 
         Ok(Either::Right(GracefulRedirect::to(
-            uri!(system_details(id)),
+            uri!(system_details(dto.id)),
             partial.is_some(),
         )))
     } else {
@@ -213,9 +160,7 @@ async fn create_system<'v>(
 
             Ok(Either::Left(RawHtml(template.render()?)))
         } else {
-            let systems = sqlx::query_as("SELECT * FROM systems ORDER BY id")
-                .fetch_all(db.inner())
-                .await?;
+            let systems = systems::list_manageable(None, true, db.inner(), perms).await?;
 
             let template = ListSystemsView {
                 ctx,
@@ -245,9 +190,7 @@ pub async fn system_details(
         perms.require(HivePermission::ManageSystem(scope)).await?;
     }
 
-    let system = sqlx::query_as("SELECT * FROM systems WHERE id = $1")
-        .bind(id)
-        .fetch_optional(db.inner())
+    let system = systems::get_by_id(id, db.inner())
         .await?
         .ok_or_else(|| AppError::NoSuchSystem(id.to_owned()))?;
     // ^ note: there is no enumeration vulnerability in returning 404 here
@@ -283,34 +226,11 @@ pub async fn delete_system(
 ) -> AppResult<GracefulRedirect> {
     perms.require(HivePermission::ManageSystems).await?;
 
-    if id == "hive" {
-        // shouldn't delete ourselves
-        warn!("Disallowing self-deletion from {}", user.username);
-        return Err(AppError::SelfPreservation);
-    }
+    // TODO: anti-CSRF(?), DELETE isn't a normal form method
 
-    let mut txn = db.begin().await?;
+    systems::delete(id, db.inner(), &user).await?;
 
-    let system: System = sqlx::query_as("DELETE FROM systems WHERE id = $1 RETURNING *")
-        .bind(id)
-        .fetch_optional(&mut *txn)
-        .await?
-        .ok_or_else(|| AppError::NoSuchSystem(id.to_owned()))?;
-
-    sqlx::query(
-        "INSERT INTO audit_logs (action_kind, target_kind, target_id, actor, details) VALUES ($1, \
-         $2, $3, $4, $5)",
-    )
-    .bind(ActionKind::Delete)
-    .bind(TargetKind::System)
-    .bind(system.id)
-    .bind(user.username)
-    .bind(json!({"old": {"description": system.description}}))
-    .execute(&mut *txn)
-    .await?;
-
-    txn.commit().await?;
-
+    // TODO: show visual confirmation of successful delete in systems list
     Ok(GracefulRedirect::to(
         uri!(list_systems(None::<&str>)),
         partial.is_some(),
@@ -341,37 +261,7 @@ pub async fn edit_system<'v>(
     if let Some(dto) = &form.value {
         // validation passed
 
-        let mut txn = db.begin().await?;
-
-        // subquery runs before update
-        let old_description: String = sqlx::query_scalar(
-            "UPDATE systems SET description = $1 WHERE id = $2 RETURNING (SELECT description FROM \
-             systems WHERE id = $2)",
-        )
-        .bind(dto.description)
-        .bind(id)
-        .fetch_optional(&mut *txn)
-        .await?
-        .ok_or_else(|| AppError::NoSuchSystem(id.to_owned()))?;
-
-        if dto.description != old_description {
-            sqlx::query(
-                "INSERT INTO audit_logs (action_kind, target_kind, target_id, actor, details) \
-                 VALUES ($1, $2, $3, $4, $5)",
-            )
-            .bind(ActionKind::Update)
-            .bind(TargetKind::System)
-            .bind(id)
-            .bind(user.username)
-            .bind(json!({
-                "old": {"description": old_description},
-                "new": {"description": dto.description},
-            }))
-            .execute(&mut *txn)
-            .await?;
-
-            txn.commit().await?;
-        }
+        systems::update(id, dto, db.inner(), &user).await?;
 
         if partial.is_some() {
             let template = SystemEditedView {
@@ -397,9 +287,7 @@ pub async fn edit_system<'v>(
         // some errors are present; show the form again
         debug!("Edit system form errors: {:?}", &form.context);
 
-        let system = sqlx::query_as("SELECT * FROM systems WHERE id = $1")
-            .bind(id)
-            .fetch_optional(db.inner())
+        let system = systems::get_by_id(id, db.inner())
             .await?
             .ok_or_else(|| AppError::NoSuchSystem(id.to_owned()))?;
 
@@ -432,17 +320,4 @@ pub async fn edit_system<'v>(
             Ok(EditSystemResponse::Invalid(RawHtml(template.render()?)))
         }
     }
-}
-
-pub async fn ensure_exists<'a, X>(id: &str, db: X) -> AppResult<()>
-where
-    X: sqlx::Executor<'a, Database = sqlx::Postgres>,
-{
-    sqlx::query("SELECT COUNT(*) FROM systems WHERE id = $1")
-        .bind(id)
-        .fetch_optional(db)
-        .await?
-        .ok_or_else(|| AppError::NoSuchSystem(id.to_owned()))?;
-
-    Ok(())
 }

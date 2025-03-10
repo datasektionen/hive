@@ -5,17 +5,17 @@ use rocket::{
     response::{content::RawHtml, Redirect},
     uri, State,
 };
-use serde_json::json;
 use sqlx::PgPool;
 
-use super::{systems, Either, RenderedTemplate};
+use super::{Either, RenderedTemplate};
 use crate::{
     dto::permissions::CreatePermissionDto,
-    errors::{AppError, AppResult},
+    errors::AppResult,
     guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
-    models::{ActionKind, Permission, TargetKind},
+    models::Permission,
     perms::{HivePermission, SystemsScope},
     routing::RouteTree,
+    services::{permissions, systems},
 };
 
 pub fn routes() -> RouteTree {
@@ -70,7 +70,7 @@ async fn list_permissions(
         // we only know how to render a table, not a full page;
         // redirect to system details
 
-        let target = uri!(systems::system_details(system_id));
+        let target = uri!(super::systems::system_details(system_id));
         return Ok(Either::Right(Redirect::to(target)));
     }
 
@@ -82,11 +82,7 @@ async fn list_permissions(
         ])
         .await?;
 
-    let permissions =
-        sqlx::query_as("SELECT * FROM permissions WHERE system_id = $1 ORDER BY perm_id")
-            .bind(system_id)
-            .fetch_all(db.inner())
-            .await?;
+    let permissions = permissions::list_for_system(system_id, db.inner()).await?;
 
     if permissions.is_empty() {
         systems::ensure_exists(system_id, db.inner()).await?;
@@ -115,12 +111,6 @@ async fn create_permission<'v>(
     let min = HivePermission::ManagePerms(SystemsScope::Id(system_id.to_owned()));
     perms.require(min).await?;
 
-    if system_id == "hive" {
-        // we manage our own permissions via database migrations
-        warn!("Disallowing permissions tampering from {}", user.username);
-        return Err(AppError::SelfPreservation);
-    }
-
     systems::ensure_exists(system_id, db.inner()).await?;
 
     // TODO: anti-CSRF
@@ -128,37 +118,7 @@ async fn create_permission<'v>(
     if let Some(dto) = &form.value {
         // validation passed
 
-        let mut txn = db.begin().await?;
-
-        let permission: Permission = sqlx::query_as(
-            "INSERT INTO permissions (system_id, perm_id, has_scope, description) VALUES ($1, $2, \
-             $3, $4) RETURNING *",
-        )
-        .bind(system_id)
-        .bind(dto.id)
-        .bind(dto.scoped)
-        .bind(dto.description)
-        .fetch_one(&mut *txn)
-        .await?;
-
-        sqlx::query(
-            "INSERT INTO audit_logs (action_kind, target_kind, target_id, actor, details) VALUES \
-             ($1, $2, $3, $4, $5)",
-        )
-        .bind(ActionKind::Create)
-        .bind(TargetKind::Permission)
-        .bind(permission.full_id())
-        .bind(user.username)
-        .bind(json!({
-            "new": {
-                "has_scope": dto.scoped,
-                "description": dto.description,
-            }
-        }))
-        .execute(&mut *txn)
-        .await?;
-
-        txn.commit().await?;
+        let permission = permissions::create_new(system_id, dto, db.inner(), &user).await?;
 
         if partial.is_some() {
             let template = PartialPermissionCreatedView { ctx, permission };
@@ -189,7 +149,7 @@ async fn create_permission<'v>(
             // any validation error indicators... but there isn't a great
             // alternative, and it might be fine for such a tiny form
 
-            let target = uri!(systems::system_details(system_id));
+            let target = uri!(super::systems::system_details(system_id));
             Ok(Either::Right(Redirect::to(target)))
         }
     }

@@ -11,6 +11,7 @@ mod models;
 mod perms;
 mod routing;
 mod sanitizers;
+mod services;
 mod web;
 
 rust_i18n::i18n!("./locales");
