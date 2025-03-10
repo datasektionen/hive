@@ -29,7 +29,17 @@
         {{ system.description|e|highlight(q.unwrap_or("")) }}
     </article>
     {% endfor %}
-    <p><em>{{ ctx.t1("listing.n-results", systems.len()) }}</em></p>
+    <p class="secondary">
+        <em>
+            {% if systems.len() > 0 %}
+            {{ ctx.t1("listing.n-results", systems.len()) }}
+            {% else %}
+            {# we know this is a search problem since hive always exists #}
+            <span class="material-icons">search_off</span>
+            {{ ctx.t("systems.list.search.no-results") }}
+            {% endif %}
+        </em>
+    </p>
     {% endblock inner_systems_listing %}
 </div>
 

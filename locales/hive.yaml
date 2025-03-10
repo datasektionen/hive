@@ -224,6 +224,9 @@ systems.form.field.id.tip:
 systems.list.action.create:
   en: Create
   sv: Skapa ny
+systems.list.search.no-results:
+  en: No matching systems were found. Try adjusting your search query?
+  sv: Inga matchande system hittades. Testa att justera din sökfråga?
 systems.list.title:
   en: Systems
   sv: System

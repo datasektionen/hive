@@ -2,6 +2,11 @@
   color: var(--pico-primary);
 }
 
+.secondary {
+  /* using color: would override .secondary buttons' text color */
+  --pico-color: var(--pico-secondary);
+}
+
 .success {
   /* some light hijacking to get dark/light theme variants for free */
   color: var(--pico-form-element-valid-focus-color);
