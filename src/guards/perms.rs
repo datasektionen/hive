@@ -3,12 +3,13 @@ use std::collections::{HashMap, HashSet};
 use log::*;
 use rocket::{
     futures::lock::Mutex,
+    http::Status,
     request::{FromRequest, Outcome},
     Request, State,
 };
 use sqlx::PgPool;
 
-use super::{user::User, Infallible};
+use super::user::User;
 use crate::{
     errors::{AppError, AppResult},
     perms::{self, HivePermission},
@@ -17,7 +18,7 @@ use crate::{
 const HIVE_SYSTEM_ID: &str = "hive";
 
 pub struct PermsEvaluator {
-    user: Option<User>,
+    user: User,
     db: PgPool, // cloning Pool is cheap (just an Arc)
     cache: Mutex<HivePermissionsCache>,
     // ^ Mutex is needed for internal mutability since Rocket can't give us a
@@ -64,7 +65,7 @@ impl HivePermissionsCache {
 }
 
 impl PermsEvaluator {
-    fn new(user: Option<User>, db: PgPool) -> Self {
+    fn new(user: User, db: PgPool) -> Self {
         Self {
             user,
             db,
@@ -79,25 +80,24 @@ impl PermsEvaluator {
             return Ok(cached);
         }
 
-        if let Some(user) = &self.user {
-            let perms = perms::get_assignments(&user.username, HIVE_SYSTEM_ID, min.key(), &self.db)
-                .await?
-                .into_iter()
-                .map(HivePermission::try_from)
-                .inspect(|r| {
-                    if let Err(err) = r {
-                        warn!("Got invalid Hive permission: {err:?}");
-                    }
-                })
-                .filter_map(Result::ok)
-                .collect::<Vec<_>>();
-
-            cache.insert(min.key(), perms.clone());
-
-            for perm in perms {
-                if perm >= min {
-                    return Ok(true);
+        let username = &self.user.username;
+        let perms = perms::get_assignments(username, HIVE_SYSTEM_ID, min.key(), &self.db)
+            .await?
+            .into_iter()
+            .map(HivePermission::try_from)
+            .inspect(|r| {
+                if let Err(err) = r {
+                    warn!("Got invalid Hive permission: {err:?}");
                 }
+            })
+            .filter_map(Result::ok)
+            .collect::<Vec<_>>();
+
+        cache.insert(min.key(), perms.clone());
+
+        for perm in perms {
+            if perm >= min {
+                return Ok(true);
             }
         }
 
@@ -128,19 +128,30 @@ impl PermsEvaluator {
     }
 }
 
+#[derive(Debug)]
+pub struct UserNotAuthenticatedError;
+
 #[rocket::async_trait]
 impl<'r> FromRequest<'r> for &'r PermsEvaluator {
-    type Error = Infallible;
+    type Error = UserNotAuthenticatedError;
 
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        Outcome::Success(
-            req.local_cache_async(async {
-                let user = req.guard::<User>().await.succeeded();
-                let pool = req.guard::<&State<PgPool>>().await.unwrap();
+        let result = req
+            .local_cache_async(async {
+                if let Outcome::Success(user) = req.guard::<User>().await {
+                    let pool = req.guard::<&State<PgPool>>().await.unwrap();
 
-                PermsEvaluator::new(user, pool.inner().clone())
+                    Some(PermsEvaluator::new(user, pool.inner().clone()))
+                } else {
+                    None
+                }
             })
-            .await,
-        )
+            .await;
+
+        if let Some(perms) = result {
+            Outcome::Success(perms)
+        } else {
+            Outcome::Error((Status::Unauthorized, UserNotAuthenticatedError))
+        }
     }
 }

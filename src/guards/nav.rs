@@ -4,7 +4,7 @@ use rocket::{
     Request,
 };
 
-use super::{perms::PermsEvaluator, user::User};
+use super::perms::PermsEvaluator;
 use crate::{errors::AppError, perms::HivePermission};
 
 // pub type Nav = Vec<NavLink> not allowed because of orphan rule;
@@ -38,10 +38,9 @@ impl<'r> FromRequest<'r> for Nav {
 
         let path = req.uri().path();
 
-        if let Outcome::Success(user) = req.guard::<User>().await {
+        // PermsEvaluator only exists when the user is logged in
+        if let Outcome::Success(perms) = req.guard::<&PermsEvaluator>().await {
             links.push(NavLink::new("groups", "/groups", &path));
-
-            let perms = req.guard::<&PermsEvaluator>().await.unwrap();
 
             // TODO: perms
             if true {
