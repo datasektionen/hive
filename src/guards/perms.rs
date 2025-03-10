@@ -104,6 +104,16 @@ impl PermsEvaluator {
         Ok(false)
     }
 
+    pub async fn satisfies_any_of(&self, possibilities: &[HivePermission]) -> AppResult<bool> {
+        for min in possibilities {
+            if self.satisfies(min.clone()).await? {
+                return Ok(true);
+            }
+        }
+
+        Ok(false)
+    }
+
     pub async fn require(&self, min: HivePermission) -> AppResult<()> {
         if self.satisfies(min.clone()).await? {
             Ok(())
@@ -113,18 +123,16 @@ impl PermsEvaluator {
     }
 
     pub async fn require_any_of(&self, possibilities: &[HivePermission]) -> AppResult<()> {
-        for min in possibilities {
-            if self.satisfies(min.clone()).await? {
-                return Ok(());
-            }
+        if self.satisfies_any_of(possibilities).await? {
+            Ok(())
+        } else {
+            Err(AppError::NotAllowed(
+                possibilities
+                    .last()
+                    .expect("Empty possible permissions array")
+                    .clone(),
+            ))
         }
-
-        Err(AppError::NotAllowed(
-            possibilities
-                .last()
-                .expect("Empty possible permissions array")
-                .clone(),
-        ))
     }
 }
 

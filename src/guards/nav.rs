@@ -5,7 +5,10 @@ use rocket::{
 };
 
 use super::perms::PermsEvaluator;
-use crate::{errors::AppError, perms::HivePermission};
+use crate::{
+    errors::AppError,
+    perms::{HivePermission, SystemsScope},
+};
 
 // pub type Nav = Vec<NavLink> not allowed because of orphan rule;
 // need to impl FromRequest
@@ -42,14 +45,21 @@ impl<'r> FromRequest<'r> for Nav {
         if let Outcome::Success(perms) = req.guard::<&PermsEvaluator>().await {
             links.push(NavLink::new("groups", "/groups", &path));
 
-            // TODO: perms
-            if true {
-                links.push(NavLink::new("systems", "/systems", &path))
+            match perms
+                .satisfies_any_of(&[
+                    HivePermission::ManageSystems,
+                    HivePermission::ManageSystem(SystemsScope::Any),
+                ])
+                .await
+            {
+                Ok(true) => links.push(NavLink::new("systems", "/systems", &path)),
+                Ok(false) => {}
+                Err(err) => return err.into(),
             }
 
             match perms.satisfies(HivePermission::ViewLogs).await {
                 Ok(true) => links.push(NavLink::new("logs", "/logs", &path)),
-                Ok(_) => {}
+                Ok(false) => {}
                 Err(err) => return err.into(),
             }
         }
