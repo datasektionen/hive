@@ -272,11 +272,11 @@ pub async fn get_assignments(
         "
         SELECT *
         FROM permission_assignments pa
-        JOIN all_groups_of($1, $2) gs
-            ON pa.group_id = gs.id
-            AND pa.group_domain = gs.domain
-        WHERE system_id = $3
-        AND perm_id = $4",
+        JOIN all_groups_of($1, $2) ag
+            ON pa.group_id = ag.id
+            AND pa.group_domain = ag.domain
+        WHERE pa.system_id = $3
+        AND pa.perm_id = $4",
     )
     .bind(username)
     .bind(today)

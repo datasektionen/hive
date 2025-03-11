@@ -81,6 +81,24 @@ control.save:
 control.search:
   en: Search
   sv: Sök
+control.view:
+  en: View
+  sv: Visa
+groups.list.icon.direct-member:
+  en: You're a direct member of this group
+  sv: Du är en direkt medlem i den här gruppen
+groups.list.icon.manager:
+  en: You're a Manager in this group
+  sv: Du är Ansvarig i den här gruppen
+groups.list.icon.member:
+  en: You're a Member in this group
+  sv: Du är Medlem i den här gruppen
+groups.list.search.no-results:
+  en: No matching groups were found. Try adjusting your search query?
+  sv: Inga matchande grupper hittades. Testa att justera din sökfråga?
+groups.list.title:
+  en: Groups
+  sv: Grupper
 indicator.datetime.never:
   en: Never
   sv: Aldrig

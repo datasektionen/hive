@@ -2,8 +2,15 @@ use rinja::Template;
 use rocket::{response::content::RawHtml, State};
 use sqlx::PgPool;
 
-use super::RenderedTemplate;
-use crate::{errors::AppResult, guards::context::PageContext, models::Group, routing::RouteTree};
+use super::{filters, RenderedTemplate};
+use crate::{
+    errors::AppResult,
+    guards::{
+        context::PageContext, headers::HxRequest, lang::Language, perms::PermsEvaluator, user::User,
+    },
+    routing::RouteTree,
+    services::groups::{self, GroupMembershipKind, GroupOverviewSummary, RoleInGroup},
+};
 
 pub fn routes() -> RouteTree {
     rocket::routes![list_groups].into()
@@ -11,18 +18,40 @@ pub fn routes() -> RouteTree {
 
 #[derive(Template)]
 #[template(path = "groups/list.html.j2")]
-struct ListGroupsView {
+struct ListGroupsView<'q> {
     ctx: PageContext,
-    groups: Vec<Group>,
+    summaries: Vec<GroupOverviewSummary>,
+    q: Option<&'q str>,
 }
 
-#[rocket::get("/groups")]
-async fn list_groups(db: &State<PgPool>, ctx: PageContext) -> AppResult<RenderedTemplate> {
-    let groups = sqlx::query_as("SELECT * FROM groups")
-        .fetch_all(db.inner())
-        .await?;
+#[derive(Template)]
+#[template(path = "groups/list.html.j2", block = "inner_groups_listing")]
+struct PartialListGroupsView<'q> {
+    ctx: PageContext,
+    summaries: Vec<GroupOverviewSummary>,
+    q: Option<&'q str>,
+}
 
-    let template = ListGroupsView { ctx, groups };
+#[rocket::get("/groups?<q>")]
+async fn list_groups(
+    q: Option<&str>,
+    db: &State<PgPool>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<RenderedTemplate> {
+    let summaries = groups::list_summaries(q, db.inner(), perms, &user).await?;
 
-    Ok(RawHtml(template.render()?))
+    // TODO: order by name in correct language from ctx
+
+    if partial.is_some() {
+        let template = PartialListGroupsView { ctx, summaries, q };
+
+        Ok(RawHtml(template.render()?))
+    } else {
+        let template = ListGroupsView { ctx, summaries, q };
+
+        Ok(RawHtml(template.render()?))
+    }
 }

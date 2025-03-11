@@ -15,6 +15,8 @@ pub type AppResult<T> = Result<T, AppError>;
 pub enum AppError {
     #[error("database error: {0}")]
     DbError(#[from] sqlx::Error),
+    #[error("query building error: {0}")]
+    QueryBuildError(#[source] sqlx::error::BoxDynError),
     #[error("template render error: {0}")]
     RenderError(#[from] rinja::Error),
 
@@ -31,6 +33,7 @@ impl AppError {
     fn status(&self) -> Status {
         match self {
             AppError::DbError(..) => Status::InternalServerError,
+            AppError::QueryBuildError(..) => Status::InternalServerError,
             AppError::RenderError(..) => Status::InternalServerError,
             AppError::NotAllowed(..) => Status::Forbidden,
             AppError::SelfPreservation => Status::UnavailableForLegalReasons,

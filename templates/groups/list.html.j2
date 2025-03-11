@@ -1,11 +1,74 @@
 {% extends "base.html.j2" %}
 
-{% block title %}Groups{% endblock title %}
+{% block title %}{{ ctx.t("groups.list.title") }}{% endblock title %}
 
 {% block content %}
-<ul>
-    {% for group in groups %}
-    <li>{{ group.name_sv }}</li>
+<input type="search" name="q" value='{{ q.unwrap_or("") }}' placeholder=' {{ ctx.t("control.search") }}'
+    aria-label='{{ ctx.t("control.search") }}' hx-get="/groups"
+    hx-trigger="input changed delay:500ms, search, keyup[key=='Enter']" hx-target="#listing-block"
+    hx-indicator="#listing-block" hx-push-url="true" />
+
+<div id="listing-block" class="htmx-anti-indicator">
+    {% block inner_groups_listing %}
+    {% for summary in summaries %}
+    <article>
+        {% let name_primary %}
+        {% let name_secondary %}
+        {% let description %}
+        {% match ctx.lang %}
+        {% when Language::Swedish %}
+        {% let name_primary = summary.group.name_sv %}
+        {% let name_secondary = summary.group.name_en %}
+        {% let description = summary.group.description_sv %}
+        {% when Language::English %}
+        {% let name_primary = summary.group.name_en %}
+        {% let name_secondary = summary.group.name_sv %}
+        {% let description = summary.group.description_en %}
+        {% endmatch %}
+        <header class="header-flex">
+            <hgroup>
+                <h3>
+                    {{ name_primary|e|highlight(q.unwrap_or("")) }}
+
+                    {% match summary.role %}
+                    {% when Some(RoleInGroup::Manager) %}
+                    <span class="primary material-icons" data-tooltip='{{ ctx.t("groups.list.icon.manager") }}'>
+                        local_police
+                    </span>
+                    {% when Some(RoleInGroup::Member) %}
+                    <span class="secondary material-icons" data-tooltip='{{ ctx.t("groups.list.icon.member") }}'>
+                        account_circle
+                    </span>
+                    {% when None %}
+                    {% endmatch %}
+
+                    {% if let Some(GroupMembershipKind::Direct) = summary.membership_kind %}
+                    <span class="secondary material-icons" data-tooltip='{{ ctx.t("groups.list.icon.direct-member") }}'>
+                        verified_user
+                    </span>
+                    {% endif %}
+                </h3>
+                <h4>({{ name_secondary|e|highlight(q.unwrap_or("")) }})</h4>
+            </hgroup>
+            <a href="/not-real" role="button" class="secondary">
+                {{ ctx.t("control.view") }}
+                <span class="material-icons">arrow_forward</span>
+            </a>
+        </header>
+        {{ description|e|highlight(q.unwrap_or("")) }}
+    </article>
     {% endfor %}
-</ul>
+    <p class="secondary">
+        <em>
+            {% if summaries.len() > 0 %}
+            {{ ctx.t1("listing.n-results", summaries.len()) }}
+            {% else %}
+            {# we know this is a search problem since root@hive always exists #}
+            <span class="material-icons">search_off</span>
+            {{ ctx.t("groups.list.search.no-results") }}
+            {% endif %}
+        </em>
+    </p>
+    {% endblock inner_groups_listing %}
+</div>
 {% endblock content %}

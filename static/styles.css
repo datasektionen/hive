@@ -1,5 +1,5 @@
 .primary {
-  color: var(--pico-primary);
+  --pico-color: var(--pico-primary);
 }
 
 .secondary {
@@ -41,6 +41,7 @@
 
 .material-icons {
   vertical-align: middle;
+  color: var(--pico-color);
 }
 
 a.material-icons:hover {

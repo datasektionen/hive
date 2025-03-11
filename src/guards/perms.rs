@@ -13,9 +13,8 @@ use super::user::User;
 use crate::{
     errors::{AppError, AppResult},
     perms::{self, HivePermission},
+    HIVE_SYSTEM_ID,
 };
-
-const HIVE_SYSTEM_ID: &str = "hive";
 
 pub struct PermsEvaluator {
     user: User,

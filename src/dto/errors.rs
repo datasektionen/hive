@@ -23,6 +23,7 @@ impl From<AppError> for InnerAppErrorDto {
     fn from(err: AppError) -> Self {
         match err {
             AppError::DbError(..) => Self::DbError,
+            AppError::QueryBuildError(..) => Self::PipelineError,
             AppError::RenderError(..) => Self::PipelineError,
             AppError::NotAllowed(..) => Self::NotAllowed,
             AppError::SelfPreservation => Self::SelfPreservation,

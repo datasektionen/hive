@@ -2,6 +2,14 @@ use chrono::{DateTime, Local};
 use sqlx::FromRow;
 use uuid::Uuid;
 
+// this is only needed in other sqlx::Type composite type records
+#[derive(sqlx::Type)]
+#[sqlx(type_name = "slug")]
+pub struct Slug(String);
+#[derive(sqlx::Type)]
+#[sqlx(type_name = "domain")]
+pub struct Domain(String);
+
 #[derive(FromRow)]
 pub struct Group {
     pub id: String,
@@ -10,6 +18,13 @@ pub struct Group {
     pub name_en: String,
     pub description_sv: String,
     pub description_en: String,
+}
+
+#[derive(sqlx::Type)]
+#[sqlx(type_name = "group_ref")]
+pub struct GroupRef {
+    pub group_id: Slug,
+    pub group_domain: Domain,
 }
 
 #[derive(FromRow)]

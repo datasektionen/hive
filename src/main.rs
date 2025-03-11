@@ -14,6 +14,8 @@ mod sanitizers;
 mod services;
 mod web;
 
+const HIVE_SYSTEM_ID: &str = "hive";
+
 rust_i18n::i18n!("./locales");
 
 #[rocket::launch]
