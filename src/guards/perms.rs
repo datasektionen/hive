@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use log::*;
 use rocket::{
-    futures::lock::Mutex,
+    futures::lock::{Mutex, MutexGuard},
     http::Status,
     request::{FromRequest, Outcome},
     Request, State,
@@ -27,7 +27,7 @@ pub struct PermsEvaluator {
 
 struct HivePermissionsCache {
     entries: HashMap<&'static str, HashSet<HivePermission>>,
-    // ^ empty Vec if we need to cache a user having *no* permissions for a key
+    // ^ empty Set if we need to cache a user having *no* permissions for a key
 }
 
 impl HivePermissionsCache {
@@ -37,22 +37,26 @@ impl HivePermissionsCache {
         }
     }
 
+    fn fetch_all_with_key<'a>(&'a self, key: &str) -> Option<&'a HashSet<HivePermission>> {
+        self.entries.get(key)
+    }
+
     fn satisfies_cached(&self, min: &HivePermission) -> Option<bool> {
-        if let Some(perms) = self.entries.get(min.key()) {
+        if let Some(perms) = self.fetch_all_with_key(min.key()) {
             for perm in perms {
                 if perm >= min {
                     return Some(true);
                 }
             }
-        } else {
-            return None;
-        }
 
-        // assumes that all permissions with the same key (i.e., different
-        // scopes) are always cached together -- meaning that we can infer
-        // "not-allowed" if the key is in the cache and no matching perm
-        // was found
-        Some(false)
+            // assumes that all permissions with the same key (i.e., different
+            // scopes) are always cached together -- meaning that we can infer
+            // "not-allowed" if the key is in the cache and no matching perm
+            // was found
+            Some(false)
+        } else {
+            None
+        }
     }
 
     fn insert<I: IntoIterator<Item = HivePermission>>(&mut self, key: &'static str, perms: I) {
@@ -73,15 +77,13 @@ impl PermsEvaluator {
         }
     }
 
-    pub async fn satisfies(&self, min: HivePermission) -> AppResult<bool> {
-        let mut cache = self.cache.lock().await;
-
-        if let Some(cached) = cache.satisfies_cached(&min) {
-            return Ok(cached);
-        }
-
+    async fn load_into_cache(
+        &self,
+        cache: &mut MutexGuard<'_, HivePermissionsCache>,
+        key: &'static str,
+    ) -> AppResult<Vec<HivePermission>> {
         let username = &self.user.username;
-        let perms = perms::get_assignments(username, HIVE_SYSTEM_ID, min.key(), &self.db)
+        let perms = perms::get_assignments(username, HIVE_SYSTEM_ID, key, &self.db)
             .await?
             .into_iter()
             .map(HivePermission::try_from)
@@ -93,9 +95,33 @@ impl PermsEvaluator {
             .filter_map(Result::ok)
             .collect::<Vec<_>>();
 
-        cache.insert(min.key(), perms.clone());
+        cache.insert(key, perms.clone());
 
-        for perm in perms {
+        Ok(perms)
+    }
+
+    // better type-checking integrity to take in a HivePermission instead of
+    // a key &str directly in public functions
+    pub async fn fetch_all_related(&self, probe: HivePermission) -> AppResult<Vec<HivePermission>> {
+        let mut cache = self.cache.lock().await;
+
+        if let Some(cached) = cache.fetch_all_with_key(probe.key()) {
+            Ok(cached.iter().cloned().collect())
+        } else {
+            Ok(self.load_into_cache(&mut cache, probe.key()).await?)
+        }
+    }
+
+    pub async fn satisfies(&self, min: HivePermission) -> AppResult<bool> {
+        let mut cache = self.cache.lock().await;
+
+        // we don't use fetch_all_related because this returns faster
+        // for cached permissions that come first
+        if let Some(cached) = cache.satisfies_cached(&min) {
+            return Ok(cached);
+        }
+
+        for perm in self.load_into_cache(&mut cache, min.key()).await? {
             if perm >= min {
                 return Ok(true);
             }
