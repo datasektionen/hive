@@ -1,14 +1,13 @@
 use log::*;
 use serde_json::json;
 
+use super::audit_logs;
 use crate::{
     dto::permissions::CreatePermissionDto,
     errors::{AppError, AppResult},
     guards::user::User,
     models::{ActionKind, Permission, TargetKind},
 };
-
-use super::audit_logs;
 
 pub async fn list_for_system<'x, X>(system_id: &str, db: X) -> AppResult<Vec<Permission>>
 where
@@ -41,8 +40,8 @@ where
     let mut txn = db.begin().await?;
 
     let permission: Permission = sqlx::query_as(
-        "INSERT INTO permissions (system_id, perm_id, has_scope, description) VALUES ($1, $2, \
-         $3, $4) RETURNING *",
+        "INSERT INTO permissions (system_id, perm_id, has_scope, description) VALUES ($1, $2, $3, \
+         $4) RETURNING *",
     )
     .bind(system_id)
     .bind(dto.id)

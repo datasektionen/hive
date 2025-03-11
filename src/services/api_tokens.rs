@@ -1,6 +1,7 @@
 use serde_json::json;
 use uuid::Uuid;
 
+use super::audit_logs;
 use crate::{
     dto::api_tokens::CreateApiTokenDto,
     errors::{AppError, AppResult},
@@ -8,8 +9,6 @@ use crate::{
     models::{ActionKind, ApiToken, TargetKind},
     perms::{HivePermission, SystemsScope},
 };
-
-use super::audit_logs;
 
 pub async fn list_for_system<'x, X>(system_id: &str, db: X) -> AppResult<Vec<ApiToken>>
 where
@@ -44,8 +43,8 @@ where
     let mut txn = db.begin().await?;
 
     let token: ApiToken = sqlx::query_as(
-        "INSERT INTO api_tokens (secret, system_id, description, expires_at) VALUES ($1, $2, \
-         $3, $4) RETURNING *",
+        "INSERT INTO api_tokens (secret, system_id, description, expires_at) VALUES ($1, $2, $3, \
+         $4) RETURNING *",
     )
     .bind(secret)
     .bind(system_id)

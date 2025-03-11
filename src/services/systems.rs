@@ -2,6 +2,7 @@ use log::*;
 use rocket::futures::TryStreamExt;
 use serde_json::json;
 
+use super::audit_logs;
 use crate::{
     dto::systems::{CreateSystemDto, EditSystemDto},
     errors::{AppError, AppResult},
@@ -10,8 +11,6 @@ use crate::{
     perms::{HivePermission, SystemsScope},
     sanitizers::SearchTerm,
 };
-
-use super::audit_logs;
 
 pub async fn ensure_exists<'x, X>(id: &str, db: X) -> AppResult<()>
 where
@@ -155,7 +154,7 @@ where
     // subquery runs before update
     let old_description: String = sqlx::query_scalar(
         "UPDATE systems SET description = $1 WHERE id = $2 RETURNING (SELECT description FROM \
-             systems WHERE id = $2)",
+         systems WHERE id = $2)",
     )
     .bind(dto.description)
     .bind(id)

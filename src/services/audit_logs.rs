@@ -16,8 +16,8 @@ where
     P: 'q + sqlx::Encode<'q, sqlx::Postgres> + sqlx::Type<sqlx::Postgres>,
 {
     sqlx::query(
-        "INSERT INTO audit_logs (action_kind, target_kind, target_id, actor, details) VALUES \
-         ($1, $2, $3, $4, $5)",
+        "INSERT INTO audit_logs (action_kind, target_kind, target_id, actor, details) VALUES ($1, \
+         $2, $3, $4, $5)",
     )
     .bind(action_kind)
     .bind(target_kind)
