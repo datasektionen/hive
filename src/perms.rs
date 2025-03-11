@@ -121,7 +121,7 @@ impl TryFrom<&str> for GroupsScope {
         if scope == "*" {
             Ok(Self::Wildcard)
         } else if let Some(tag) = scope.strip_prefix("#hive:") {
-            let mut split = tag.split(":");
+            let mut split = tag.splitn(2, ":");
             Ok(Self::Tag {
                 id: split.next().unwrap().to_owned(),
                 content: split.next().map(TagContent::from),
