@@ -106,7 +106,10 @@ impl TryFrom<BasePermissionAssignment> for HivePermission {
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum GroupsScope {
     Wildcard,
-    Tag(String),
+    Tag {
+        id: String,
+        content: Option<TagContent>,
+    },
     Domain(String),
     Any, // pseudo-scope meaning "any of the above"
 }
@@ -118,7 +121,11 @@ impl TryFrom<&str> for GroupsScope {
         if scope == "*" {
             Ok(Self::Wildcard)
         } else if let Some(tag) = scope.strip_prefix("#hive:") {
-            Ok(Self::Tag(tag.to_owned()))
+            let mut split = tag.split(":");
+            Ok(Self::Tag {
+                id: split.next().unwrap().to_owned(),
+                content: split.next().map(TagContent::from),
+            })
         } else if let Some(domain) = scope.strip_prefix("@") {
             Ok(Self::Domain(domain.to_owned()))
         } else {
@@ -132,7 +139,10 @@ impl fmt::Display for GroupsScope {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Wildcard => write!(f, "*"),
-            Self::Tag(tag) => write!(f, "#hive:{tag}"),
+            Self::Tag { id, content } => match content {
+                Some(content) => write!(f, "#hive:{id}:{content}"),
+                None => write!(f, "#hive:{id}"),
+            },
             Self::Domain(domain) => write!(f, "@{domain}"),
             Self::Any => write!(f, "?"),
         }
@@ -150,7 +160,56 @@ impl PartialOrd for GroupsScope {
             (_, Self::Wildcard) => Some(Ordering::Less),
             (Self::Any, _) => Some(Ordering::Less),
             (_, Self::Any) => Some(Ordering::Greater),
+            (
+                Self::Tag {
+                    id: id_a,
+                    content: Some(content_a),
+                },
+                Self::Tag {
+                    id: id_b,
+                    content: Some(content_b),
+                },
+            ) if id_a == id_b => content_a.partial_cmp(content_b),
             _ => None,
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Hash, Debug, Clone)]
+pub enum TagContent {
+    Wildcard,
+    Custom(String),
+}
+
+impl PartialOrd for TagContent {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self == other {
+            return Some(Ordering::Equal);
+        }
+
+        match (self, other) {
+            (Self::Wildcard, _) => Some(Ordering::Greater),
+            (_, Self::Wildcard) => Some(Ordering::Less),
+            _ => None,
+        }
+    }
+}
+
+impl fmt::Display for TagContent {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Wildcard => write!(f, "*"),
+            Self::Custom(content) => write!(f, "{content}"),
+        }
+    }
+}
+
+impl From<&str> for TagContent {
+    fn from(content: &str) -> Self {
+        if content == "*" {
+            Self::Wildcard
+        } else {
+            Self::Custom(content.to_owned())
         }
     }
 }
