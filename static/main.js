@@ -71,6 +71,16 @@ document.body.addEventListener("htmx:beforeOnLoad", () => {
   }
 });
 
+// remove empty parameters, e.g. avoid `/path?q=` without any value
+document.body.addEventListener("htmx:configRequest", (event) => {
+  // event.detail.parameters is of type FormData
+  for (const [key, value] of event.detail.parameters.entries()) {
+    if (value == "") {
+      event.detail.parameters.delete(key);
+    }
+  }
+});
+
 // make button disabled while form is invalid; force re-validation on input
 for (const btn of document.querySelectorAll("[data-require-validity]")) {
   btn.form.addEventListener("input", (event) => {
