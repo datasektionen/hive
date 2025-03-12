@@ -84,6 +84,24 @@ control.search:
 control.view:
   en: View
   sv: Visa
+groups.list.control.sort.label:
+  en: Sort by
+  sv: Sortera efter
+groups.list.control.sort.option.direct-members:
+  en: Number of direct members
+  sv: Antal direktmedlemmar
+groups.list.control.sort.option.domain:
+  en: Group domain
+  sv: Gruppdomän
+groups.list.control.sort.option.id:
+  en: Group ID
+  sv: Grupp-ID
+groups.list.control.sort.option.name:
+  en: Group name
+  sv: Gruppnamn
+groups.list.control.sort.option.total-members:
+  en: Total number of members
+  sv: Totalt antal medlemmar
 groups.list.empty:
   # we know it's a permissions problem because root@hive.internal always exists
   en: >

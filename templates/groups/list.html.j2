@@ -1,12 +1,38 @@
 {% extends "base.html.j2" %}
 
+{%- import "utils.html.j2" as utils -%}
+
 {% block title %}{{ ctx.t("groups.list.title") }}{% endblock title %}
 
 {% block content %}
-<input type="search" name="q" value='{{ q.unwrap_or("") }}' placeholder=' {{ ctx.t("control.search") }}'
-    aria-label='{{ ctx.t("control.search") }}' hx-get="/groups"
-    hx-trigger="input changed delay:500ms, search, keyup[key=='Enter']" hx-target="#listing-block"
-    hx-indicator="#listing-block" hx-push-url="true" />
+<form method="get" hx-boost="true" hx-target="#listing-block" hx-indicator="#listing-block"
+    hx-trigger="submit, change, search, input changed delay:500ms" hx-swap="show:none">
+    <input type="search" name="q" value='{{ q.unwrap_or("") }}' placeholder=' {{ ctx.t("control.search") }}'
+        aria-label='{{ ctx.t("control.search") }}' />
+
+    <div>
+        <label>
+            {{ ctx.t("groups.list.control.sort.label") }}
+            <select name="sort">
+                <option {% call utils::option(ListGroupsSort::Name, sort) %}>
+                    {{ ctx.t("groups.list.control.sort.option.name") }}
+                </option>
+                <option {% call utils::option(ListGroupsSort::Id, sort) %}>
+                    {{ ctx.t("groups.list.control.sort.option.id") }}
+                </option>
+                <option {% call utils::option(ListGroupsSort::Domain, sort) %}>
+                    {{ ctx.t("groups.list.control.sort.option.domain") }}
+                </option>
+                <option {% call utils::option(ListGroupsSort::DirectMembers, sort) %}>
+                    {{ ctx.t("groups.list.control.sort.option.direct-members") }}
+                </option>
+                <option {% call utils::option(ListGroupsSort::TotalMembers, sort) %}>
+                    {{ ctx.t("groups.list.control.sort.option.total-members") }}
+                </option>
+            </select>
+        </label>
+    </div>
+</form>
 
 <div id="listing-block" class="htmx-anti-indicator">
     {% block inner_groups_listing %}

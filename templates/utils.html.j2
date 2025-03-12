@@ -29,6 +29,14 @@ aria-invalid="false"
 {%- endmacro checkbox %}
 
 
+{% macro option(value, selected_value) -%}
+value="{{ value }}"
+{%- if value == selected_value -%}
+selected
+{%- endif -%}
+{%- endmacro option %}
+
+
 {% macro stamp_or_never(option) -%}
 {%- if let Some(val) = option -%}
 {{ val|timestamp }}
