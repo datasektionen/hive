@@ -84,6 +84,12 @@ control.search:
 control.view:
   en: View
   sv: Visa
+groups.list.control.domain-filter.any:
+  en: (Any domain)
+  sv: (Alla domäner)
+groups.list.control.domain-filter.label:
+  en: Domain
+  sv: Domän
 groups.list.control.sort.label:
   en: Sort by
   sv: Sortera efter

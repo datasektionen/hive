@@ -10,7 +10,7 @@
     <input type="search" name="q" value='{{ q.unwrap_or("") }}' placeholder=' {{ ctx.t("control.search") }}'
         aria-label='{{ ctx.t("control.search") }}' />
 
-    <div>
+    <div class="grid">
         <label>
             {{ ctx.t("groups.list.control.sort.label") }}
             <select name="sort">
@@ -29,6 +29,19 @@
                 <option {% call utils::option(ListGroupsSort::TotalMembers, sort) %}>
                     {{ ctx.t("groups.list.control.sort.option.total-members") }}
                 </option>
+            </select>
+        </label>
+        <label>
+            {{ ctx.t("groups.list.control.domain-filter.label") }}
+            <select name="domain">
+                <option {% call utils::option("", domain_filter.unwrap_or("")) %} style="font-style: italic">
+                    {{ ctx.t("groups.list.control.domain-filter.any") }}
+                </option>
+                {% for domain in domains %}
+                <option {% call utils::option(domain, domain_filter.unwrap_or("")) %}>
+                    {{ domain }}
+                </option>
+                {% endfor %}
             </select>
         </label>
     </div>

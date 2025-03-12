@@ -23,11 +23,13 @@ pub fn routes() -> RouteTree {
 
 #[derive(Template)]
 #[template(path = "groups/list.html.j2")]
-struct ListGroupsView<'q> {
+struct ListGroupsView<'r> {
     ctx: PageContext,
     summaries: Vec<GroupOverviewSummary>,
-    q: Option<&'q str>,
+    q: Option<&'r str>,
     sort: ListGroupsSort,
+    domain_filter: Option<&'r str>,
+    domains: Vec<String>,
 }
 
 #[derive(Template)]
@@ -109,10 +111,12 @@ impl ListGroupsSort {
     }
 }
 
-#[rocket::get("/groups?<q>&<sort>")]
+#[rocket::get("/groups?<q>&<sort>&<domain>")]
+#[allow(clippy::too_many_arguments)]
 async fn list_groups(
     q: Option<&str>,
     sort: Option<ListGroupsSort>,
+    domain: Option<&str>,
     db: &State<PgPool>,
     ctx: PageContext,
     perms: &PermsEvaluator,
@@ -120,8 +124,13 @@ async fn list_groups(
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<RenderedTemplate> {
     let sort = sort.unwrap_or(ListGroupsSort::Name);
+    let domain_filter = domain.map(str::to_lowercase);
 
-    let mut summaries = groups::list_summaries(q, db.inner(), perms, &user).await?;
+    let mut summaries = groups::list_summaries(q, domain, db.inner(), perms, &user).await?;
+
+    let mut domains: Vec<_> = summaries.iter().map(|s| s.group.domain.clone()).collect();
+    domains.sort();
+    domains.dedup();
 
     // unstable is faster, and we should have no equal elements anyway
     summaries.sort_unstable_by(|a, b| sort.ordering(a, b, &ctx.lang));
@@ -131,11 +140,20 @@ async fn list_groups(
 
         Ok(RawHtml(template.render()?))
     } else {
+        if let Some(filter) = domain_filter {
+            // ensure current value can be shown to be selected
+            if !domains.contains(&filter) {
+                domains.push(filter);
+            }
+        }
+
         let template = ListGroupsView {
             ctx,
             summaries,
             q,
             sort,
+            domain_filter: domain,
+            domains,
         };
 
         Ok(RawHtml(template.render()?))

@@ -34,6 +34,7 @@ pub enum RoleInGroup {
 
 pub async fn list_summaries<'x, X>(
     q: Option<&str>,
+    domain_filter: Option<&str>,
     db: X,
     perms: &PermsEvaluator,
     user: &User,
@@ -45,7 +46,7 @@ where
 
     let mut summaries = HashMap::new();
 
-    for entry in get_relevant_from_memberships(&today, q, db, user).await? {
+    for entry in get_relevant_from_memberships(&today, q, domain_filter, db, user).await? {
         let stats = get_group_stats(&today, &entry.group.id, &entry.group.domain, db).await?;
 
         summaries.insert(
@@ -61,7 +62,7 @@ where
         );
     }
 
-    for group in get_relevant_from_permissions(q, db, perms).await? {
+    for group in get_relevant_from_permissions(q, domain_filter, db, perms).await? {
         if let Entry::Vacant(entry) = summaries.entry((group.id.clone(), group.domain.clone())) {
             let stats = get_group_stats(&today, &group.id, &group.domain, db).await?;
 
@@ -88,6 +89,7 @@ struct GroupMembershipEntry {
 async fn get_relevant_from_memberships<'x, X>(
     today: &NaiveDate,
     q: Option<&str>,
+    domain_filter: Option<&str>,
     db: X,
     user: &User,
 ) -> AppResult<Vec<GroupMembershipEntry>>
@@ -108,7 +110,12 @@ where
         args,
     );
 
-    add_search_clauses(&mut query, q, Some("gs"), false);
+    add_search_clauses(&mut query, q, Some("gs"), domain_filter.is_some());
+
+    if let Some(domain) = domain_filter {
+        query.push(" ag.domain = ");
+        query.push_bind(domain);
+    }
 
     query.push(" ORDER BY gs.id, gs.domain");
 
@@ -175,6 +182,7 @@ where
 
 async fn get_relevant_from_permissions<'x, X>(
     q: Option<&str>,
+    domain_filter: Option<&str>,
     db: X,
     perms: &PermsEvaluator,
 ) -> AppResult<Vec<Group>>
@@ -188,7 +196,11 @@ where
     for perm in perms.fetch_all_related(probe).await? {
         if let HivePermission::ManageGroups(scope) = perm {
             match scope {
-                GroupsScope::Domain(domain) => domains.push(domain),
+                GroupsScope::Domain(domain) => match domain_filter {
+                    None => domains.push(domain),
+                    Some(filter) if filter == domain => domains.push(domain),
+                    _ => {}
+                },
                 GroupsScope::Tag { id, content } => tags.push((id, content)),
                 GroupsScope::Wildcard => {
                     return get_all_groups(q, db).await;
@@ -220,6 +232,13 @@ where
                 AND gs.domain = ta.group_domain",
         );
         add_search_clauses(&mut query, q, Some("gs"), true);
+
+        if let Some(domain) = domain_filter {
+            query.push(" gs.domain = ");
+            query.push_bind(domain);
+            query.push(" AND");
+        }
+
         query.push(" ta.system_id = ");
         query.push_bind(HIVE_SYSTEM_ID);
         query.push(" AND (");
