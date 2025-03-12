@@ -17,9 +17,9 @@ pub struct GroupOverviewSummary {
     pub group: Group,
     pub membership_kind: Option<GroupMembershipKind>,
     pub role: Option<RoleInGroup>,
-    pub n_permissions: usize,
     pub n_direct_members: usize,
     pub n_total_members: usize,
+    pub n_permissions: usize,
 }
 
 pub enum GroupMembershipKind {
@@ -324,12 +324,49 @@ async fn get_group_stats<'x, X>(
     db: X,
 ) -> AppResult<GroupStatistics>
 where
-    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+    X: sqlx::Executor<'x, Database = sqlx::Postgres> + Copy,
 {
-    // TODO: real stats
+    let members = sqlx::query(
+        "SELECT
+            COUNT(DISTINCT username) AS n_total_members,
+            COUNT(DISTINCT
+                CASE
+                    WHEN ARRAY_LENGTH(path, 1) = 1 THEN username
+                END
+            ) AS n_direct_members
+        FROM all_members_of($1, $2, $3)",
+    )
+    .bind(id)
+    .bind(domain)
+    .bind(today)
+    .fetch_one(db)
+    .await?;
+
+    let n_direct_members = members
+        .try_get::<i64, _>("n_direct_members")?
+        .try_into()
+        .unwrap_or(usize::MAX);
+    let n_total_members = members
+        .try_get::<i64, _>("n_total_members")?
+        .try_into()
+        .unwrap_or(usize::MAX);
+
+    let n_permissions = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(*)
+        FROM permission_assignments
+        WHERE group_id = $1
+            AND group_domain = $2",
+    )
+    .bind(id)
+    .bind(domain)
+    .fetch_one(db)
+    .await?
+    .try_into()
+    .unwrap_or(usize::MAX);
+
     Ok(GroupStatistics {
-        n_permissions: 5,
-        n_direct_members: 7,
-        n_total_members: 9,
+        n_direct_members,
+        n_total_members,
+        n_permissions,
     })
 }
