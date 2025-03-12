@@ -32,6 +32,8 @@
 [data-tooltip]::after {
   /* reset monospace from pre, samp, etc. */
   font-family: var(--pico-font-family-sans-serif);
+  /* reset bold from strong, h1, etc. */
+  font-weight: normal;
 }
 
 [data-require-validity] {
