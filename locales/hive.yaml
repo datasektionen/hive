@@ -102,6 +102,9 @@ groups.list.icon.manager:
 groups.list.icon.member:
   en: You're a Member in this group
   sv: Du är Medlem i den här gruppen
+groups.list.id.tooltip:
+  en: Group ID
+  sv: Grupp-ID
 groups.list.search.no-results:
   en: No matching groups were found. Try adjusting your search query?
   sv: Inga matchande grupper hittades. Testa att justera din sökfråga?

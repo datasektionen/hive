@@ -25,7 +25,7 @@
         {% let name_secondary = summary.group.name_sv %}
         {% let description = summary.group.description_en %}
         {% endmatch %}
-        <header class="header-flex">
+        <header class="flex-between">
             <hgroup>
                 <h3>
                     {{ name_primary|e|highlight(q.unwrap_or("")) }}
@@ -56,23 +56,32 @@
             </a>
         </header>
         {{ description|e|highlight(q.unwrap_or("")) }}
-        <footer>
-            <button class="outline secondary chip"
-                data-tooltip='{{ ctx.t1("groups.list.stats.icon.n-direct-members", summary.n_direct_members) }}'>
-                <span class="material-icons">verified_user</span>
-                {{ summary.n_direct_members }}
+        <footer class="flex-between">
+            <div>
+                <button class="outline secondary chip"
+                    data-tooltip='{{ ctx.t1("groups.list.stats.icon.n-direct-members", summary.n_direct_members) }}'>
+                    <span class="material-icons">verified_user</span>
+                    {{ summary.n_direct_members }}
+                    </span>
+                </button>
+                <button class="outline secondary chip"
+                    data-tooltip='{{ ctx.t1("groups.list.stats.icon.n-total-members", summary.n_total_members) }}'>
+                    <span class="material-icons">account_circle</span>
+                    {{ summary.n_total_members }}
+                </button>
+                <button class="outline secondary chip"
+                    data-tooltip='{{ ctx.t1("groups.list.stats.icon.n-permissions", summary.n_permissions) }}'>
+                    <span class="material-icons">key</span>
+                    {{ summary.n_permissions }}
+                </button>
+            </div>
+            <samp data-tooltip='{{ ctx.t("groups.list.id.tooltip") }}'>
+                <strong>
+                    {{- summary.group.id|e|highlight(q.unwrap_or("")) -}}
+                </strong><span class="primary">@
+                    {{- summary.group.domain|e|highlight(q.unwrap_or("")) -}}
                 </span>
-            </button>
-            <button class="outline secondary chip"
-                data-tooltip='{{ ctx.t1("groups.list.stats.icon.n-total-members", summary.n_total_members) }}'>
-                <span class="material-icons">account_circle</span>
-                {{ summary.n_total_members }}
-            </button>
-            <button class="outline secondary chip"
-                data-tooltip='{{ ctx.t1("groups.list.stats.icon.n-permissions", summary.n_permissions) }}'>
-                <span class="material-icons">key</span>
-                {{ summary.n_permissions }}
-            </button>
+            </samp>
         </footer>
     </article>
     {% endfor %}

@@ -21,7 +21,7 @@
     {% block inner_systems_listing %}
     {% for system in systems %}
     <article>
-        <header class="header-flex">
+        <header class="flex-between">
             <h3>{{ system.id|e|highlight(q.unwrap_or("")) }}</h3>
             <a href="/system/{{ system.id }}" role="button" class="secondary">
                 {{ ctx.t("control.manage") }}

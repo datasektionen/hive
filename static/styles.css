@@ -7,9 +7,20 @@
   --pico-color: var(--pico-secondary);
 }
 
+.contrast {
+  --pico-color: var(--pico-contrast-background);
+}
+
 .success {
   /* some light hijacking to get dark/light theme variants for free */
   color: var(--pico-form-element-valid-focus-color);
+}
+
+.primary,
+.secondary,
+.contrast,
+.success {
+  color: var(--pico-color);
 }
 
 .btn-danger {
@@ -92,7 +103,7 @@ article footer {
   --pico-typography-spacing-vertical: 0;
 }
 
-.header-flex {
+.flex-between {
   display: flex;
   justify-content: space-between;
   align-items: center;
