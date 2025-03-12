@@ -96,6 +96,15 @@ groups.list.icon.member:
 groups.list.search.no-results:
   en: No matching groups were found. Try adjusting your search query?
   sv: Inga matchande grupper hittades. Testa att justera din sökfråga?
+groups.list.stats.icon.n-direct-members:
+  en: "%{x} direct members"
+  sv: "%{x} direkta medlemmar"
+groups.list.stats.icon.n-permissions:
+  en: "%{x} permissions assigned"
+  sv: "%{x} behörigheter tilldelade"
+groups.list.stats.icon.n-total-members:
+  en: "%{x} total members"
+  sv: "Totalt %{x} medlemmar"
 groups.list.title:
   en: Groups
   sv: Grupper

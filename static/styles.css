@@ -52,6 +52,10 @@ a.material-icons:hover {
   font-weight: var(--pico-font-weight);
 }
 
+.material-icons[data-tooltip] {
+  border-bottom: none;
+}
+
 [role="button"]:has(> .material-icons),
 [type="button"]:has(> .material-icons),
 [type="reset"]:has(> .material-icons),
@@ -71,6 +75,16 @@ button {
   /* a little less padding */
   --pico-form-element-spacing-vertical: 0.5rem;
   --pico-form-element-spacing-horizontal: 0.75rem;
+}
+
+[role="button"].chip,
+button.chip {
+  /* even less padding */
+  --pico-form-element-spacing-vertical: 0.25rem;
+  --pico-form-element-spacing-horizontal: 0.5rem;
+}
+.chip:not(:first-of-type) {
+  margin-inline-start: 0.25rem;
 }
 
 article header,
