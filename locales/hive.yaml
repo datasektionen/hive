@@ -84,6 +84,15 @@ control.search:
 control.view:
   en: View
   sv: Visa
+groups.list.empty:
+  # we know it's a permissions problem because root@hive.internal always exists
+  en: >
+    You're not a member of any group.
+    If you think this is a mistake, contact a Group Manager and ask to be added
+  sv: >
+    Du är inte medlem i någon grupp.
+    Om du tror att detta är ett misstag, kontakta en Gruppansvarig och be att få
+    läggas till
 groups.list.icon.direct-member:
   en: You're a direct member of this group
   sv: Du är en direkt medlem i den här gruppen

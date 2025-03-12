@@ -80,10 +80,12 @@
         <em>
             {% if summaries.len() > 0 %}
             {{ ctx.t1("listing.n-results", summaries.len()) }}
-            {% else %}
-            {# we know this is a search problem since root@hive always exists #}
+            {% else if q.is_some() %}
             <span class="material-icons">search_off</span>
             {{ ctx.t("groups.list.search.no-results") }}
+            {% else %}
+            <span class="material-icons">block</span>
+            {{ ctx.t("groups.list.empty") }}
             {% endif %}
         </em>
     </p>
