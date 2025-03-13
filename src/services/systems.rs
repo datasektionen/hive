@@ -16,7 +16,7 @@ pub async fn ensure_exists<'x, X>(id: &str, db: X) -> AppResult<()>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
-    sqlx::query("SELECT COUNT(*) FROM systems WHERE id = $1")
+    sqlx::query("SELECT id FROM systems WHERE id = $1")
         .bind(id)
         .fetch_optional(db)
         .await?
