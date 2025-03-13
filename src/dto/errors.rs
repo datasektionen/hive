@@ -17,6 +17,8 @@ enum InnerAppErrorDto {
 
     #[serde(rename = "system.unknown")]
     NoSuchSystem { id: String },
+    #[serde(rename = "group.unknown")]
+    NoSuchGroup { id: String, domain: String },
 }
 
 impl From<AppError> for InnerAppErrorDto {
@@ -28,6 +30,7 @@ impl From<AppError> for InnerAppErrorDto {
             AppError::NotAllowed(..) => Self::NotAllowed,
             AppError::SelfPreservation => Self::SelfPreservation,
             AppError::NoSuchSystem(id) => Self::NoSuchSystem { id },
+            AppError::NoSuchGroup(id, domain) => Self::NoSuchGroup { id, domain },
         }
     }
 }

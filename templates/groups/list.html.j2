@@ -79,7 +79,7 @@
                     ({{ summary.group.localized_name(other_lang)|e|highlight(q.unwrap_or("")) }})
                 </h4>
             </hgroup>
-            <a href="/not-real" role="button" class="secondary">
+            <a href="/group/{{ summary.group.domain }}/{{ summary.group.id }}" role="button" class="secondary">
                 {{ ctx.t("control.view") }}
                 <span class="material-icons">arrow_forward</span>
             </a>

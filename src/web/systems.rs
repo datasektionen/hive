@@ -190,7 +190,7 @@ pub async fn system_details(
         perms.require(HivePermission::ManageSystem(scope)).await?;
     }
 
-    let system = systems::get_by_id(id, db.inner())
+    let system = systems::get_one(id, db.inner())
         .await?
         .ok_or_else(|| AppError::NoSuchSystem(id.to_owned()))?;
     // ^ note: there is no enumeration vulnerability in returning 404 here
@@ -287,7 +287,7 @@ pub async fn edit_system<'v>(
         // some errors are present; show the form again
         debug!("Edit system form errors: {:?}", &form.context);
 
-        let system = systems::get_by_id(id, db.inner())
+        let system = systems::get_one(id, db.inner())
             .await?
             .ok_or_else(|| AppError::NoSuchSystem(id.to_owned()))?;
 

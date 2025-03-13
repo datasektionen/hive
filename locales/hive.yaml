@@ -84,6 +84,24 @@ control.search:
 control.view:
   en: View
   sv: Visa
+groups.details.info.description:
+  en: Description (English)
+  sv: Beskrivning (svenska)
+groups.details.info.id:
+  en: Group ID
+  sv: Grupp-ID
+groups.details.info.membership.manager:
+  en: You're a Group Manager
+  sv: Du är Gruppansvarig
+groups.details.info.membership.member:
+  en: You're an ordinary member of this group
+  sv: Du är en ordinarie gruppmedlem
+groups.details.info.membership.none:
+  en: You're not a member of this group, but you can still view it
+  sv: Du är inte medlem i den här gruppen, men du kan fortfarande visa den
+groups.details.title:
+  en: "Group: %{x}"
+  sv: "Grupp: %{x}"
 groups.list.control.domain-filter.any:
   en: (Any domain)
   sv: (Alla domäner)

@@ -25,7 +25,7 @@ where
     Ok(())
 }
 
-pub async fn get_by_id<'x, X>(id: &str, db: X) -> AppResult<Option<System>>
+pub async fn get_one<'x, X>(id: &str, db: X) -> AppResult<Option<System>>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {

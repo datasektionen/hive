@@ -27,6 +27,8 @@ pub enum AppError {
 
     #[error("could not find system with ID `{0}`")]
     NoSuchSystem(String),
+    #[error("could not find group with ID `{0}@{1}`")]
+    NoSuchGroup(String, String),
 }
 
 impl AppError {
@@ -38,6 +40,7 @@ impl AppError {
             AppError::NotAllowed(..) => Status::Forbidden,
             AppError::SelfPreservation => Status::UnavailableForLegalReasons,
             AppError::NoSuchSystem(..) => Status::NotFound,
+            AppError::NoSuchGroup(..) => Status::NotFound,
         }
     }
 }

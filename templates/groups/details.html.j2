@@ -1,0 +1,73 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ ctx.t1("groups.details.title", group.localized_name(ctx.lang)) }}{% endblock title %}
+
+
+{% block heading %}
+<hgroup>
+    <h1>{{ ctx.t1("groups.details.title", group.localized_name(ctx.lang)) }}</h1>
+    {% let other_lang = ctx.lang.other() %}
+    <h3 lang="{{ other_lang }}">({{ group.localized_name(other_lang) }})</h3>
+</hgroup>
+{% endblock heading %}
+
+{% block action_buttons %}
+{% if relevance.authority == AuthorityInGroup::FullyAuthorized %}
+<button class="secondary" onclick="openModal('edit-group')">
+    <span class="material-icons">edit</span>
+    {{ ctx.t("control.edit") }}
+</button>
+{% if group.domain != "hive.internal" %}
+<button class="btn-danger" onclick="openModal('delete-group')">
+    <span class="material-icons">delete</span>
+    {{ ctx.t("control.delete") }}
+</button>
+{% endif %}
+{% endif %}
+{% endblock action_buttons %}
+
+{% block content %}
+<article>
+    {% match relevance.role %}
+    {% when Some(RoleInGroup::Manager) %}
+    <p class="primary">
+        <span class="material-icons">local_police</span>
+        {{ ctx.t("groups.details.info.membership.manager") }}
+    </p>
+    {% when Some(RoleInGroup::Member) %}
+    <p>
+        <span class="material-icons">account_circle</span>
+        {{ ctx.t("groups.details.info.membership.member") }}
+    </p>
+    {% when None %}
+    <p>
+        <span class="material-icons">block</span>
+        {{ ctx.t("groups.details.info.membership.none") }}
+    </p>
+    {% endmatch %}
+
+    <hr />
+
+    <section class="grid mb-0">
+        <div>
+            <h4>{{ ctx.t("groups.details.info.id") }}</h4>
+            <samp>
+                <strong>{{- group.id -}}</strong><span class="primary">@{{- group.domain -}}</span>
+            </samp>
+        </div>
+        <div>{# TODO: put something here, e.g. public in directory? y/n #}</div>
+    </section>
+
+    <section class="grid mb-0">
+        <div>
+            <h4>{{ ctx.t("groups.details.info.description") }}</h4>
+            {{ group.localized_description(ctx.lang) }}
+        </div>
+        {% let other_lang = ctx.lang.other() %}
+        <div lang="{{ other_lang }}" class="secondary">
+            <h4>{{ other_lang.t("groups.details.info.description") }}</h4>
+            {{ group.localized_description(other_lang) }}
+        </div>
+    </section>
+</article>
+{% endblock content %}

@@ -99,8 +99,13 @@ button.chip {
 }
 
 article header,
-article footer {
+article footer,
+.mb-0 {
   --pico-typography-spacing-vertical: 0;
+}
+
+section:last-of-type {
+  --pico-block-spacing-vertical: 0;
 }
 
 .flex-between {

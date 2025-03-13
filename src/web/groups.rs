@@ -9,16 +9,20 @@ use sqlx::PgPool;
 
 use super::{filters, RenderedTemplate};
 use crate::{
-    errors::AppResult,
+    errors::{AppError, AppResult},
     guards::{
         context::PageContext, headers::HxRequest, lang::Language, perms::PermsEvaluator, user::User,
     },
+    models::Group,
     routing::RouteTree,
-    services::groups::{self, GroupMembershipKind, GroupOverviewSummary, RoleInGroup},
+    services::groups::{
+        self, list::GroupOverviewSummary, AuthorityInGroup, GroupMembershipKind, GroupRelevance,
+        RoleInGroup,
+    },
 };
 
 pub fn routes() -> RouteTree {
-    rocket::routes![list_groups].into()
+    rocket::routes![list_groups, group_details].into()
 }
 
 #[derive(Template)]
@@ -38,6 +42,14 @@ struct PartialListGroupsView<'q> {
     ctx: PageContext,
     summaries: Vec<GroupOverviewSummary>,
     q: Option<&'q str>,
+}
+
+#[derive(Template)]
+#[template(path = "groups/details.html.j2")]
+struct GroupDetailsView {
+    ctx: PageContext,
+    group: Group,
+    relevance: GroupRelevance,
 }
 
 #[derive(FromFormField, PartialEq, Eq)]
@@ -126,7 +138,7 @@ async fn list_groups(
     let sort = sort.unwrap_or(ListGroupsSort::Name);
     let domain_filter = domain.map(str::to_lowercase);
 
-    let mut summaries = groups::list_summaries(q, domain, db.inner(), perms, &user).await?;
+    let mut summaries = groups::list::list_summaries(q, domain, db.inner(), perms, &user).await?;
 
     let mut domains: Vec<_> = summaries.iter().map(|s| s.group.domain.clone()).collect();
     domains.sort();
@@ -158,4 +170,31 @@ async fn list_groups(
 
         Ok(RawHtml(template.render()?))
     }
+}
+
+#[rocket::get("/group/<domain>/<id>")]
+async fn group_details(
+    id: &str,
+    domain: &str,
+    db: &State<PgPool>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+    user: User,
+) -> AppResult<RenderedTemplate> {
+    let group = groups::details::get_one(id, domain, db.inner())
+        .await?
+        .ok_or_else(|| AppError::NoSuchGroup(id.to_owned(), domain.to_owned()))?;
+
+    let relevance = groups::details::get_relevance(id, domain, db.inner(), perms, &user)
+        .await?
+        .ok_or_else(|| AppError::NoSuchGroup(id.to_owned(), domain.to_owned()))?;
+    // ^ technically it's a permissions problem, but this prevents enumeration
+
+    let template = GroupDetailsView {
+        ctx,
+        group,
+        relevance,
+    };
+
+    Ok(RawHtml(template.render()?))
 }
