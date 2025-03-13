@@ -51,23 +51,10 @@
     {% block inner_groups_listing %}
     {% for summary in summaries %}
     <article>
-        {% let name_primary %}
-        {% let name_secondary %}
-        {% let description %}
-        {% match ctx.lang %}
-        {% when Language::Swedish %}
-        {% let name_primary = summary.group.name_sv %}
-        {% let name_secondary = summary.group.name_en %}
-        {% let description = summary.group.description_sv %}
-        {% when Language::English %}
-        {% let name_primary = summary.group.name_en %}
-        {% let name_secondary = summary.group.name_sv %}
-        {% let description = summary.group.description_en %}
-        {% endmatch %}
         <header class="flex-between">
             <hgroup>
                 <h3>
-                    {{ name_primary|e|highlight(q.unwrap_or("")) }}
+                    {{ summary.group.localized_name(ctx.lang)|e|highlight(q.unwrap_or("")) }}
 
                     {% match summary.role %}
                     {% when Some(RoleInGroup::Manager) %}
@@ -87,14 +74,17 @@
                     </span>
                     {% endif %}
                 </h3>
-                <h4>({{ name_secondary|e|highlight(q.unwrap_or("")) }})</h4>
+                {% let other_lang = ctx.lang.other() %}
+                <h4 lang="{{ other_lang }}">
+                    ({{ summary.group.localized_name(other_lang)|e|highlight(q.unwrap_or("")) }})
+                </h4>
             </hgroup>
             <a href="/not-real" role="button" class="secondary">
                 {{ ctx.t("control.view") }}
                 <span class="material-icons">arrow_forward</span>
             </a>
         </header>
-        {{ description|e|highlight(q.unwrap_or("")) }}
+        {{ summary.group.localized_description(ctx.lang)|e|highlight(q.unwrap_or("")) }}
         <footer class="flex-between">
             <div>
                 <button class="outline secondary chip"

@@ -2,6 +2,8 @@ use chrono::{DateTime, Local};
 use sqlx::FromRow;
 use uuid::Uuid;
 
+use crate::guards::lang::Language;
+
 // this is only needed in other sqlx::Type composite type records
 #[derive(sqlx::Type)]
 #[sqlx(type_name = "slug")]
@@ -18,6 +20,22 @@ pub struct Group {
     pub name_en: String,
     pub description_sv: String,
     pub description_en: String,
+}
+
+impl Group {
+    pub fn localized_name(&self, lang: &Language) -> &str {
+        match lang {
+            Language::Swedish => &self.name_sv,
+            Language::English => &self.name_en,
+        }
+    }
+
+    pub fn localized_description(&self, lang: &Language) -> &str {
+        match lang {
+            Language::Swedish => &self.description_sv,
+            Language::English => &self.description_en,
+        }
+    }
 }
 
 #[derive(sqlx::Type)]
