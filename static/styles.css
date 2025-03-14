@@ -133,6 +133,10 @@ table tbody > .if-table-empty td .material-icons {
   vertical-align: text-bottom;
 }
 
+.multiline {
+  white-space: pre-line;
+}
+
 /* opposite of .htmx-indicator; hidden if a request is being sent */
 .htmx-anti-indicator {
   visibility: visible;
