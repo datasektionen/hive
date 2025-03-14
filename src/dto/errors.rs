@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::errors::AppError;
+use crate::{errors::AppError, services::groups::AuthorityInGroup};
 
 #[derive(Serialize)]
 #[serde(tag = "key", content = "context")]
@@ -14,6 +14,8 @@ enum InnerAppErrorDto {
 
     #[serde(rename = "forbidden")]
     NotAllowed,
+    #[serde(rename = "group.forbidden")]
+    InsufficientAuthorityInGroup { min: AuthorityInGroup },
 
     #[serde(rename = "system.unknown")]
     NoSuchSystem { id: String },
@@ -28,6 +30,9 @@ impl From<AppError> for InnerAppErrorDto {
             AppError::QueryBuildError(..) => Self::PipelineError,
             AppError::RenderError(..) => Self::PipelineError,
             AppError::NotAllowed(..) => Self::NotAllowed,
+            AppError::InsufficientAuthorityInGroup(min) => {
+                Self::InsufficientAuthorityInGroup { min }
+            }
             AppError::SelfPreservation => Self::SelfPreservation,
             AppError::NoSuchSystem(id) => Self::NoSuchSystem { id },
             AppError::NoSuchGroup(id, domain) => Self::NoSuchGroup { id, domain },

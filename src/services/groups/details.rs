@@ -1,7 +1,7 @@
 use chrono::Local;
 
 use crate::{
-    errors::AppResult,
+    errors::{AppError, AppResult},
     guards::{perms::PermsEvaluator, user::User},
     models::Group,
     perms::{GroupsScope, HivePermission, TagContent},
@@ -22,6 +22,15 @@ where
         .await?;
 
     Ok(group)
+}
+
+pub async fn require_one<'x, X>(id: &str, domain: &str, db: X) -> AppResult<Group>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+{
+    get_one(id, domain, db)
+        .await?
+        .ok_or_else(|| AppError::NoSuchGroup(id.to_owned(), domain.to_owned()))
 }
 
 pub async fn get_relevance<'x, X>(

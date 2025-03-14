@@ -3,6 +3,7 @@ use rocket::form;
 
 pub mod api_tokens;
 pub mod errors;
+pub mod groups;
 pub mod permissions;
 pub mod systems;
 

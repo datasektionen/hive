@@ -1,0 +1,25 @@
+<title hx-swap-oob="outerHTML:title">
+    {{ ctx.t1("groups.details.title", group.localized_name(ctx.lang)) }} | Hive
+</title>
+
+<hgroup hx-swap-oob="outerHTML" id="group-names">
+    <h1>{{ ctx.t1("groups.details.title", group.localized_name(ctx.lang)) }}</h1>
+    {% let other_lang = ctx.lang.other() %}
+    <h3 lang="{{ other_lang }}">({{ group.localized_name(other_lang) }})</h3>
+</hgroup>
+
+<section hx-swap-oob="outerHTML" id="group-descriptions" class="grid mb-0">
+    <div>
+        <h4>{{ ctx.t("groups.details.info.description") }}</h4>
+        {{ group.localized_description(ctx.lang) }}
+    </div>
+    {% let other_lang = ctx.lang.other() %}
+    <div lang="{{ other_lang }}" class="secondary">
+        <h4>{{ other_lang.t("groups.details.info.description") }}</h4>
+        {{ group.localized_description(other_lang) }}
+    </div>
+</section>
+
+{% include "edit.html.j2" %}
+
+<script>closeModal('edit-group')</script>

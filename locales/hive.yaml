@@ -102,6 +102,62 @@ groups.details.info.membership.none:
 groups.details.title:
   en: "Group: %{x}"
   sv: "Grupp: %{x}"
+groups.edit.title:
+  en: Edit Group Details
+  sv: Redigera Gruppdetaljer
+groups.form.field.description-en.label:
+  en: Description (English)
+  sv: Beskrivning (engelska)
+groups.form.field.description-en.placeholder:
+  en: >
+    e.g., Committee members with access to the Study Board's general resources
+    in order to work towards improving education quality.
+  sv: >
+    t.ex. Committee members with access to the Study Board's general resources
+    in order to work towards improving education quality.
+groups.form.field.description-en.tip:
+  en: A translation conveying the same information as the one above
+  sv: En översättning som förmedlar samma information som den ovan
+groups.form.field.description-sv.label:
+  en: Description (Swedish)
+  sv: Beskrivning (svenska)
+groups.form.field.description-sv.placeholder:
+  en: >
+    e.g., Nämndmedlemmar med tillgång till Studienämndens allmänna resurser
+    för att arbeta utbildningens kvalitet.
+  sv: t.ex. Nämndmedlemmar med tillgång till Studienämndens allmänna resurser
+    för att arbeta utbildningens kvalitet.
+groups.form.field.description-sv.tip:
+  en: >
+    Describe this group's purpose and members clearly. Strive for it to be
+    easily understood even by people not familiar with the group.
+  sv: >
+    Beskriv denna grupps syfte och medlemmar tydligt. Sträva efter att det ska
+    vara lätt att förstå även av personer som inte är bekanta med gruppen.
+groups.form.field.domain.label:
+  en: Domain
+  sv: Domän
+groups.form.field.id.label:
+  en: Group ID
+  sv: Grupp-ID
+groups.form.field.name-en.label:
+  en: Name (English)
+  sv: Namn (engelska)
+groups.form.field.name-en.placeholder:
+  en: e.g., Study Board
+  sv: t.ex. Study Board
+groups.form.field.name-en.tip:
+  en: An appropriate and recognizable translation
+  sv: En lämplig och igenkännbar översättning
+groups.form.field.name-sv.label:
+  en: Name (Swedish)
+  sv: Namn (svenska)
+groups.form.field.name-sv.placeholder:
+  en: e.g., Studienämnden
+  sv: t.ex. Studienämnden
+groups.form.field.name-sv.tip:
+  en: Choose something clear and concise
+  sv: Välj något tydligt och koncist
 groups.list.control.domain-filter.any:
   en: (Any domain)
   sv: (Alla domäner)

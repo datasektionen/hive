@@ -2,9 +2,8 @@
 
 {% block title %}{{ ctx.t1("groups.details.title", group.localized_name(ctx.lang)) }}{% endblock title %}
 
-
 {% block heading %}
-<hgroup>
+<hgroup id="group-names">
     <h1>{{ ctx.t1("groups.details.title", group.localized_name(ctx.lang)) }}</h1>
     {% let other_lang = ctx.lang.other() %}
     <h3 lang="{{ other_lang }}">({{ group.localized_name(other_lang) }})</h3>
@@ -58,7 +57,7 @@
         <div>{# TODO: put something here, e.g. public in directory? y/n #}</div>
     </section>
 
-    <section class="grid mb-0">
+    <section id="group-descriptions" class="grid mb-0">
         <div>
             <h4>{{ ctx.t("groups.details.info.description") }}</h4>
             {{ group.localized_description(ctx.lang) }}
@@ -70,4 +69,6 @@
         </div>
     </section>
 </article>
+
+{% include "edit.html.j2" %}
 {% endblock content %}

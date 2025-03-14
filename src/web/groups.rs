@@ -3,12 +3,19 @@ use std::{
     fmt,
 };
 
+use log::*;
 use rinja::Template;
-use rocket::{form::FromFormField, response::content::RawHtml, State};
+use rocket::{
+    form::{self, Contextual, Form, FromFormField},
+    http::Header,
+    response::{content::RawHtml, Redirect},
+    uri, Responder, State,
+};
 use sqlx::PgPool;
 
 use super::{filters, RenderedTemplate};
 use crate::{
+    dto::groups::EditGroupDto,
     errors::{AppError, AppResult},
     guards::{
         context::PageContext, headers::HxRequest, lang::Language, perms::PermsEvaluator, user::User,
@@ -22,7 +29,7 @@ use crate::{
 };
 
 pub fn routes() -> RouteTree {
-    rocket::routes![list_groups, group_details].into()
+    rocket::routes![list_groups, group_details, edit_group].into()
 }
 
 #[derive(Template)]
@@ -46,10 +53,29 @@ struct PartialListGroupsView<'q> {
 
 #[derive(Template)]
 #[template(path = "groups/details.html.j2")]
-struct GroupDetailsView {
+struct GroupDetailsView<'f, 'v> {
     ctx: PageContext,
     group: Group,
     relevance: GroupRelevance,
+    edit_form: &'f form::Context<'v>,
+    edit_modal_open: bool,
+}
+
+#[derive(Template)]
+#[template(path = "groups/edit.html.j2", block = "inner_edit_form")]
+struct PartialEditGroupView<'f, 'v> {
+    ctx: PageContext,
+    group: Group,
+    edit_form: &'f form::Context<'v>,
+}
+
+#[derive(Template)]
+#[template(path = "groups/edited.html.j2")]
+struct GroupEditedView<'f, 'v> {
+    ctx: PageContext,
+    group: Group,
+    edit_form: &'f form::Context<'v>,
+    edit_modal_open: bool,
 }
 
 #[derive(FromFormField, PartialEq, Eq)]
@@ -181,9 +207,7 @@ async fn group_details(
     perms: &PermsEvaluator,
     user: User,
 ) -> AppResult<RenderedTemplate> {
-    let group = groups::details::get_one(id, domain, db.inner())
-        .await?
-        .ok_or_else(|| AppError::NoSuchGroup(id.to_owned(), domain.to_owned()))?;
+    let group = groups::details::require_one(id, domain, db.inner()).await?;
 
     let relevance = groups::details::get_relevance(id, domain, db.inner(), perms, &user)
         .await?
@@ -194,7 +218,96 @@ async fn group_details(
         ctx,
         group,
         relevance,
+        edit_form: &form::Context::default(),
+        edit_modal_open: false,
     };
 
     Ok(RawHtml(template.render()?))
+}
+
+#[derive(Responder)]
+pub enum EditGroupResponse {
+    SuccessPartial(RenderedTemplate, Header<'static>, Header<'static>),
+    SuccessFullPage(Redirect),
+    Invalid(RenderedTemplate),
+}
+
+#[rocket::patch("/group/<domain>/<id>", data = "<form>")]
+#[allow(clippy::too_many_arguments)]
+pub async fn edit_group<'v>(
+    id: &str,
+    domain: &str,
+    form: Form<Contextual<'v, EditGroupDto<'v>>>,
+    db: &State<PgPool>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<EditGroupResponse> {
+    let relevance = groups::details::get_relevance(id, domain, db.inner(), perms, &user)
+        .await?
+        .ok_or_else(|| AppError::NoSuchGroup(id.to_owned(), domain.to_owned()))?;
+    // ^ technically it's a permissions problem, but this prevents enumeration
+
+    relevance
+        .authority
+        .require(AuthorityInGroup::FullyAuthorized)?;
+
+    // TODO: anti-CSRF
+
+    if let Some(dto) = &form.value {
+        // validation passed
+
+        groups::management::update(id, domain, dto, db.inner(), &user).await?;
+
+        if partial.is_some() {
+            let template = GroupEditedView {
+                ctx,
+                group: Group {
+                    id: id.to_owned(),
+                    domain: domain.to_owned(),
+                    name_sv: dto.name_sv.to_owned(),
+                    name_en: dto.name_en.to_owned(),
+                    description_sv: dto.description_sv.to_owned(),
+                    description_en: dto.description_en.to_owned(),
+                },
+                edit_form: &form::Context::default(),
+                edit_modal_open: false,
+            };
+
+            Ok(EditGroupResponse::SuccessPartial(
+                RawHtml(template.render()?),
+                Header::new("HX-Retarget", "#edit-group"),
+                Header::new("HX-Reswap", "outerHTML"),
+            ))
+        } else {
+            let target = uri!(group_details(id = id, domain = domain));
+            Ok(EditGroupResponse::SuccessFullPage(Redirect::to(target)))
+        }
+    } else {
+        // some errors are present; show the form again
+        debug!("Edit group form errors: {:?}", &form.context);
+
+        let group = groups::details::require_one(id, domain, db.inner()).await?;
+
+        if partial.is_some() {
+            let template = PartialEditGroupView {
+                ctx,
+                group,
+                edit_form: &form.context,
+            };
+
+            Ok(EditGroupResponse::Invalid(RawHtml(template.render()?)))
+        } else {
+            let template = GroupDetailsView {
+                ctx,
+                group,
+                relevance,
+                edit_form: &form.context,
+                edit_modal_open: true,
+            };
+
+            Ok(EditGroupResponse::Invalid(RawHtml(template.render()?)))
+        }
+    }
 }

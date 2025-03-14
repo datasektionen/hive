@@ -7,7 +7,7 @@ use rocket::{
     Request, Response,
 };
 
-use crate::{dto::errors::AppErrorDto, perms::HivePermission};
+use crate::{dto::errors::AppErrorDto, perms::HivePermission, services::groups::AuthorityInGroup};
 
 pub type AppResult<T> = Result<T, AppError>;
 
@@ -22,6 +22,8 @@ pub enum AppError {
 
     #[error("user lacks permissions to perform action (minimum needed: {0})")]
     NotAllowed(HivePermission),
+    #[error("user lacks necessary authority in group (minimum needed: {0:?}")]
+    InsufficientAuthorityInGroup(AuthorityInGroup),
     #[error("action disallowed because it compromises system integrity")]
     SelfPreservation,
 
@@ -38,6 +40,7 @@ impl AppError {
             AppError::QueryBuildError(..) => Status::InternalServerError,
             AppError::RenderError(..) => Status::InternalServerError,
             AppError::NotAllowed(..) => Status::Forbidden,
+            AppError::InsufficientAuthorityInGroup(..) => Status::Forbidden,
             AppError::SelfPreservation => Status::UnavailableForLegalReasons,
             AppError::NoSuchSystem(..) => Status::NotFound,
             AppError::NoSuchGroup(..) => Status::NotFound,

@@ -1,12 +1,17 @@
+{% macro field_validation(form, name) -%}
+{%- if form.field_errors(name).next().is_some() -%}
+aria-invalid="true"
+{%- else if form.field_value(name).is_some() -%}
+aria-invalid="false"
+{%- endif -%}
+{%- endmacro field_validation %}
+
+
 {% macro field_with_default(form, name, default) -%}
 name="{{ name }}"
 {%- let value = form.field_value(name) -%}
 value='{{ value.unwrap_or(default) }}'
-{%- if form.field_errors(name).next().is_some() -%}
-aria-invalid="true"
-{%- else if value.is_some() -%}
-aria-invalid="false"
-{%- endif -%}
+{%- call field_validation(form, name) -%}
 {%- endmacro field_with_default %}
 
 
