@@ -1,0 +1,23 @@
+{%- import "utils.html.j2" as utils -%}
+
+<dialog id="delete-group">
+    <article>
+        <h2>{{ ctx.t("groups.delete.title") }}</h2>
+        <p>{{ ctx.t1("groups.delete.description", group.key())|safe }}</p>
+        {# input must be in a form to trigger browser validation #}
+        <form id="delete-group-confirmation-form" onsubmit="event.preventDefault()">
+            <input placeholder='{{ ctx.t("groups.delete.confirmation.placeholder") }}' required
+                pattern='{{ group.key().replace(".", "\\.") }}' />
+        </form>
+        <footer>
+            <button form="delete-group-confirmation-form" type="reset" class="secondary"
+                onclick="closeModal('delete-group')">
+                {{ ctx.t("control.cancel") }}
+            </button>
+            <button form="delete-group-confirmation-form" data-require-validity class="btn-danger"
+                hx-delete="/group/{{ group.domain }}/{{ group.id }}">
+                {{ ctx.t("control.delete") }}
+            </button>
+        </footer>
+    </article>
+</dialog>

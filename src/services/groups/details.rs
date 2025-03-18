@@ -42,6 +42,21 @@ pub async fn get_relevance<'x, X>(
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres> + Copy,
 {
+    let role = get_role_in_group(&user.username, id, domain, db).await?;
+    let authority = get_authority(id, domain, db, perms).await?;
+
+    Ok(GroupRelevance::new(role, authority))
+}
+
+pub async fn get_authority<'x, X>(
+    id: &str,
+    domain: &str,
+    db: X,
+    perms: &PermsEvaluator,
+) -> AppResult<AuthorityInGroup>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres> + Copy,
+{
     let mut authority = AuthorityInGroup::None;
 
     try_authority_from_permissions(
@@ -66,10 +81,7 @@ where
     )
     .await?;
 
-    Ok(GroupRelevance::new(
-        get_role_in_group(&user.username, id, domain, db).await?,
-        authority,
-    ))
+    Ok(authority)
 }
 
 async fn try_authority_from_permissions<'x, X>(

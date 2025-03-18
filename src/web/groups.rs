@@ -9,11 +9,11 @@ use rocket::{
     form::{self, Contextual, Form, FromFormField},
     http::Header,
     response::{content::RawHtml, Redirect},
-    uri, Responder, State,
+    uri, Responder, State, UriDisplayQuery,
 };
 use sqlx::PgPool;
 
-use super::{filters, RenderedTemplate};
+use super::{filters, GracefulRedirect, RenderedTemplate};
 use crate::{
     dto::groups::EditGroupDto,
     errors::{AppError, AppResult},
@@ -29,7 +29,7 @@ use crate::{
 };
 
 pub fn routes() -> RouteTree {
-    rocket::routes![list_groups, group_details, edit_group].into()
+    rocket::routes![list_groups, group_details, delete_group, edit_group].into()
 }
 
 #[derive(Template)]
@@ -78,8 +78,9 @@ struct GroupEditedView<'f, 'v> {
     edit_modal_open: bool,
 }
 
-#[derive(FromFormField, PartialEq, Eq)]
+#[derive(FromFormField, UriDisplayQuery, PartialEq, Eq, Default)]
 enum ListGroupsSort {
+    #[default]
     Name,
     Id,
     Domain,
@@ -161,7 +162,7 @@ async fn list_groups(
     user: User,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<RenderedTemplate> {
-    let sort = sort.unwrap_or(ListGroupsSort::Name);
+    let sort = sort.unwrap_or_default();
     let domain_filter = domain.map(str::to_lowercase);
 
     let mut summaries = groups::list::list_summaries(q, domain, db.inner(), perms, &user).await?;
@@ -223,6 +224,34 @@ async fn group_details(
     };
 
     Ok(RawHtml(template.render()?))
+}
+
+#[rocket::delete("/group/<domain>/<id>")]
+pub async fn delete_group(
+    id: &str,
+    domain: &str,
+    db: &State<PgPool>,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<GracefulRedirect> {
+    groups::details::get_authority(id, domain, db.inner(), perms)
+        .await?
+        .require(AuthorityInGroup::FullyAuthorized)?;
+
+    // TODO: anti-CSRF(?), DELETE isn't a normal form method
+
+    groups::management::delete(id, domain, db.inner(), &user).await?;
+
+    // TODO: show visual confirmation of successful delete in groups list
+    Ok(GracefulRedirect::to(
+        uri!(list_groups(
+            None::<&str>,
+            None::<ListGroupsSort>,
+            None::<&str>
+        )),
+        partial.is_some(),
+    ))
 }
 
 #[derive(Responder)]

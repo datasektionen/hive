@@ -23,6 +23,10 @@ pub struct Group {
 }
 
 impl Group {
+    pub fn key(&self) -> String {
+        format!("{}@{}", self.id, self.domain)
+    }
+
     pub fn localized_name(&self, lang: &Language) -> &str {
         match lang {
             Language::Swedish => &self.name_sv,

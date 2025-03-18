@@ -84,6 +84,27 @@ control.search:
 control.view:
   en: View
   sv: Visa
+groups.delete.title:
+  en: Delete Group
+  sv: Radera grupp
+groups.delete.description:
+  en: >
+    This will <strong>permanently and irrecoverably</strong> delete
+    group <strong><samp>%{x}</samp>!</strong>
+    All associated details such as membership information and
+    assigned permissions will also be deleted.
+    <em>Please confirm your intentions by typing the group's ID and
+    domain below.</em>
+  sv: >
+    Detta kommer att <strong>permanent och oåterkalleligt</strong>
+    ta bort system <strong><samp>%{x}</samp>!</strong>
+    Alla associerade detaljer som medlemsinformation och tilldelade
+    behörigheter kommer också att raderas.
+    <em>Vänligen bekräfta dina avsikter genom att skriva in gruppens
+    ID och domän nedan.</em>
+groups.delete.confirmation.placeholder:
+  en: id@domain
+  sv: id@domän
 groups.details.info.description:
   en: Description (English)
   sv: Beskrivning (svenska)
@@ -307,14 +328,14 @@ systems.delete.title:
 systems.delete.description:
   en: >
     This will <strong>permanently and irrecoverably</strong> delete
-    system <strong><samp>%{x}</samp></strong>!
+    system <strong><samp>%{x}</samp>!</strong>
     All associated items such as API tokens, tags, and permissions
     will also be deleted.
     <em>Please confirm your intentions by typing the system's ID
     below.</em>
   sv: >
     Detta kommer att <strong>permanent och oåterkalleligt</strong>
-    ta bort system <strong><samp>%{x}</samp></strong>!
+    ta bort system <strong><samp>%{x}</samp>!</strong>
     Alla associerade objekt som API-tokens, taggar och behörigheter
     kommer också att raderas.
     <em>Vänligen bekräfta dina avsikter genom att skriva in systemets

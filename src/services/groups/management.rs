@@ -1,12 +1,57 @@
 use std::collections::HashMap;
 
+use log::*;
+use serde_json::json;
+
 use crate::{
     dto::groups::EditGroupDto,
-    errors::AppResult,
+    errors::{AppError, AppResult},
     guards::user::User,
-    models::{ActionKind, TargetKind},
+    models::{ActionKind, Group, TargetKind},
     services::{audit_log_details_for_update, audit_logs, update_if_changed},
+    HIVE_INTERNAL_DOMAIN,
 };
+
+pub async fn delete<'x, X>(id: &str, domain: &str, db: X, user: &User) -> AppResult<()>
+where
+    X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
+{
+    if domain == HIVE_INTERNAL_DOMAIN {
+        // shouldn't delete our own system-critical internal groups
+        warn!("Disallowing internal group deletion from {}", user.username);
+        return Err(AppError::SelfPreservation);
+    }
+
+    let mut txn = db.begin().await?;
+
+    let old: Group = sqlx::query_as("DELETE FROM groups WHERE id = $1 AND domain = $2 RETURNING *")
+        .bind(id)
+        .bind(domain)
+        .fetch_optional(&mut *txn)
+        .await?
+        .ok_or_else(|| AppError::NoSuchGroup(id.to_owned(), domain.to_owned()))?;
+
+    audit_logs::add_entry(
+        ActionKind::Delete,
+        TargetKind::Group,
+        old.key(),
+        &user.username,
+        json!({
+            "old": {
+                "name_sv": old.name_sv,
+                "name_en": old.name_en,
+                "description_sv": old.description_sv,
+                "description_en": old.description_en,
+            }
+        }),
+        &mut *txn,
+    )
+    .await?;
+
+    txn.commit().await?;
+
+    Ok(())
+}
 
 pub async fn update<'v, 'x, X>(
     id: &str,
@@ -21,6 +66,7 @@ where
     let mut txn = db.begin().await?;
 
     let old = super::details::require_one(id, domain, &mut *txn).await?;
+    let key = old.key();
 
     let mut query = sqlx::QueryBuilder::new("UPDATE groups SET");
     let mut changed = HashMap::new();
@@ -43,7 +89,7 @@ where
         audit_logs::add_entry(
             ActionKind::Update,
             TargetKind::Group,
-            format!("{id}@{domain}"),
+            key,
             &user.username,
             audit_log_details_for_update!(changed),
             &mut *txn,

@@ -16,7 +16,7 @@
     <span class="material-icons">edit</span>
     {{ ctx.t("control.edit") }}
 </button>
-{% if group.domain != "hive.internal" %}
+{% if group.domain != crate::HIVE_INTERNAL_DOMAIN %}
 <button class="btn-danger" onclick="openModal('delete-group')">
     <span class="material-icons">delete</span>
     {{ ctx.t("control.delete") }}
@@ -71,4 +71,5 @@
 </article>
 
 {% include "edit.html.j2" %}
+{% include "delete.html.j2" %}
 {% endblock content %}
