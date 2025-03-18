@@ -55,6 +55,7 @@
 .material-icons {
   vertical-align: middle;
   color: var(--pico-color);
+  cursor: default;
 }
 
 a.material-icons:hover {
