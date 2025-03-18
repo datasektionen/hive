@@ -43,12 +43,19 @@ where
     X: sqlx::Executor<'x, Database = sqlx::Postgres> + Copy,
 {
     let role = get_role_in_group(&user.username, id, domain, db).await?;
-    let authority = get_authority(id, domain, db, perms).await?;
+    let mut authority = get_authority_from_permissions(id, domain, db, perms).await?;
+
+    if let Some(RoleInGroup::Manager) = role {
+        if authority < AuthorityInGroup::ManageMembers {
+            authority = AuthorityInGroup::ManageMembers;
+        }
+    }
 
     Ok(GroupRelevance::new(role, authority))
 }
 
-pub async fn get_authority<'x, X>(
+// does not take group role into account
+async fn get_authority_from_permissions<'x, X>(
     id: &str,
     domain: &str,
     db: X,

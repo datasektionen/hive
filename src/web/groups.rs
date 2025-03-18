@@ -235,8 +235,10 @@ pub async fn delete_group(
     user: User,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<GracefulRedirect> {
-    groups::details::get_authority(id, domain, db.inner(), perms)
+    groups::details::get_relevance(id, domain, db.inner(), perms, &user)
         .await?
+        .map(|r| r.authority)
+        .unwrap_or(AuthorityInGroup::None)
         .require(AuthorityInGroup::FullyAuthorized)?;
 
     // TODO: anti-CSRF(?), DELETE isn't a normal form method
