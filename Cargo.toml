@@ -9,7 +9,6 @@ license = "MIT"
 publish = false
 
 [dependencies]
-anyhow = "1.0.96"
 chrono = { version = "0.4.39", features = ["serde"] }
 clap = { version = "4.5.30", features = ["derive"] }
 figment = { version = "0.10.19", features = ["env", "toml"] }

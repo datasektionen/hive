@@ -1,4 +1,4 @@
-use std::path;
+use std::{io, path};
 
 use clap::ValueEnum;
 use log::*;
@@ -28,7 +28,15 @@ impl From<Verbosity> for LevelFilter {
     }
 }
 
-pub fn init_logger(verbosity: Verbosity, log_file: &path::Path) -> anyhow::Result<()> {
+#[derive(thiserror::Error, Debug)]
+pub enum InitLoggerError {
+    #[error("failed to open log file: {0}")]
+    OpenLogFile(#[from] io::Error),
+    #[error("failed to set logger (another logger has already been registered): {0}")]
+    SetLog(#[from] log::SetLoggerError),
+}
+
+pub fn init_logger(verbosity: Verbosity, log_file: &path::Path) -> Result<(), InitLoggerError> {
     let level_filter: LevelFilter = verbosity.into();
 
     simplelog::CombinedLogger::init(vec![
