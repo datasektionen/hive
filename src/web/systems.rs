@@ -145,7 +145,7 @@ async fn create_system<'v>(
         systems::create_new(dto, db.inner(), &user).await?;
 
         Ok(Either::Right(GracefulRedirect::to(
-            uri!(system_details(dto.id)),
+            uri!(system_details(*dto.id)),
             partial.is_some(),
         )))
     } else {
@@ -268,7 +268,7 @@ pub async fn edit_system<'v>(
                 ctx,
                 system: System {
                     id: id.to_owned(),
-                    description: dto.description.to_owned(),
+                    description: dto.description.to_string(),
                 },
                 edit_form: &form::Context::default(),
                 edit_modal_open: false,

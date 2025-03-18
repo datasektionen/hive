@@ -7,6 +7,8 @@ use rocket::{
 };
 use serde::Serialize;
 
+use super::TrimmedStr;
+
 // `input type="datetime-local"` accepts this format exactly,
 // with absolutely no room for variation, per MDN
 const BROWSER_DATE_TIME_FORMAT: &str = "%Y-%m-%dT%H:%M";
@@ -43,7 +45,7 @@ impl<'f> form::FromFormField<'f> for BrowserDateTime {
 #[derive(FromForm)]
 pub struct CreateApiTokenDto<'v> {
     #[field(validate = len(3..))]
-    pub description: &'v str,
+    pub description: TrimmedStr<'v>,
     // cannot validate here; errors (lifetimes/borrow checker)
     pub expiration: Option<BrowserDateTime>,
 }

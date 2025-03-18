@@ -23,7 +23,7 @@ macro_rules! pg_args {
 
 macro_rules! update_if_changed {
     ($map:expr, $query:expr, $prop:ident, $old:expr, $new:expr) => {
-        if $old.$prop != $new.$prop {
+        if $old.$prop != *$new.$prop {
             if !$map.is_empty() {
                 $query.push(", ");
             }

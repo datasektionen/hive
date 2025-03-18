@@ -162,7 +162,7 @@ where
     .await?
     .ok_or_else(|| AppError::NoSuchSystem(id.to_owned()))?;
 
-    if dto.description != old_description {
+    if *dto.description != old_description {
         audit_logs::add_entry(
             ActionKind::Update,
             TargetKind::System,
