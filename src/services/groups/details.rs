@@ -1,5 +1,6 @@
 use chrono::Local;
 
+use super::{GroupRelevance, RoleInGroup};
 use crate::{
     errors::{AppError, AppResult},
     guards::{perms::PermsEvaluator, user::User},
@@ -8,8 +9,6 @@ use crate::{
     services::{groups::AuthorityInGroup, pg_args},
     HIVE_SYSTEM_ID,
 };
-
-use super::{GroupRelevance, RoleInGroup};
 
 pub async fn get_one<'x, X>(id: &str, domain: &str, db: X) -> AppResult<Option<Group>>
 where

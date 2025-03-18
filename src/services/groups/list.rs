@@ -4,6 +4,7 @@ use chrono::{Local, NaiveDate};
 use rocket::futures::TryStreamExt;
 use sqlx::{FromRow, Row};
 
+use super::{GroupMembershipKind, RoleInGroup};
 use crate::{
     errors::AppResult,
     guards::{perms::PermsEvaluator, user::User},
@@ -13,8 +14,6 @@ use crate::{
     services::pg_args,
     HIVE_SYSTEM_ID,
 };
-
-use super::{GroupMembershipKind, RoleInGroup};
 
 pub struct GroupOverviewSummary {
     pub group: Group,
