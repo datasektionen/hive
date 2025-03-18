@@ -1,10 +1,12 @@
 use chrono::Local;
+use rocket::futures::TryStreamExt;
+use sqlx::Row;
 
 use super::{GroupRelevance, RoleInGroup};
 use crate::{
     errors::{AppError, AppResult},
     guards::{perms::PermsEvaluator, user::User},
-    models::Group,
+    models::{Group, GroupRef},
     perms::{GroupsScope, HivePermission, TagContent},
     services::{groups::AuthorityInGroup, pg_args},
     HIVE_SYSTEM_ID,
@@ -42,16 +44,28 @@ pub async fn get_relevance<'x, X>(
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres> + Copy,
 {
+    let (role, path) = get_role_in_group_with_paths(&user.username, id, domain, db).await?;
+
+    let authority = get_authority_from_permissions(id, domain, db, perms).await? + &role;
+
+    Ok(GroupRelevance::new(role, authority, path))
+}
+
+pub async fn require_authority<'x, X>(
+    min: AuthorityInGroup,
+    id: &str,
+    domain: &str,
+    db: X,
+    perms: &PermsEvaluator,
+    user: &User,
+) -> AppResult<()>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres> + Copy,
+{
     let role = get_role_in_group(&user.username, id, domain, db).await?;
-    let mut authority = get_authority_from_permissions(id, domain, db, perms).await?;
+    let authority = get_authority_from_permissions(id, domain, db, perms).await? + &role;
 
-    if let Some(RoleInGroup::Manager) = role {
-        if authority < AuthorityInGroup::ManageMembers {
-            authority = AuthorityInGroup::ManageMembers;
-        }
-    }
-
-    Ok(GroupRelevance::new(role, authority))
+    authority.require(min)
 }
 
 // does not take group role into account
@@ -216,4 +230,45 @@ where
     };
 
     Ok(role)
+}
+
+async fn get_role_in_group_with_paths<'x, X>(
+    username: &str,
+    id: &str,
+    domain: &str,
+    db: X,
+) -> AppResult<(Option<RoleInGroup>, Vec<Vec<GroupRef>>)>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+{
+    let today = Local::now().date_naive();
+
+    let mut result = sqlx::query(
+        "SELECT manager, trim_array(path, 1) AS path
+        FROM all_members_of($1, $2, $3)
+        WHERE username = $4
+        ORDER BY manager DESC", // DESC makes true come first
+    )
+    .bind(id)
+    .bind(domain)
+    .bind(today)
+    .bind(username)
+    .fetch(db);
+
+    let mut role = None;
+    let mut paths = vec![];
+
+    while let Some(row) = result.try_next().await? {
+        if row.try_get("manager")? {
+            role = Some(RoleInGroup::Manager);
+        } else if role.is_none() {
+            role = Some(RoleInGroup::Member);
+        }
+
+        let mut path: Vec<GroupRef> = row.try_get("path")?;
+        path.reverse();
+        paths.push(path);
+    }
+
+    Ok((role, paths))
 }

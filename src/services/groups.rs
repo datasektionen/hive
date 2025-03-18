@@ -1,6 +1,11 @@
+use std::ops::Add;
+
 use serde::Serialize;
 
-use crate::errors::{AppError, AppResult};
+use crate::{
+    errors::{AppError, AppResult},
+    models::GroupRef,
+};
 
 pub mod details;
 pub mod list;
@@ -34,17 +39,51 @@ impl AuthorityInGroup {
     }
 }
 
+impl Add<&Option<RoleInGroup>> for AuthorityInGroup {
+    type Output = Self;
+
+    fn add(self, role: &Option<RoleInGroup>) -> Self::Output {
+        if let Some(RoleInGroup::Manager) = role {
+            self.max(AuthorityInGroup::ManageMembers)
+        } else {
+            self
+        }
+    }
+}
+
 pub struct GroupRelevance {
     pub role: Option<RoleInGroup>,
     pub authority: AuthorityInGroup,
+    pub paths: Vec<Vec<GroupRef>>, // empty => not indirect member (but not <=!)
+    pub is_direct_member: bool,    // false doesn't mean indirect! might be none
 }
 
 impl GroupRelevance {
-    pub fn new(role: Option<RoleInGroup>, authority: AuthorityInGroup) -> Option<Self> {
+    pub fn new(
+        role: Option<RoleInGroup>,
+        authority: AuthorityInGroup,
+        mut paths: Vec<Vec<GroupRef>>,
+    ) -> Option<Self> {
         if role.is_none() && authority == AuthorityInGroup::None {
             None
         } else {
-            Some(Self { role, authority })
+            let mut is_direct_member = false;
+            paths.retain(|path| {
+                if path.is_empty() {
+                    is_direct_member = true;
+
+                    false
+                } else {
+                    true
+                }
+            });
+
+            Some(Self {
+                role,
+                authority,
+                paths,
+                is_direct_member,
+            })
         }
     }
 }

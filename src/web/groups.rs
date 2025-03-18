@@ -235,11 +235,15 @@ pub async fn delete_group(
     user: User,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<GracefulRedirect> {
-    groups::details::get_relevance(id, domain, db.inner(), perms, &user)
-        .await?
-        .map(|r| r.authority)
-        .unwrap_or(AuthorityInGroup::None)
-        .require(AuthorityInGroup::FullyAuthorized)?;
+    groups::details::require_authority(
+        AuthorityInGroup::FullyAuthorized,
+        id,
+        domain,
+        db.inner(),
+        perms,
+        &user,
+    )
+    .await?;
 
     // TODO: anti-CSRF(?), DELETE isn't a normal form method
 
@@ -275,14 +279,15 @@ pub async fn edit_group<'v>(
     user: User,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<EditGroupResponse> {
-    let relevance = groups::details::get_relevance(id, domain, db.inner(), perms, &user)
-        .await?
-        .ok_or_else(|| AppError::NoSuchGroup(id.to_owned(), domain.to_owned()))?;
-    // ^ technically it's a permissions problem, but this prevents enumeration
-
-    relevance
-        .authority
-        .require(AuthorityInGroup::FullyAuthorized)?;
+    groups::details::require_authority(
+        AuthorityInGroup::FullyAuthorized,
+        id,
+        domain,
+        db.inner(),
+        perms,
+        &user,
+    )
+    .await?;
 
     // TODO: anti-CSRF
 
@@ -330,6 +335,10 @@ pub async fn edit_group<'v>(
 
             Ok(EditGroupResponse::Invalid(RawHtml(template.render()?)))
         } else {
+            let relevance = groups::details::get_relevance(id, domain, db.inner(), perms, &user)
+                .await?
+                .ok_or_else(|| AppError::NoSuchGroup(id.to_owned(), domain.to_owned()))?;
+
             let template = GroupDetailsView {
                 ctx,
                 group,

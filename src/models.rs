@@ -1,16 +1,31 @@
+use std::fmt;
+
 use chrono::{DateTime, Local};
 use sqlx::FromRow;
 use uuid::Uuid;
 
 use crate::guards::lang::Language;
 
-// this is only needed in other sqlx::Type composite type records
+// these are only needed in other sqlx::Type composite type records
 #[derive(sqlx::Type)]
 #[sqlx(type_name = "slug")]
 pub struct Slug(String);
+
+impl fmt::Display for Slug {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 #[derive(sqlx::Type)]
 #[sqlx(type_name = "domain")]
 pub struct Domain(String);
+
+impl fmt::Display for Domain {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 #[derive(FromRow)]
 pub struct Group {

@@ -45,6 +45,37 @@
     </p>
     {% endmatch %}
 
+    {% if relevance.role.is_some() %}
+    <hr />
+
+    <ul class="collapse-if-single less-padding">
+        {% if relevance.is_direct_member %}
+        <li>
+            {{ ctx.t("groups.details.info.membership.direct") }}
+            <span class="material-icons">verified_user</span>
+        </li>
+        {% endif %}
+
+        {% if !relevance.paths.is_empty() %}
+        <li>{{ ctx.t("groups.details.info.membership.indirect") }}
+            <ul class="collapse-if-single">
+                {% for path in relevance.paths %}
+                <li>
+                    {% for node in path %}
+                    <a href="/group/{{ node.group_domain }}/{{ node.group_id }}" class="secondary">
+                        <samp><strong>{{ node.group_id }}</strong>@{{ node.group_domain }}</samp></a>
+                    {% if !loop.last %}
+                    &gt;
+                    {% endif %}
+                    {% endfor %}
+                </li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% endif %}
+    </ul>
+    {% endif %}
+
     <hr />
 
     <section class="grid mb-0">

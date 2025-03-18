@@ -111,6 +111,12 @@ groups.details.info.description:
 groups.details.info.id:
   en: Group ID
   sv: Grupp-ID
+groups.details.info.membership.indirect:
+  en: "You're an indirect member of this group via:"
+  sv: "Du är en indirekt medlem i den här gruppen via:"
+groups.details.info.membership.direct:
+  en: You're a direct member of this group
+  sv: Du är en indirekt medlem i den här gruppen
 groups.details.info.membership.manager:
   en: You're a Group Manager
   sv: Du är Gruppansvarig

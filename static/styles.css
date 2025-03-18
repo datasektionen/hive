@@ -137,6 +137,23 @@ table tbody > .if-table-empty td .material-icons {
   white-space: pre-line;
 }
 
+ul.less-padding {
+  /* can't be an inline style or it'd have highest priority; no overriding */
+  padding-inline-start: 25px; /* browser default is 50px */
+}
+
+ul.collapse-if-single > li:only-child {
+  list-style-type: none;
+}
+ul.collapse-if-single:has(> li:only-child) {
+  display: inline-block;
+  margin-bottom: 0;
+  padding-inline-start: 0;
+}
+ul.collapse-if-single:has(> li:only-child) ul.collapse-if-single {
+  margin-bottom: 0;
+}
+
 /* opposite of .htmx-indicator; hidden if a request is being sent */
 .htmx-anti-indicator {
   visibility: visible;
