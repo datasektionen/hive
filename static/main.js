@@ -35,14 +35,26 @@ function openModal(id) {
   if (scrollbarWidth) {
     html.style.setProperty("--pico-scrollbar-width", `${scrollbarWidth}px`);
   }
-  html.classList.add("modal-is-open", "modal-is-opening");
-  setTimeout(() => html.classList.remove("modal-is-opening"), 300);
+
+  // only animate background if no other dialog is already open
+  if (!document.querySelector("dialog[open]")) {
+    html.classList.add("modal-is-open", "modal-is-opening");
+    setTimeout(() => html.classList.remove("modal-is-opening"), 300);
+  }
+
   modal.showModal();
 }
 
 function closeModal(id) {
   const modal = document.getElementById(id);
   const html = document.documentElement;
+
+  // only animate if this was the only dialog open
+  if (document.querySelectorAll("dialog[open]").length > 1) {
+    modal.close();
+    return;
+  }
+
   html.classList.add("modal-is-closing");
   setTimeout(() => {
     html.classList.remove("modal-is-closing", "modal-is-open");
