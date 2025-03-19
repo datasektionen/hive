@@ -7,9 +7,11 @@
 
 {% block api_token_created_partial %}
 <template>
-    <tr hx-swap-oob="beforeend:#api-tokens-table tbody">
-        {% include "row-cells.html.j2" %}
-    </tr>
+    <tbody hx-swap-oob="beforeend:#api-tokens-table tbody">
+        <tr>
+            {% include "row-cells.html.j2" %}
+        </tr>
+    </tbody>
 </template>
 
 <div hx-swap-oob="outerHTML:#create-api-token-form">

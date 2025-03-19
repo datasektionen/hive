@@ -7,10 +7,12 @@
 
 {% block permission_created_partial %}
 <template>
-    <tr hx-swap-oob="beforeend:#permissions-table tbody">
-        {% let can_manage = true %}
-        {% include "row-cells.html.j2" %}
-    </tr>
+    <tbody hx-swap-oob="beforeend:#permissions-table tbody">
+        <tr>
+            {% let can_manage = true %}
+            {% include "row-cells.html.j2" %}
+        </tr>
+    </tbody>
 </template>
 
 <div hx-swap-oob="outerHTML:#create-permission-form">
