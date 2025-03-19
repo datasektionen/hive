@@ -1,3 +1,4 @@
+pub use catchers::catchers;
 use rocket::{
     http::{uri::Reference, Header},
     response::{content::RawHtml, Redirect},
@@ -5,8 +6,6 @@ use rocket::{
 };
 
 use crate::routing::RouteTree;
-
-pub use catchers::catchers;
 
 mod api_tokens;
 mod catchers;

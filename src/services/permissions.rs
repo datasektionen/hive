@@ -48,7 +48,8 @@ where
     .bind(dto.scoped)
     .bind(dto.description)
     .fetch_one(&mut *txn)
-    .await?;
+    .await
+    .map_err(|e| AppError::DuplicatePermissionId(dto.id.to_string()).if_unique_violation(e))?;
 
     audit_logs::add_entry(
         ActionKind::Create,

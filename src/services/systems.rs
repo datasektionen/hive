@@ -90,7 +90,8 @@ where
         .bind(dto.id)
         .bind(dto.description)
         .execute(&mut *txn)
-        .await?;
+        .await
+        .map_err(|e| AppError::DuplicateSystemId(dto.id.to_string()).if_unique_violation(e))?;
 
     audit_logs::add_entry(
         ActionKind::Create,

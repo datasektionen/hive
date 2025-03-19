@@ -5,12 +5,11 @@ use rocket::{
     Request, Responder,
 };
 
+use super::RenderedTemplate;
 use crate::{
     errors::render_error_page,
     guards::{context::PageContext, headers::HxRequest},
 };
-
-use super::RenderedTemplate;
 
 pub fn catchers() -> Vec<rocket::Catcher> {
     catchers![not_found, unknown]

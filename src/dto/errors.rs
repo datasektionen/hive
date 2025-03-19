@@ -19,6 +19,14 @@ enum InnerAppErrorDto {
 
     #[serde(rename = "system.unknown")]
     NoSuchSystem { id: String },
+    #[serde(rename = "system.id.duplicate")]
+    DuplicateSystemId { id: String },
+
+    #[serde(rename = "api-token.description.ambiguous-in-system")]
+    AmbiguousAPIToken { description: String },
+    #[serde(rename = "permission.id.duplicate-in-system")]
+    DuplicatePermissionId { id: String },
+
     #[serde(rename = "group.unknown")]
     NoSuchGroup { id: String, domain: String },
 }
@@ -36,6 +44,9 @@ impl From<AppError> for InnerAppErrorDto {
             }
             AppError::SelfPreservation => Self::SelfPreservation,
             AppError::NoSuchSystem(id) => Self::NoSuchSystem { id },
+            AppError::DuplicateSystemId(id) => Self::DuplicateSystemId { id },
+            AppError::AmbiguousAPIToken(description) => Self::AmbiguousAPIToken { description },
+            AppError::DuplicatePermissionId(id) => Self::DuplicatePermissionId { id },
             AppError::NoSuchGroup(id, domain) => Self::NoSuchGroup { id, domain },
         }
     }
@@ -65,6 +76,14 @@ impl InnerAppErrorDto {
             }
             (Self::NoSuchSystem { .. }, Language::English) => "Unknown System",
             (Self::NoSuchSystem { .. }, Language::Swedish) => "Okänt system",
+            (Self::DuplicateSystemId { .. }, Language::English) => "Duplicate System ID",
+            (Self::DuplicateSystemId { .. }, Language::Swedish) => "Duplicerat system-ID",
+            (Self::AmbiguousAPIToken { .. }, Language::English) => {
+                "Ambiguous API Token Description"
+            }
+            (Self::AmbiguousAPIToken { .. }, Language::Swedish) => "Tvetydig API-token beskrivning",
+            (Self::DuplicatePermissionId { .. }, Language::English) => "Duplicate Permission ID",
+            (Self::DuplicatePermissionId { .. }, Language::Swedish) => "Duplicerat behörighet-ID",
             (Self::NoSuchGroup { .. }, Language::English) => "Unknown Group",
             (Self::NoSuchGroup { .. }, Language::Swedish) => "Okänt grupp",
         }
@@ -125,16 +144,40 @@ impl InnerAppErrorDto {
                 }
             ),
             (Self::NoSuchSystem { id }, Language::English) => {
-                format!("Could not find any system with ID {id}.")
+                format!("Could not find any system with ID \"{id}\".")
             }
             (Self::NoSuchSystem { id }, Language::Swedish) => {
-                format!("Kunde inte hitta något system med ID {id}.")
+                format!("Kunde inte hitta något system med ID \"{id}\".")
             }
+            (Self::DuplicateSystemId { id }, Language::English) => {
+                format!("ID \"{id}\" is already in use by another system.")
+            }
+            (Self::DuplicateSystemId { id }, Language::Swedish) => {
+                format!("ID \"{id}\" används redan av ett annat system.")
+            }
+            (Self::AmbiguousAPIToken { description }, Language::English) => {
+                format!(
+                    "Description \"{description}\" is ambiguous because it is already in use by \
+                     another API token for the same system."
+                )
+            }
+            (Self::AmbiguousAPIToken { description }, Language::Swedish) => format!(
+                "Beskrivning \"{description}\" är tvetydig eftersom den redan används av ett \
+                 annat API-token för samma system."
+            ),
+            (Self::DuplicatePermissionId { id }, Language::English) => format!(
+                "ID \"{id}\" is already in use by another permission associated with the same \
+                 system."
+            ),
+            (Self::DuplicatePermissionId { id }, Language::Swedish) => format!(
+                "ID \"{id}\" används redan av ett annan behörighet som är kopplad till samma \
+                 system."
+            ),
             (Self::NoSuchGroup { id, domain }, Language::English) => {
-                format!("Could not find any group with ID {id}@{domain}.")
+                format!("Could not find any group with ID \"{id}@{domain}\".")
             }
             (Self::NoSuchGroup { id, domain }, Language::Swedish) => {
-                format!("Kunde inte hitta någon grupp med ID {id}@{domain}.")
+                format!("Kunde inte hitta någon grupp med ID \"{id}@{domain}\".")
             }
         }
     }

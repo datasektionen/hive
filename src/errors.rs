@@ -40,11 +40,33 @@ pub enum AppError {
 
     #[error("could not find system with ID `{0}`")]
     NoSuchSystem(String),
+    #[error("ID `{0}` is already in use by another system")]
+    DuplicateSystemId(String),
+
+    #[error("description `{0}` is already in use by another API token for this system")]
+    AmbiguousAPIToken(String),
+    #[error("ID `{0}` is already in use by another permission for this system")]
+    DuplicatePermissionId(String),
+
     #[error("could not find group with ID `{0}@{1}`")]
     NoSuchGroup(String, String),
 }
 
 impl AppError {
+    // normally any sqlx::Error is mapped to Self::DbError, but sometimes it's
+    // necessary to use a more specific variant if a uniqueness constraint
+    // violation is detected. this function keeps self iff the inner database
+    // error is a unique violation, otherwise converts it into a DbError
+    pub fn if_unique_violation(self, err: sqlx::Error) -> Self {
+        if let sqlx::Error::Database(ref db_err) = err {
+            if db_err.is_unique_violation() {
+                return self;
+            }
+        }
+
+        Self::from(err)
+    }
+
     fn status(&self) -> Status {
         match self {
             AppError::DbError(..) => Status::InternalServerError,
@@ -55,6 +77,9 @@ impl AppError {
             AppError::InsufficientAuthorityInGroup(..) => Status::Forbidden,
             AppError::SelfPreservation => Status::UnavailableForLegalReasons,
             AppError::NoSuchSystem(..) => Status::NotFound,
+            AppError::DuplicateSystemId(..) => Status::Conflict,
+            AppError::AmbiguousAPIToken(..) => Status::Conflict,
+            AppError::DuplicatePermissionId(..) => Status::Conflict,
             AppError::NoSuchGroup(..) => Status::NotFound,
         }
     }
