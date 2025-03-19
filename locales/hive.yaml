@@ -75,6 +75,9 @@ control.edit:
 control.manage:
   en: Manage
   sv: Hantera
+control.ok:
+  en: Okay
+  sv: Okej
 control.save:
   en: Save
   sv: Spara

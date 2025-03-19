@@ -1,6 +1,6 @@
 use std::ops::Add;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     errors::{AppError, AppResult},
@@ -21,7 +21,7 @@ pub enum RoleInGroup {
     Manager,
 }
 
-#[derive(Serialize, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
 #[serde(rename_all = "snake_case")]
 pub enum AuthorityInGroup {
     None,

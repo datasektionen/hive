@@ -1,3 +1,11 @@
+Object.assign(htmx.config, {
+  responseHandling: [
+    { code: "204", swap: false },
+    { code: "[23]..", swap: true },
+    { code: "[45]..", swap: true, error: true },
+  ],
+});
+
 const persistedTheme = localStorage.getItem("theme");
 
 if (persistedTheme === "dark" || persistedTheme === "light") {
@@ -79,6 +87,11 @@ document.body.addEventListener("htmx:configRequest", (event) => {
       event.detail.parameters.delete(key);
     }
   }
+});
+
+document.body.addEventListener("htmx:responseError", () => {
+  // by now, error details should already have been swapped into dialog
+  openModal("error-occurred");
 });
 
 // make button disabled while form is invalid; force re-validation on input

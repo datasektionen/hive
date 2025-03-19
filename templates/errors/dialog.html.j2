@@ -1,0 +1,14 @@
+<dialog id="error-occurred" role="alert">
+    <article>
+        <h2 class="error">
+            <span class="material-icons">error</span>
+            <span id="error-occurred-title">???</span>
+        </h2>
+        <p id="error-occurred-description">???</p>
+        <footer>
+            <button class="secondary" onclick="closeModal('error-occurred')">
+                {{ ctx.t("control.ok") }}
+            </button>
+        </footer>
+    </article>
+</dialog>

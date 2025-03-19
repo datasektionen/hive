@@ -13,13 +13,17 @@
 
 .success {
   /* some light hijacking to get dark/light theme variants for free */
-  color: var(--pico-form-element-valid-focus-color);
+  --pico-color: var(--pico-form-element-valid-focus-color);
+}
+.error {
+  --pico-color: var(--pico-form-element-invalid-focus-color);
 }
 
 .primary,
 .secondary,
 .contrast,
-.success {
+.success,
+.error {
   color: var(--pico-color);
 }
 
@@ -55,6 +59,7 @@
 .material-icons {
   vertical-align: middle;
   color: var(--pico-color);
+  font-size: var(--pico-font-size) !important;
   cursor: default;
 }
 

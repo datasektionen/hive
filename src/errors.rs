@@ -1,13 +1,22 @@
+use std::io::Cursor;
+
 use log::*;
+use rinja::Template;
 use rocket::{
-    http::Status,
+    fairing::{self, Fairing},
+    http::{ContentType, Status},
     request::Outcome,
     response::{self, Responder},
     serde::json::Json,
     Request, Response,
 };
 
-use crate::{dto::errors::AppErrorDto, perms::HivePermission, services::groups::AuthorityInGroup};
+use crate::{
+    dto::errors::AppErrorDto,
+    guards::{context::PageContext, headers::HxRequest},
+    perms::HivePermission,
+    services::groups::AuthorityInGroup,
+};
 
 pub type AppResult<T> = Result<T, AppError>;
 
@@ -19,6 +28,8 @@ pub enum AppError {
     QueryBuildError(#[source] sqlx::error::BoxDynError),
     #[error("template render error: {0}")]
     RenderError(#[from] rinja::Error),
+    #[error("failed to decode error while generating error page from JSON")]
+    ErrorDecodeFailure,
 
     #[error("user lacks permissions to perform action (minimum needed: {0})")]
     NotAllowed(HivePermission),
@@ -39,6 +50,7 @@ impl AppError {
             AppError::DbError(..) => Status::InternalServerError,
             AppError::QueryBuildError(..) => Status::InternalServerError,
             AppError::RenderError(..) => Status::InternalServerError,
+            AppError::ErrorDecodeFailure => Status::InternalServerError,
             AppError::NotAllowed(..) => Status::Forbidden,
             AppError::InsufficientAuthorityInGroup(..) => Status::Forbidden,
             AppError::SelfPreservation => Status::UnavailableForLegalReasons,
@@ -67,5 +79,106 @@ impl<'r> Responder<'r, 'static> for AppError {
 impl<T> From<AppError> for Outcome<T, AppError> {
     fn from(err: AppError) -> Self {
         Outcome::Error((err.status(), err))
+    }
+}
+
+#[derive(Template)]
+#[template(path = "errors/full.html.j2")]
+struct ErrorOccurredView {
+    ctx: PageContext,
+    title: String,
+    description: String,
+}
+
+#[derive(Template)]
+#[template(path = "errors/partial.html.j2")]
+struct PartialErrorOccurredView {
+    title: String,
+    description: String,
+}
+
+// FIXME: this should become a typed catcher when Rocket implements the feature
+// see https://github.com/rwf2/Rocket/issues/749#issuecomment-2024072120
+pub struct ErrorPageGenerator;
+
+#[rocket::async_trait]
+impl Fairing for ErrorPageGenerator {
+    fn info(&self) -> fairing::Info {
+        fairing::Info {
+            name: "Error Page Generator",
+            kind: fairing::Kind::Response,
+        }
+    }
+
+    async fn on_response<'r>(&self, req: &'r Request<'_>, res: &mut Response<'r>) {
+        // since we can't use await in Responder (respond_to is not async),
+        // it's not possible to render an HTML webpage with PageContext
+        // directly from AppError, so instead this fairing intercepts the
+        // generated JSON response and, when relevant, converts it to a proper
+        // page. this does mean, however, that we need to serialize to JSON
+        // only to immediately deserialize it back, but the performance
+        // penalty shouldn't be too heavy, especially since errors should be
+        // a minority of all traffic, in general
+
+        let status_class = res.status().class();
+        if !status_class.is_client_error() && !status_class.is_server_error() {
+            // nothing to do if there was no error
+            return;
+        }
+
+        if let Some(route) = req.route() {
+            if route.uri.base().starts_with("/api") {
+                // nothing to do; error is already in JSON
+                return;
+            }
+        }
+
+        let mut error = AppErrorDto::from(AppError::ErrorDecodeFailure);
+
+        if let Ok(body) = res.body_mut().to_string().await {
+            if let Ok(dto) = serde_json::from_str(&body) {
+                error = dto;
+            }
+        }
+
+        let ctx = req
+            .guard::<PageContext>()
+            .await
+            .expect("infallible ctx guard");
+
+        let title = error.title(&ctx.lang).to_owned();
+        let description = error.description(&ctx.lang);
+
+        res.set_header(ContentType::HTML);
+
+        let partial = req.guard::<HxRequest>().await.succeeded();
+        if partial.is_some() {
+            // only oob swaps should take place
+            res.set_raw_header("HX-Reswap", "none");
+
+            let template = PartialErrorOccurredView { title, description };
+
+            let html = template.render().unwrap_or_else(|e| {
+                error!("Failed to render partial error page: {e}");
+
+                res.status().reason_lossy().to_owned()
+            });
+
+            res.set_sized_body(html.len(), Cursor::new(html));
+        } else {
+            let template = ErrorOccurredView {
+                ctx,
+                title,
+                description,
+            };
+
+            let html = template.render().unwrap_or_else(|e| {
+                error!("Failed to render full error page: {e}");
+
+                res.status().reason_lossy().to_owned()
+            });
+
+            res.set_sized_body(html.len(), Cursor::new(html));
+        }
     }
 }

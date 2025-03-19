@@ -1,0 +1,19 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ title }}{% endblock title %}
+
+{% block heading %}
+<h1 class="error">
+    <span class="material-icons">error</span>
+    <span>{{ title }}</span>
+</h1>
+{% endblock heading %}
+
+{% block content %}
+<p>{{ description }}</p>
+
+<a role="button" href="/">
+    <span class="material-icons">arrow_back</span>
+    {{ ctx.t("control.back") }}
+</a>
+{% endblock content %}
