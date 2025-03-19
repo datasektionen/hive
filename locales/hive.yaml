@@ -87,6 +87,26 @@ control.search:
 control.view:
   en: View
   sv: Visa
+errors.caught.not-found.title:
+  en: Page Not Found
+  sv: Sidan hittades inte
+errors.caught.not-found.description:
+  en: >
+    The requested page could not be found. It might not exist, or you might lack
+    the necessary permissions to view it.
+  sv: >
+    Den begärda sidan kunde inte hittas. Det kanske inte finns, eller så saknar
+    du de nödvändiga behörigheterna för att se det.
+errors.caught.unknown.title:
+  en: Unknown Error
+  sv: Okänt fel
+errors.caught.unknown.description:
+  en: >
+    An unspecified server error has occurred and no further information could be
+    ascertained. If the problem persists, please contact an administrator.
+  sv: >
+    Ett ospecificerat serverfel har inträffat och ingen ytterligare information
+    kunde fastställas. Kontakta en administratör om problemet kvarstår.
 groups.delete.title:
   en: Delete Group
   sv: Radera grupp

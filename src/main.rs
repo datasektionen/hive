@@ -51,4 +51,5 @@ async fn rocket() -> _ {
         .attach(ErrorPageGenerator)
         .mount("/", &web::tree())
         .mount("/static", FileServer::from(relative!("./static")))
+        .register("/", web::catchers())
 }

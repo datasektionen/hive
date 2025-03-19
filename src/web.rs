@@ -6,7 +6,10 @@ use rocket::{
 
 use crate::routing::RouteTree;
 
+pub use catchers::catchers;
+
 mod api_tokens;
+mod catchers;
 mod groups;
 mod permissions;
 mod systems;

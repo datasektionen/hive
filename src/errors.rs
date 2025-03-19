@@ -128,9 +128,15 @@ impl Fairing for ErrorPageGenerator {
 
         if let Some(route) = req.route() {
             if route.uri.base().starts_with("/api") {
-                // nothing to do; error is already in JSON
+                // nothing to do; error is already in JSON as intended
                 return;
             }
+        }
+
+        if res.content_type().map(|t| t.is_html()).unwrap_or(false) {
+            // this is not JSON! probably an error that has already been made
+            // into HTML by a catcher
+            return;
         }
 
         let mut error = AppErrorDto::from(AppError::ErrorDecodeFailure);
@@ -144,7 +150,7 @@ impl Fairing for ErrorPageGenerator {
         let ctx = req
             .guard::<PageContext>()
             .await
-            .expect("infallible ctx guard");
+            .expect("infallible page context guard");
 
         let title = error.title(&ctx.lang).to_owned();
         let description = error.description(&ctx.lang);
@@ -155,30 +161,42 @@ impl Fairing for ErrorPageGenerator {
         if partial.is_some() {
             // only oob swaps should take place
             res.set_raw_header("HX-Reswap", "none");
-
-            let template = PartialErrorOccurredView { title, description };
-
-            let html = template.render().unwrap_or_else(|e| {
-                error!("Failed to render partial error page: {e}");
-
-                res.status().reason_lossy().to_owned()
-            });
-
-            res.set_sized_body(html.len(), Cursor::new(html));
-        } else {
-            let template = ErrorOccurredView {
-                ctx,
-                title,
-                description,
-            };
-
-            let html = template.render().unwrap_or_else(|e| {
-                error!("Failed to render full error page: {e}");
-
-                res.status().reason_lossy().to_owned()
-            });
-
-            res.set_sized_body(html.len(), Cursor::new(html));
         }
+
+        let html = render_error_page(title, description, res.status(), ctx, partial.is_some());
+        res.set_sized_body(html.len(), Cursor::new(html));
+    }
+}
+
+pub fn render_error_page<T: ToString, D: ToString>(
+    title: T,
+    description: D,
+    status: Status,
+    ctx: PageContext,
+    partial: bool,
+) -> String {
+    let title = title.to_string();
+    let description = description.to_string();
+
+    if partial {
+        let template = PartialErrorOccurredView { title, description };
+
+        template.render().unwrap_or_else(|e| {
+            error!("Failed to render partial error page: {e}");
+
+            status.reason_lossy().to_owned()
+        })
+    } else {
+        let template = ErrorOccurredView {
+            ctx,
+            title,
+            description,
+        };
+
+        template.render().unwrap_or_else(|e| {
+            error!("Failed to render full error page: {e}");
+
+            status.reason_lossy().to_owned()
+        })
     }
 }
