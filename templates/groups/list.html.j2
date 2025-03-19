@@ -6,7 +6,7 @@
 
 {% block content %}
 <form method="get" hx-boost="true" hx-target="#listing-block" hx-indicator="#listing-block"
-    hx-trigger="submit, change, search, input changed delay:500ms" hx-swap="show:none">
+    hx-trigger="submit, change, search, input changed delay:500ms">
     <input type="search" name="q" value='{{ q.unwrap_or("") }}' placeholder=' {{ ctx.t("control.search") }}'
         aria-label='{{ ctx.t("control.search") }}' />
 

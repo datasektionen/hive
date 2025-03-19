@@ -1,11 +1,3 @@
-Object.assign(htmx.config, {
-  responseHandling: [
-    { code: "204", swap: false },
-    { code: "[23]..", swap: true },
-    { code: "[45]..", swap: true, error: true },
-  ],
-});
-
 const persistedTheme = localStorage.getItem("theme");
 
 if (persistedTheme === "dark" || persistedTheme === "light") {

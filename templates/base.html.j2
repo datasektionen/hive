@@ -26,6 +26,17 @@
         integrity="sha512-2kIcAizYXhIn8TzUvqzEDZNuDZ+aW7yE/+f1HJHXFjQcGNfv1kqzJSTBRBSlOgp6B/KZsz1K0a3ZTqP9dnxioQ=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script async src="/static/main.js"></script>
+
+    <meta name="htmx-config" content='{
+            "responseHandling": [
+                { "code": "204", "swap": false },
+                { "code": "[23]..", "swap": true },
+                { "code": "[45]..", "swap": true, "error": true }
+            ],
+            "scrollBehavior": "smooth",
+            "scrollIntoViewOnBoost": false,
+            "selfRequestsOnly": true
+        }' />
 </head>
 
 <body>
