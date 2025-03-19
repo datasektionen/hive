@@ -78,6 +78,16 @@ button:has(> .material-icons) {
   gap: 0.25em;
 }
 
+[role="button"] .material-icons,
+[type="button"] .material-icons,
+[type="reset"] .material-icons,
+[type="submit"] .material-icons,
+button .material-icons,
+a .material-icons,
+a.material-icons {
+  cursor: pointer;
+}
+
 [role="button"],
 [type="button"],
 [type="file"]::file-selector-button,
