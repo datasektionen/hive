@@ -37,8 +37,8 @@ where
     let members = sqlx::query_as(
         "SELECT username,
             bool_or(manager) AS manager,
-            '1970-01-01'::DATE AS \"from\", -- FIXME: actual date
-            '1970-01-01'::DATE AS \"until\" -- FIXME: actual date
+            min(\"from\") AS \"from\",
+            max(\"until\") AS \"until\"
         FROM all_members_of($1, $2, $3)
         GROUP BY username
         ORDER BY manager DESC, username", // DESC makes true come first
