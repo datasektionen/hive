@@ -28,8 +28,13 @@ use crate::{
     },
 };
 
+mod members;
+
 pub fn routes() -> RouteTree {
-    rocket::routes![list_groups, group_details, delete_group, edit_group].into()
+    RouteTree::Branch(vec![
+        rocket::routes![list_groups, group_details, delete_group, edit_group].into(),
+        members::routes(),
+    ])
 }
 
 #[derive(Template)]

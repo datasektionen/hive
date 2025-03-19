@@ -1,6 +1,6 @@
 use std::fmt;
 
-use chrono::{DateTime, Local};
+use chrono::{DateTime, Local, NaiveDate};
 use sqlx::FromRow;
 use uuid::Uuid;
 
@@ -62,6 +62,29 @@ impl Group {
 pub struct GroupRef {
     pub group_id: Slug,
     pub group_domain: Domain,
+}
+
+#[derive(FromRow)]
+pub struct GroupMember {
+    #[sqlx(default)]
+    pub id: Option<Uuid>, // only exists for direct memberships
+    pub username: String,
+    pub from: NaiveDate,
+    pub until: NaiveDate,
+    pub manager: bool,
+}
+
+impl GroupMember {
+    pub fn is_direct_member(&self) -> bool {
+        self.id.is_some()
+    }
+}
+
+#[derive(FromRow)]
+pub struct Subgroup {
+    pub manager: bool,
+    #[sqlx(flatten)]
+    pub group: Group,
 }
 
 #[derive(FromRow)]

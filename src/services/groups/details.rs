@@ -58,14 +58,14 @@ pub async fn require_authority<'x, X>(
     db: X,
     perms: &PermsEvaluator,
     user: &User,
-) -> AppResult<()>
+) -> AppResult<AuthorityInGroup>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres> + Copy,
 {
     let role = get_role_in_group(&user.username, id, domain, db).await?;
     let authority = get_authority_from_permissions(id, domain, db, perms).await? + &role;
 
-    authority.require(min)
+    authority.require(min).map(|_| authority)
 }
 
 // does not take group role into account

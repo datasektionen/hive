@@ -1,0 +1,32 @@
+{% if !show_indirect %}
+<td>
+    <span class="material-icons" data-tooltip='{{ ctx.t("groups.members.list.icon.user") }}'>person</span>
+</td>
+{% endif %}
+<td>
+    <strong>{{ member.username }}</strong>
+    {% if member.manager %}
+    <span class="primary material-icons" data-tooltip='{{ ctx.t("groups.members.list.icon.manager") }}'>
+        local_police
+    </span>
+    {% endif %}
+    {% if show_indirect && member.is_direct_member() %}
+    <span class="secondary material-icons" data-tooltip='{{ ctx.t("groups.list.icon.direct-member") }}'>
+        verified_user
+    </span>
+    {% endif %}
+</td>
+<td style="font-weight: bold">Johnny Louis Armstrong</td>
+<td>{{ member.from }}</td>
+<td>{{ member.until }}</td>
+{% if can_manage && !show_indirect %}
+<td>
+    {% if let Some(id) = member.id %}
+    <button class="btn-danger" data-tooltip='{{ ctx.t("groups.members.list.action.delete.tooltip") }}'
+        hx-delete="/group-membership/{{ id }}" hx-swap="delete" hx-target="closest tr"
+        hx-confirm='{{ ctx.t1("groups.members.list.action.delete.direct-member.confirm", member.username) }}'>
+        <span class="material-icons">person_remove</span>
+    </button>
+    {% endif %}
+</td>
+{% endif %}

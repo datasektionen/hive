@@ -131,6 +131,7 @@ impl InnerAppErrorDto {
                 match min {
                     AuthorityInGroup::FullyAuthorized => "Full authority",
                     AuthorityInGroup::ManageMembers => "Member management authority",
+                    AuthorityInGroup::View => "Read authority",
                     AuthorityInGroup::None => "Nothing", // in theory, shouldn't happen
                 }
             ),
@@ -140,6 +141,7 @@ impl InnerAppErrorDto {
                 match min {
                     AuthorityInGroup::FullyAuthorized => "Fullständig befogenhet",
                     AuthorityInGroup::ManageMembers => "Befogenhet att hantera medlemmar",
+                    AuthorityInGroup::View => "Läsa befogenhet",
                     AuthorityInGroup::None => "Ingenting", // in theory, shouldn't happen
                 }
             ),

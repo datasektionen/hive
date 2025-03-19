@@ -10,6 +10,7 @@ use crate::{
 pub mod details;
 pub mod list;
 pub mod management;
+pub mod members;
 
 pub enum GroupMembershipKind {
     Indirect,
@@ -25,6 +26,7 @@ pub enum RoleInGroup {
 #[serde(rename_all = "snake_case")]
 pub enum AuthorityInGroup {
     None,
+    View,
     ManageMembers,
     FullyAuthorized,
 }
@@ -45,6 +47,8 @@ impl Add<&Option<RoleInGroup>> for AuthorityInGroup {
     fn add(self, role: &Option<RoleInGroup>) -> Self::Output {
         if let Some(RoleInGroup::Manager) = role {
             self.max(AuthorityInGroup::ManageMembers)
+        } else if role.is_some() {
+            self.max(AuthorityInGroup::View)
         } else {
             self
         }

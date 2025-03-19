@@ -101,6 +101,21 @@
     </section>
 </article>
 
+<article class="overflow-auto">
+    <header class="flex-between">
+        <h2>{{ ctx.t("groups.details.members.title") }}</h2>
+        <label style="margin-bottom: 0">
+            <input type="checkbox" role="switch" name="show_indirect"
+                hx-get="/groups/{{ group.domain}}/{{ group.id }}/members" hx-trigger="change" hx-swap="outerHTML"
+                hx-target="#group-members-table">
+            {{ ctx.t("groups.details.members.control.show-indirect") }}
+        </label>
+    </header>
+    <div hx-get="/groups/{{ group.domain}}/{{ group.id }}/members" hx-trigger="load delay:100ms" hx-swap="outerHTML">
+        {# delay is to give event listener time to be set, for aria-busy=true #}
+    </div>
+</article>
+
 {% include "edit.html.j2" %}
 {% include "delete.html.j2" %}
 {% endblock content %}

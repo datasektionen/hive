@@ -1,0 +1,26 @@
+{% if !show_indirect %}
+<td>
+    <span class="material-icons blue" data-tooltip='{{ ctx.t("groups.members.list.icon.group") }}'>group</span>
+</td>
+{% endif %}
+<td>
+    <samp><strong>{{ subgroup.group.id }}</strong>@{{ subgroup.group.domain }}</samp>
+    {% if subgroup.manager %}
+    <span class="primary material-icons" data-tooltip='{{ ctx.t("groups.members.list.icon.manager") }}'>
+        local_police
+    </span>
+    {% endif %}
+</td>
+<td style="font-weight: bold">{{ subgroup.group.localized_name(ctx.lang) }}</td>
+<td class="secondary">&mdash;</td>
+<td class="secondary">&mdash;</td>
+{% if can_manage && !show_indirect %}
+<td>
+    <button class="btn-danger" data-tooltip='{{ ctx.t("groups.members.list.action.delete.tooltip") }}'
+        hx-delete="/groups/{{ group_domain }}/{{ group_id }}/subgroup/{{ subgroup.group.domain }}/{{ subgroup.group.id }}"
+        hx-swap="delete" hx-target="closest tr"
+        hx-confirm='{{ ctx.t1("groups.members.list.action.delete.subgroup.confirm", subgroup.group.key()) }}'>
+        <span class="material-icons">group_remove</span>
+    </button>
+</td>
+{% endif %}

@@ -1,0 +1,44 @@
+<table id="group-members-table" class="striped">
+    <thead>
+        <tr>
+            {% if !show_indirect %}
+            <th scope="col">{{ ctx.t("groups.members.list.col.type") }}</th>
+            {% endif %}
+            <th scope="col">{{ ctx.t("groups.members.list.col.id") }}</th>
+            <th scope="col">{{ ctx.t("groups.members.list.col.name") }}</th>
+            <th scope="col">
+                {{ ctx.t("groups.members.list.col.from") }}
+                <span class="material-icons" data-tooltip='{{ ctx.t("groups.members.list.tooltip.inclusive") }}'>
+                    info
+                </span>
+            </th>
+            <th scope="col">
+                {{ ctx.t("groups.members.list.col.until") }}
+                <span class="material-icons" data-tooltip='{{ ctx.t("groups.members.list.tooltip.inclusive") }}'>
+                    info
+                </span>
+            </th>
+            {% if can_manage && !show_indirect %}
+            <th scope="col">{{ ctx.t("col.actions") }}</th>
+            {% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="if-table-empty">
+            <td colspan="6">
+                <span class="material-icons">block</span>
+                {{ ctx.t("groups.members.list.empty") }}
+            </td>
+        </tr>
+        {% for subgroup in subgroups %}
+        <tr>
+            {% include "subgroup-cells.html.j2" %}
+        </tr>
+        {% endfor %}
+        {% for member in members %}
+        <tr>
+            {% include "member-cells.html.j2" %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

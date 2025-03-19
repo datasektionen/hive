@@ -19,11 +19,16 @@
   --pico-color: var(--pico-form-element-invalid-focus-color);
 }
 
+.blue {
+  --pico-color: #01aaff;
+}
+
 .primary,
 .secondary,
 .contrast,
 .success,
-.error {
+.error,
+.blue {
   color: var(--pico-color);
 }
 

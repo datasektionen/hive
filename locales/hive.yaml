@@ -149,6 +149,12 @@ groups.details.info.membership.member:
 groups.details.info.membership.none:
   en: You're not a member of this group, but you can still view it
   sv: Du är inte medlem i den här gruppen, men du kan fortfarande visa den
+groups.details.members.control.show-indirect:
+  en: Show indirect members
+  sv: Visa indirekta medlemmar
+groups.details.members.title:
+  en: Members
+  sv: Medlemmar
 groups.details.title:
   en: "Group: %{x}"
   sv: "Grupp: %{x}"
@@ -268,6 +274,53 @@ groups.list.stats.icon.n-total-members:
 groups.list.title:
   en: Groups
   sv: Grupper
+groups.members.list.action.delete.direct-member.confirm:
+  en: >
+    Are you sure you want to revoke "%{x}"'s membership in this group?
+    They will lose access immediately.
+  sv: >
+    Är du säker på att du vill återkalla "%{x}"s medlemskap i den här gruppen?
+    Hen kommer att förlora åtkomst omedelbart.
+groups.members.list.action.delete.subgroup.confirm:
+  en: >
+    Are you sure you want to remove "%{x}" as a subgroup of this group?
+    All of its members will lose access immediately.
+  sv: >
+    Är du säker på att du vill ta bort "%{x}" som en undergrupp till den här
+    gruppen? Alla dess medlemmar kommer att förlora åtkomst omedelbart.
+groups.members.list.action.delete.tooltip:
+  en: Revoke membership
+  sv: Återkalla medlemskapet
+groups.members.list.col.from:
+  en: From
+  sv: Från
+groups.members.list.col.id:
+  en: ID
+  sv: ID
+groups.members.list.col.name:
+  en: Name
+  sv: Namn
+groups.members.list.col.type:
+  en: Type
+  sv: Typ
+groups.members.list.col.until:
+  en: Until
+  sv: Until
+groups.members.list.empty:
+  en: This group does not have any members.
+  sv: Den här gruppen har inga medlemmar.
+groups.members.list.icon.group:
+  en: Subgroup
+  sv: Undergrupp
+groups.members.list.icon.manager:
+  en: Manager
+  sv: Gruppansvarig
+groups.members.list.icon.user:
+  en: User
+  sv: Användare
+groups.members.list.tooltip.inclusive:
+  en: (Inclusive)
+  sv: (Inklusive)
 indicator.datetime.never:
   en: Never
   sv: Aldrig
