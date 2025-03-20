@@ -8,3 +8,9 @@ environment variables and `hive.toml` settings.
 **Additionally, it is imperative that the `TZ` environment variable is set
 correctly!** The local timezone is used to calculate group membership and thus
 permissions. A recommended value is `TZ=Europe/Stockholm`.
+
+## License
+
+Copyright (c) 2025 Konglig Datasektionen
+
+SPDX-License-Identifier: GPL-3.0-or-later
