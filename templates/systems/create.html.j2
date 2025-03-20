@@ -4,7 +4,7 @@
     <article>
         <h2>{{ ctx.t("systems.create.title") }}</h2>
         <p>{{ ctx.t("systems.create.description") }}</p>
-        <form id="create-system-form" method="post" hx-boost="true" hx-target="this"
+        <form id="create-system-form" method="post" hx-boost="true" hx-push-url="false" hx-target="this"
             hx-indicator="#create-system-submit">
             {% block inner_create_form %}
             <label>

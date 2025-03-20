@@ -1,7 +1,7 @@
 {%- import "utils.html.j2" as utils -%}
 
 <form id="create-permission-form" method="post" action="/system/{{ system.id }}/permissions" hx-boost="true"
-    hx-indicator="#create-permission-submit" class="container-fluid">
+    hx-push-url="false" hx-target="this" hx-indicator="#create-permission-submit" class="container-fluid">
     {% block inner_create_permission_form %}
     <div class="grid">
         <label>
