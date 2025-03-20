@@ -139,6 +139,8 @@ section:last-of-type {
 .flex-end {
   display: flex;
   justify-content: end;
+  align-items: end; /* somehow this aligns text + btns better than center/baseline */
+  column-gap: var(--pico-grid-column-gap);
 }
 
 /* empty text that automatically goes away if a new row is appended */
