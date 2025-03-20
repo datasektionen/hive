@@ -1,4 +1,7 @@
-use std::collections::{hash_map::Entry, HashMap};
+use std::{
+    cmp::Ordering,
+    collections::{hash_map::Entry, HashMap, HashSet},
+};
 
 use chrono::{Local, NaiveDate};
 use rocket::futures::TryStreamExt;
@@ -7,8 +10,8 @@ use sqlx::{FromRow, Row};
 use super::{GroupMembershipKind, RoleInGroup};
 use crate::{
     errors::AppResult,
-    guards::{perms::PermsEvaluator, user::User},
-    models::{Group, GroupRef},
+    guards::{lang::Language, perms::PermsEvaluator, user::User},
+    models::{Group, GroupRef, SimpleGroup},
     perms::{GroupsScope, HivePermission, TagContent},
     sanitizers::SearchTerm,
     services::pg_args,
@@ -176,26 +179,18 @@ async fn get_relevant_from_permissions<'x, X>(
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres> + Copy,
 {
-    let mut domains = vec![];
-    let mut tags = vec![];
+    let mut domains = HashSet::new();
+    let mut tags = HashSet::new();
 
-    let probe = HivePermission::ManageGroups(GroupsScope::Any);
-    // TODO: also HivePermission::ManageMembers
-    for perm in perms.fetch_all_related(probe).await? {
-        if let HivePermission::ManageGroups(scope) = perm {
-            match scope {
-                GroupsScope::Domain(domain) => match domain_filter {
-                    None => domains.push(domain),
-                    Some(filter) if filter == domain => domains.push(domain),
-                    _ => {}
-                },
-                GroupsScope::Tag { id, content } => tags.push((id, content)),
-                GroupsScope::Wildcard => {
-                    return get_all_groups(q, db).await;
-                }
-                GroupsScope::Any => unreachable!("? is not a real scope"),
-            }
-        }
+    let probes = [
+        HivePermission::ManageGroups(GroupsScope::Any),
+        HivePermission::ManageMembers(GroupsScope::Any),
+    ];
+    for probe in probes {
+        if populate_from_permission(probe, &mut domains, &mut tags, domain_filter, perms).await? {
+            // wildcard was found, just return everything
+            return get_all_groups(q, db).await;
+        };
     }
 
     let mut groups = vec![];
@@ -205,7 +200,7 @@ where
         add_search_clauses(&mut query, q, None, true);
 
         query.push(" domain = ANY(");
-        query.push_bind(domains);
+        query.push_bind(Vec::from_iter(domains));
         query.push(")");
 
         groups.extend(query.build_query_as().fetch_all(db).await?);
@@ -227,34 +222,42 @@ where
             query.push(" AND");
         }
 
-        query.push(" ta.system_id = ");
-        query.push_bind(HIVE_SYSTEM_ID);
-        query.push(" AND (");
+        add_tag_clauses(&mut query, tags);
 
-        for (i, (id, content)) in tags.iter().enumerate() {
-            if i > 0 {
-                query.push(" OR ");
-            }
-            match content {
-                None | Some(TagContent::Wildcard) => {
-                    query.push("ta.tag_id = ");
-                    query.push_bind(id);
-                }
-                Some(TagContent::Custom(content)) => {
-                    query.push("(ta.tag_id = ");
-                    query.push_bind(id);
-                    query.push(" AND ta.content = ");
-                    query.push_bind(content);
-                    query.push(")");
-                }
-            }
-        }
-
-        query.push(")");
         groups.extend(query.build_query_as().fetch_all(db).await?);
     }
 
     Ok(groups)
+}
+
+// returns true if wildcard is found
+pub(super) async fn populate_from_permission(
+    probe: HivePermission,
+    domains: &mut HashSet<String>,
+    tags: &mut HashSet<(String, Option<TagContent>)>,
+    domain_filter: Option<&str>,
+    perms: &PermsEvaluator,
+) -> AppResult<bool> {
+    for perm in perms.fetch_all_related(probe).await? {
+        let scope = match perm {
+            HivePermission::ManageGroups(scope) => scope,
+            HivePermission::ManageMembers(scope) => scope,
+            _ => continue,
+        };
+
+        match scope {
+            GroupsScope::Domain(domain) => match domain_filter {
+                None => domains.insert(domain),
+                Some(filter) if filter == domain => domains.insert(domain),
+                _ => false,
+            },
+            GroupsScope::Tag { id, content } => tags.insert((id, content)),
+            GroupsScope::Wildcard => return Ok(true),
+            GroupsScope::Any => unreachable!("? is not a real scope"),
+        };
+    }
+
+    Ok(false)
 }
 
 async fn get_all_groups<'x, X>(q: Option<&str>, db: X) -> AppResult<Vec<Group>>
@@ -318,6 +321,41 @@ fn add_search_clauses(
     }
 }
 
+pub(super) fn add_tag_clauses(
+    query: &mut sqlx::QueryBuilder<sqlx::Postgres>,
+    tags: HashSet<(String, Option<TagContent>)>,
+) {
+    if tags.is_empty() {
+        // nothing to do
+        return;
+    }
+
+    query.push(" ta.system_id = ");
+    query.push_bind(HIVE_SYSTEM_ID);
+    query.push(" AND (");
+
+    for (i, (id, content)) in tags.into_iter().enumerate() {
+        if i > 0 {
+            query.push(" OR ");
+        }
+        match content {
+            None | Some(TagContent::Wildcard) => {
+                query.push("ta.tag_id = ");
+                query.push_bind(id);
+            }
+            Some(TagContent::Custom(content)) => {
+                query.push("(ta.tag_id = ");
+                query.push_bind(id);
+                query.push(" AND ta.content = ");
+                query.push_bind(content);
+                query.push(")");
+            }
+        }
+    }
+
+    query.push(")");
+}
+
 struct GroupStatistics {
     n_permissions: usize,
     n_direct_members: usize,
@@ -376,4 +414,106 @@ where
         n_total_members,
         n_permissions,
     })
+}
+
+pub async fn list_all_permissible<'x, X>(
+    db: X,
+    perms: &PermsEvaluator,
+    user: &User,
+) -> AppResult<HashSet<SimpleGroup>>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres> + Copy,
+{
+    let today = Local::now().date_naive();
+
+    let mut groups = HashSet::new();
+
+    // from membership
+    groups.extend(
+        sqlx::query_as(
+            "SELECT DISTINCT gs.id, gs.domain, gs.name_sv, gs.name_en
+            FROM all_groups_of($1, $2) ag
+            JOIN groups gs
+                ON gs.id = ag.id
+                AND gs.domain = ag.domain",
+        )
+        .bind(&user.username)
+        .bind(today)
+        .fetch_all(db)
+        .await?,
+    );
+
+    // from permissions
+    let mut domains = HashSet::new();
+    let mut tags = HashSet::new();
+
+    let probes = [
+        HivePermission::ManageGroups(GroupsScope::Any),
+        HivePermission::ManageMembers(GroupsScope::Any),
+    ];
+    for probe in probes {
+        if populate_from_permission(probe, &mut domains, &mut tags, None, perms).await? {
+            // wildcard was found, just return everything
+            let all = sqlx::query_as("SELECT id, domain, name_sv, name_en FROM groups")
+                .fetch_all(db)
+                .await?;
+
+            return Ok(HashSet::from_iter(all));
+        };
+    }
+
+    if !domains.is_empty() {
+        groups.extend(
+            sqlx::query_as(
+                "SELECT id, domain, name_sv, name_en
+                FROM groups
+                WHERE domain = ANY($1)",
+            )
+            .bind(Vec::from_iter(domains))
+            .fetch_all(db)
+            .await?,
+        );
+    }
+
+    if !tags.is_empty() {
+        let mut query = sqlx::QueryBuilder::new(
+            "SELECT gs.*
+            FROM groups gs
+            JOIN tag_assignments ta
+                ON gs.id = ta.group_id
+                AND gs.domain = ta.group_domain
+            WHERE",
+        );
+
+        add_tag_clauses(&mut query, tags);
+
+        groups.extend(query.build_query_as().fetch_all(db).await?);
+    }
+
+    Ok(groups)
+}
+
+pub async fn list_all_permissible_sorted<'x, X>(
+    lang: &Language,
+    db: X,
+    perms: &PermsEvaluator,
+    user: &User,
+) -> AppResult<Vec<SimpleGroup>>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres> + Copy,
+{
+    let mut groups = Vec::from_iter(list_all_permissible(db, perms, user).await?);
+
+    // using sort_by_key would be more concise but require cloning all fields...
+    groups.sort_by(
+        |a, b| match (a.localized_name(lang)).cmp(b.localized_name(lang)) {
+            Ordering::Equal => match a.id.cmp(&b.id) {
+                Ordering::Equal => a.domain.cmp(&b.domain),
+                other => other,
+            },
+            other => other,
+        },
+    );
+
+    Ok(groups)
 }

@@ -57,6 +57,9 @@ api-tokens.list.empty:
 col.actions:
   en: Actions
   sv: Åtgärder
+control.add:
+  en: Add
+  sv: Lägg till
 control.back:
   en: Back
   sv: Tillbaka
@@ -149,6 +152,9 @@ groups.details.info.membership.member:
 groups.details.info.membership.none:
   en: You're not a member of this group, but you can still view it
   sv: Du är inte medlem i den här gruppen, men du kan fortfarande visa den
+groups.details.members.add.subgroup:
+  en: Add subgroup
+  sv: Lägg till undergrupp
 groups.details.members.control.show-indirect:
   en: Show indirect members
   sv: Visa indirekta medlemmar
@@ -274,6 +280,24 @@ groups.list.stats.icon.n-total-members:
 groups.list.title:
   en: Groups
   sv: Grupper
+groups.members.add.subgroup.field.child.label:
+  en: Subgroup
+  sv: Undergrupp
+groups.members.add.subgroup.field.child.placeholder:
+  en: id@domain
+  sv: id@domän
+groups.members.add.subgroup.field.child.tip:
+  en: All members of this group will become indirect members of <samp>%{x}</samp>
+  sv: Alla medlemmar i denna grupp blir indirekta medlemmar av <samp>%{x}</samp>
+groups.members.add.subgroup.field.manager.label:
+  en: Manager?
+  sv: Gruppansvarig?
+groups.members.add.subgroup.field.manager.tip:
+  en: Whether members of the subgroup should be able to manage this group
+  sv: Om medlemmar i undergruppen ska kunna hantera denna grupp
+groups.members.add.subgroup.success:
+  en: Successfully added "%{x}" as a subgroup!
+  sv: Lade till "%{x}" som en undergrupp med framgång!
 groups.members.list.action.delete.direct-member.confirm:
   en: >
     Are you sure you want to revoke "%{x}"'s membership in this group?

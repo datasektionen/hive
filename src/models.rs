@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, hash};
 
 use chrono::{DateTime, Local, NaiveDate};
 use sqlx::FromRow;
@@ -64,6 +64,44 @@ pub struct GroupRef {
     pub group_domain: Domain,
 }
 
+// for when loading the whole Group isn't needed
+// (e.g., just in an autocomplete listing with name and id@domain)
+#[derive(FromRow, Clone)]
+pub struct SimpleGroup {
+    pub id: String,
+    pub domain: String,
+    pub name_sv: String,
+    pub name_en: String,
+}
+
+impl SimpleGroup {
+    pub fn key(&self) -> String {
+        format!("{}@{}", self.id, self.domain)
+    }
+
+    pub fn localized_name(&self, lang: &Language) -> &str {
+        match lang {
+            Language::Swedish => &self.name_sv,
+            Language::English => &self.name_en,
+        }
+    }
+}
+
+impl PartialEq for SimpleGroup {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id && self.domain == other.domain
+    }
+}
+
+impl Eq for SimpleGroup {}
+
+impl hash::Hash for SimpleGroup {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+        self.domain.hash(state);
+    }
+}
+
 #[derive(FromRow)]
 pub struct GroupMember {
     #[sqlx(default)]
@@ -84,7 +122,7 @@ impl GroupMember {
 pub struct Subgroup {
     pub manager: bool,
     #[sqlx(flatten)]
-    pub group: Group,
+    pub group: SimpleGroup,
 }
 
 #[derive(FromRow)]

@@ -1,6 +1,6 @@
 for (const ul of document.querySelectorAll(".combobox ul")) {
   const container = ul.parentElement;
-  const input = ul.previousElementSibling;
+  const input = container.querySelector("input");
 
   container.addEventListener("focusin", () =>
     ul.classList.add("combobox-open")

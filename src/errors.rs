@@ -50,6 +50,8 @@ pub enum AppError {
 
     #[error("could not find group with ID `{0}@{1}`")]
     NoSuchGroup(String, String),
+    #[error("group `{0}@{1}` cannot be a subgroup of this system (loop detected)")]
+    InvalidSubgroup(String, String),
 }
 
 impl AppError {
@@ -81,6 +83,7 @@ impl AppError {
             AppError::AmbiguousAPIToken(..) => Status::Conflict,
             AppError::DuplicatePermissionId(..) => Status::Conflict,
             AppError::NoSuchGroup(..) => Status::NotFound,
+            AppError::InvalidSubgroup(..) => Status::BadRequest,
         }
     }
 }

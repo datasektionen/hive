@@ -1,0 +1,56 @@
+{%- import "utils.html.j2" as utils -%}
+
+<form id="add-subgroup-form" method="post" action="/group/{{ group.domain}}/{{ group.id }}/subgroups" hx-boost="true"
+    hx-push-url="false" hx-target="this" hx-indicator="#add-subgroup-submit" class="container-fluid">
+    {% block inner_add_subgroup_form %}
+    {% if let Some(subgroup) = add_subgroup_success %}
+    <p class="success">
+        {{ ctx.t1("groups.members.add.subgroup.success", subgroup.group.localized_name(ctx.lang)) }}
+    </p>
+    <template>
+        <tbody hx-swap-oob="beforeend:#group-members-table[data-with-indirect=false] tbody">
+            <tr>
+                {% let can_manage = true %}
+                {% let group_id = group.id %}
+                {% let group_domain = group.domain %}
+                {% include "groups/members/subgroup-cells.html.j2" %}
+            </tr>
+        </tbody>
+    </template>
+    {% endif %}
+    <label>
+        {{ ctx.t("groups.members.add.subgroup.field.child.label") }}
+        <div class="combobox">
+            <input {% call utils::field(add_subgroup_form, "child" ) %} id="subgroup-child-field"
+                placeholder='{{ ctx.t("groups.members.add.subgroup.field.child.placeholder") }}' required minlength="3"
+                pattern="[a-z0-9]+(-[a-z0-9]+)*@[\-a-z0-9]+\.[a-z]+" aria-describedby="subgroup-child-tip" />
+            <small id="subgroup-child-tip">
+                {{ ctx.t1("groups.members.add.subgroup.field.child.tip", group.key())|safe }}
+            </small>
+            <ul>
+                {% for permissible in permissible_groups %}
+                {% if permissible.id != group.id || permissible.domain != group.domain %}
+                <li class="flex-between" data-combobox-value="{{ permissible.key() }}" tabindex="0">
+                    <strong>{{ permissible.localized_name(ctx.lang) }}</strong>
+                    <samp class="secondary">{{ permissible.key() }}</samp>
+                </li>
+                {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+    </label>
+    <div class="flex-end">
+        <label>
+            {{ ctx.t("groups.members.add.subgroup.field.manager.label") }}
+            <span class="material-icons" data-tooltip='{{ ctx.t("groups.members.add.subgroup.field.manager.tip") }}'>
+                info
+            </span>
+            <input {% call utils::checkbox(add_subgroup_form, "manager" ) %} />
+        </label>
+        <button id="add-subgroup-submit">
+            <span class="material-icons">group_add</span>
+            {{ ctx.t("control.add") }}
+        </button>
+    </div>
+    {% endblock inner_add_subgroup_form %}
+</form>

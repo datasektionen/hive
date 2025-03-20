@@ -65,3 +65,13 @@ fn valid_slug<'v, T: Into<&'v str>>(s: T) -> form::Result<'v, ()> {
         Err(form::Error::validation("invalid slug").into())
     }
 }
+
+fn valid_domain<'v, T: Into<&'v str>>(s: T) -> form::Result<'v, ()> {
+    let re = Regex::new("^[-a-z0-9]+\\.[a-z]+$").unwrap();
+
+    if re.is_match(s.into()) {
+        Ok(())
+    } else {
+        Err(form::Error::validation("invalid domain").into())
+    }
+}

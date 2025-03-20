@@ -29,6 +29,8 @@ enum InnerAppErrorDto {
 
     #[serde(rename = "group.unknown")]
     NoSuchGroup { id: String, domain: String },
+    #[serde(rename = "group.add.subgroup.invalid")]
+    InvalidSubgroup { id: String, domain: String },
 }
 
 impl From<AppError> for InnerAppErrorDto {
@@ -48,6 +50,7 @@ impl From<AppError> for InnerAppErrorDto {
             AppError::AmbiguousAPIToken(description) => Self::AmbiguousAPIToken { description },
             AppError::DuplicatePermissionId(id) => Self::DuplicatePermissionId { id },
             AppError::NoSuchGroup(id, domain) => Self::NoSuchGroup { id, domain },
+            AppError::InvalidSubgroup(id, domain) => Self::InvalidSubgroup { id, domain },
         }
     }
 }
@@ -86,6 +89,8 @@ impl InnerAppErrorDto {
             (Self::DuplicatePermissionId { .. }, Language::Swedish) => "Duplicerat behörighet-ID",
             (Self::NoSuchGroup { .. }, Language::English) => "Unknown Group",
             (Self::NoSuchGroup { .. }, Language::Swedish) => "Okänt grupp",
+            (Self::InvalidSubgroup { .. }, Language::English) => "Invalid Subgroup",
+            (Self::InvalidSubgroup { .. }, Language::Swedish) => "Ogiltig undergrupp",
         }
     }
 
@@ -180,6 +185,21 @@ impl InnerAppErrorDto {
             }
             (Self::NoSuchGroup { id, domain }, Language::Swedish) => {
                 format!("Kunde inte hitta någon grupp med ID \"{id}@{domain}\".")
+            }
+            (Self::InvalidSubgroup { id, domain }, Language::English) => {
+                format!(
+                    "The group with ID \"{id}@{domain}\" cannot be added as a subgroup to this \
+                     group because it would lead to an infinite membership loop, since this group \
+                     is already a (potentially indirect) subgroup of \"{id}@{domain}\"."
+                )
+            }
+            (Self::InvalidSubgroup { id, domain }, Language::Swedish) => {
+                format!(
+                    "Gruppen med ID \"{id}@{domain}\" kan inte läggas till som en undergrupp till \
+                     den här gruppen på grund av att den skulle leda till en oändlig medlemsloop, \
+                     eftersom denna grupp redan är en (potentiellt indirekt) undergrupp av \
+                     \"{id}@{domain}\"."
+                )
             }
         }
     }

@@ -101,7 +101,7 @@
     </section>
 </article>
 
-<article class="overflow-auto">
+<article>
     <header class="flex-between">
         <h2>{{ ctx.t("groups.details.members.title") }}</h2>
         <label style="margin-bottom: 0">
@@ -111,9 +111,20 @@
             {{ ctx.t("groups.details.members.control.show-indirect") }}
         </label>
     </header>
-    <div hx-get="/groups/{{ group.domain}}/{{ group.id }}/members" hx-trigger="load delay:100ms" hx-swap="outerHTML">
-        {# delay is to give event listener time to be set, for aria-busy=true #}
-    </div>
+    <main class="overflow-auto">
+        <div hx-get="/groups/{{ group.domain}}/{{ group.id }}/members" hx-trigger="load delay:100ms"
+            hx-swap="outerHTML">
+            {# delay is to give event listener time to be set, for aria-busy=true #}
+        </div>
+    </main>
+    <footer>
+        <details>
+            <summary role="button" class="secondary">
+                {{ ctx.t("groups.details.members.add.subgroup") }}
+            </summary>
+            {% include "members/add-subgroup.html.j2" %}
+        </details>
+    </footer>
 </article>
 
 {% include "edit.html.j2" %}
