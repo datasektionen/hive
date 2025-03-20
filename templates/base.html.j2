@@ -27,6 +27,10 @@
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script async src="/static/main.js"></script>
 
+    {# TODO: maybe only include this when needed... but prevent executing twice #}
+    <script async src="/static/combobox.js"></script>
+    <link rel="stylesheet" href="/static/combobox.css" />
+
     <meta name="htmx-config" content='{
             "responseHandling": [
                 { "code": "204", "swap": false },

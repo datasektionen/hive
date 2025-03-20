@@ -1,0 +1,40 @@
+.combobox {
+  position: relative;
+}
+
+.combobox ul {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 0;
+  margin-top: calc(-1 * var(--pico-spacing));
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  background-color: var(--pico-background-color);
+  border-color: var(--pico-form-element-border-color);
+  border-end-start-radius: var(--pico-border-radius);
+  border-end-end-radius: var(--pico-border-radius);
+
+  max-height: 0;
+  transition: max-height 0.3s ease-out;
+}
+
+.combobox ul.combobox-open {
+  max-height: 150px;
+}
+
+.combobox ul li[data-combobox-value] {
+  cursor: pointer;
+  padding: var(--pico-form-element-spacing-vertical)
+    var(--pico-form-element-spacing-horizontal);
+}
+
+.combobox ul li[data-combobox-value]:not(.combobox-match) {
+  display: none;
+}
+
+.combobox ul li[data-combobox-value]:is(:active, :focus, :hover) {
+  background-color: var(--pico-form-element-selected-background-color);
+}
