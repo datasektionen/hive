@@ -7,7 +7,7 @@
 -- (Note: this is mostly used as an auxiliary function for `all_members_of`, by
 -- recursively calculating all of a group's subgroups)
 
-CREATE FUNCTION all_subgroups_of(parent_id SLUG, parent_domain DOMAIN, at DATE)
+CREATE FUNCTION all_subgroups_of(parent_id SLUG, parent_domain DOMAIN)
 RETURNS TABLE (child_id SLUG, child_domain DOMAIN, manager BOOL, path GROUP_REF[])
 AS $$
     WITH RECURSIVE subgroup_hierarchy(child_id, child_domain, manager, path) AS (

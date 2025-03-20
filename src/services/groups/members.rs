@@ -96,19 +96,16 @@ where
         ));
     }
 
-    let today = Local::now().date_naive();
-
     let mut txn = db.begin().await?;
 
     let loop_detected = sqlx::query_scalar(
         "SELECT COUNT(*) > 0
-        FROM all_subgroups_of($1, $2, $3)
-        WHERE child_id = $4
-            AND child_domain = $5",
+        FROM all_subgroups_of($1, $2)
+        WHERE child_id = $3
+            AND child_domain = $4",
     )
     .bind(dto.child.id)
     .bind(dto.child.domain)
-    .bind(today)
     .bind(parent_id)
     .bind(parent_domain)
     .fetch_one(&mut *txn)
