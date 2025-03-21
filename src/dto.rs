@@ -5,6 +5,7 @@ use rocket::form::{self, FromFormField};
 use serde::Serialize;
 
 pub mod api_tokens;
+pub mod datetime;
 pub mod errors;
 pub mod groups;
 pub mod permissions;

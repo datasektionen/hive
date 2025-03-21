@@ -97,7 +97,7 @@ async fn list_api_tokens(
 #[rocket::post("/system/<system_id>/api-tokens", data = "<form>")]
 async fn create_api_token<'v>(
     system_id: &str,
-    mut form: Form<Contextual<'v, CreateApiTokenDto<'v>>>,
+    form: Form<Contextual<'v, CreateApiTokenDto<'v>>>,
     db: &State<PgPool>,
     ctx: PageContext,
     perms: &PermsEvaluator,
@@ -114,8 +114,6 @@ async fn create_api_token<'v>(
     systems::ensure_exists(system_id, db.inner()).await?;
 
     // TODO: anti-CSRF
-
-    CreateApiTokenDto::extra_validation(&mut form);
 
     if let Some(dto) = &form.value {
         // validation passed
