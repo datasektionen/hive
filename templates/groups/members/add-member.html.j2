@@ -1,0 +1,66 @@
+{%- import "utils.html.j2" as utils -%}
+
+<form id="add-member-form" method="post" action="/group/{{ group.domain }}/{{ group.id }}/members" hx-boost="true"
+    hx-push-url="false" hx-target="this" hx-indicator="#add-member-submit" class="container-fluid">
+    {% block inner_add_member_form %}
+    {% if let Some(member) = add_member_success %}
+    <p class="success">
+        <span class="material-icons">task_alt</span>
+        {# TODO: show name? #}
+        <strong>{{ ctx.t1("groups.members.add.member.success", member.username) }}</strong>
+    </p>
+    <br />
+    <template>
+        <tbody hx-swap-oob="beforeend:#group-members-table[data-with-indirect=false] tbody">
+            <tr>
+                {% let show_indirect = false %}
+                {% let can_manage = true %}
+                {% include "groups/members/member-cells.html.j2" %}
+            </tr>
+        </tbody>
+        <tbody hx-swap-oob="beforeend:#group-members-table[data-with-indirect=true] tbody">
+            <tr>
+                {% let show_indirect = true %}
+                {% let can_manage = true %}
+                {% include "groups/members/member-cells.html.j2" %}
+            </tr>
+        </tbody>
+    </template>
+    {% endif %}
+
+    <div class="grid">
+        <label>
+            {{ ctx.t("groups.members.add.member.field.username.label") }}
+            <input {% call utils::field(add_member_form, "username" ) %}
+                placeholder='{{ ctx.t("groups.members.add.member.field.username.placeholder") }}' required
+                pattern="[a-z0-9]{2,}" autocomplete="off" aria-describedby="member-username-tip" />
+            <small id="member-username-tip">{{ ctx.t("groups.members.add.member.field.username.tip") }}</small>
+        </label>
+        <label>
+            {{ ctx.t("groups.members.add.member.field.from.label") }}
+            <input type="date" {% call utils::field(add_member_form, "from" ) %} required
+                aria-describedby="member-from-tip" />
+            <small id="member-from-tip">{{ ctx.t("groups.members.add.member.field.from.tip") }}</small>
+        </label>
+        <label>
+            {{ ctx.t("groups.members.add.member.field.until.label") }}
+            <input type="date" {% call utils::field(add_member_form, "until" ) %} required
+                aria-describedby="member-until-tip" />
+            <small id="member-until-tip">{{ ctx.t("groups.members.add.member.field.until.tip") }}</small>
+        </label>
+    </div>
+    <div class="flex-end">
+        <label>
+            {{ ctx.t("groups.members.add.member.field.manager.label") }}
+            <span class="material-icons" data-tooltip='{{ ctx.t("groups.members.add.member.field.manager.tip") }}'>
+                info
+            </span>
+            <input {% call utils::checkbox(add_member_form, "manager" ) %} />
+        </label>
+        <button id="add-member-submit">
+            <span class="material-icons">person_add</span>
+            {{ ctx.t("control.add") }}
+        </button>
+    </div>
+    {% endblock inner_add_member_form %}
+</form>

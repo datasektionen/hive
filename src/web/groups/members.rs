@@ -8,7 +8,7 @@ use rocket::{
 use sqlx::PgPool;
 
 use crate::{
-    dto::groups::AddSubgroupDto,
+    dto::groups::{AddMemberDto, AddSubgroupDto},
     errors::AppResult,
     guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
     models::{GroupMember, SimpleGroup, Subgroup},
@@ -18,7 +18,7 @@ use crate::{
 };
 
 pub fn routes() -> RouteTree {
-    rocket::routes![list_members, add_subgroup].into()
+    rocket::routes![list_members, add_subgroup, add_member].into()
 }
 
 #[derive(Template)]
@@ -44,6 +44,17 @@ struct PartialAddSubgroupView<'f, 'v> {
     add_subgroup_success: Option<Subgroup>,
     group: SimpleGroup,
     permissible_groups: Vec<SimpleGroup>,
+}
+
+#[derive(Template)]
+#[template(
+    path = "groups/members/add-member.html.j2",
+    block = "inner_add_member_form"
+)]
+struct PartialAddMemberView<'f, 'v> {
+    ctx: PageContext,
+    add_member_form: &'f form::Context<'v>,
+    add_member_success: Option<GroupMember>,
 }
 
 #[rocket::get("/groups/<domain>/<id>/members?<show_indirect>")]
@@ -187,6 +198,72 @@ async fn add_subgroup<'v>(
                 add_subgroup_success: None,
                 group,
                 permissible_groups,
+            };
+
+            Ok(Either::Left(RawHtml(template.render()?)))
+        } else {
+            // FIXME: this just resets the form without actually showing
+            // any validation error indicators... but there isn't a great
+            // alternative, and it might be fine for such a tiny form
+
+            let target = uri!(super::group_details(id, domain));
+            Ok(Either::Right(Redirect::to(target)))
+        }
+    }
+}
+
+#[rocket::post("/group/<domain>/<id>/members", data = "<form>")]
+#[allow(clippy::too_many_arguments)]
+async fn add_member<'v>(
+    id: &str,
+    domain: &str,
+    form: Form<Contextual<'v, AddMemberDto<'v>>>,
+    db: &State<PgPool>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<Either<RenderedTemplate, Redirect>> {
+    groups::details::require_authority(
+        AuthorityInGroup::ManageMembers,
+        id,
+        domain,
+        db.inner(),
+        perms,
+        &user,
+    )
+    .await?;
+
+    // TODO: anti-CSRF
+
+    if let Some(dto) = &form.value {
+        // validation passed
+
+        let added = groups::members::add_member(id, domain, dto, db.inner(), &user).await?;
+
+        if partial.is_some() {
+            let template = PartialAddMemberView {
+                ctx,
+                add_member_form: &form::Context::default(),
+                add_member_success: Some(added),
+            };
+
+            Ok(Either::Left(RawHtml(template.render()?)))
+        } else {
+            // FIXME: maybe allow passing ?added_member=id@domain
+
+            let target = uri!(super::group_details(id, domain));
+            Ok(Either::Right(Redirect::to(target)))
+        }
+    } else {
+        // some errors are present; show the form again
+        debug!("Add member form errors: {:?}", &form.context);
+
+        if partial.is_some() {
+            let template = PartialAddMemberView {
+                ctx,
+                add_member_form: &form.context,
+                add_member_success: None,
             };
 
             Ok(Either::Left(RawHtml(template.render()?)))

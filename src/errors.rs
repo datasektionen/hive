@@ -54,6 +54,8 @@ pub enum AppError {
     InvalidSubgroup(String, String),
     #[error("group with ID `{0}@{1}` is already a subgroup of this system")]
     DuplicateSubgroup(String, String),
+    #[error("user `{0}` is already a member of this group within the specified period")]
+    RedundantMembership(String),
 }
 
 impl AppError {
@@ -87,6 +89,7 @@ impl AppError {
             AppError::NoSuchGroup(..) => Status::NotFound,
             AppError::InvalidSubgroup(..) => Status::BadRequest,
             AppError::DuplicateSubgroup(..) => Status::Conflict,
+            AppError::RedundantMembership(..) => Status::Conflict,
         }
     }
 }

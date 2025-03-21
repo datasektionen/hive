@@ -20,7 +20,7 @@ use crate::{
     guards::{
         context::PageContext, headers::HxRequest, lang::Language, perms::PermsEvaluator, user::User,
     },
-    models::{Group, SimpleGroup, Subgroup},
+    models::{Group, GroupMember, SimpleGroup, Subgroup},
     routing::RouteTree,
     services::groups::{
         self, list::GroupOverviewSummary, AuthorityInGroup, GroupMembershipKind, GroupRelevance,
@@ -62,8 +62,10 @@ struct GroupDetailsView<'f, 'v> {
     ctx: PageContext,
     group: Group,
     relevance: GroupRelevance,
-    add_subgroup_success: Option<Subgroup>,
     add_subgroup_form: &'f form::Context<'v>,
+    add_subgroup_success: Option<Subgroup>,
+    add_member_form: &'f form::Context<'v>,
+    add_member_success: Option<GroupMember>,
     edit_form: &'f form::Context<'v>,
     edit_modal_open: bool,
     permissible_groups: Vec<SimpleGroup>, // for autocomplete
@@ -231,8 +233,10 @@ async fn group_details(
         ctx,
         group,
         relevance,
-        add_subgroup_success: None,
         add_subgroup_form: &empty_form,
+        add_subgroup_success: None,
+        add_member_form: &empty_form,
+        add_member_success: None,
         edit_form: &empty_form,
         edit_modal_open: false,
         permissible_groups,
@@ -358,12 +362,15 @@ pub async fn edit_group<'v>(
                 groups::list::list_all_permissible_sorted(&ctx.lang, db.inner(), perms, &user)
                     .await?;
 
+            let empty_form = form::Context::default();
             let template = GroupDetailsView {
                 ctx,
                 group,
                 relevance,
+                add_subgroup_form: &empty_form,
                 add_subgroup_success: None,
-                add_subgroup_form: &form::Context::default(),
+                add_member_form: &empty_form,
+                add_member_success: None,
                 edit_form: &form.context,
                 edit_modal_open: true,
                 permissible_groups,

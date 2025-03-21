@@ -3,7 +3,7 @@ use rocket::{
     FromForm,
 };
 
-use super::TrimmedStr;
+use super::{datetime::BrowserDateDto, TrimmedStr};
 
 #[derive(FromForm)]
 pub struct EditGroupDto<'v> {
@@ -43,4 +43,14 @@ impl<'v> FromFormField<'v> for GroupRefDto<'v> {
 
         Ok(Self { id, domain })
     }
+}
+
+#[derive(FromForm)]
+pub struct AddMemberDto<'v> {
+    #[field(validate = super::valid_username())]
+    pub username: TrimmedStr<'v>,
+    pub from: BrowserDateDto,
+    #[field(validate = with(|until| until >= &self.from, "invalid until before from"))]
+    pub until: BrowserDateDto,
+    pub manager: bool,
 }

@@ -76,3 +76,13 @@ fn valid_domain<'v, T: Into<&'v str>>(s: T) -> form::Result<'v, ()> {
         Err(form::Error::validation("invalid domain").into())
     }
 }
+
+fn valid_username<'v, T: Into<&'v str>>(s: T) -> form::Result<'v, ()> {
+    let re = Regex::new("^[a-z0-9]{2,}$").unwrap();
+
+    if re.is_match(s.into()) {
+        Ok(())
+    } else {
+        Err(form::Error::validation("invalid username").into())
+    }
+}

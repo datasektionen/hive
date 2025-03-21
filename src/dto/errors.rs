@@ -33,6 +33,8 @@ enum InnerAppErrorDto {
     InvalidSubgroup { id: String, domain: String },
     #[serde(rename = "group.add.subgroup.duplicate")]
     DuplicateSubgroup { id: String, domain: String },
+    #[serde(rename = "group.add.membership.redundant")]
+    RedundantMembership { username: String },
 }
 
 impl From<AppError> for InnerAppErrorDto {
@@ -54,6 +56,7 @@ impl From<AppError> for InnerAppErrorDto {
             AppError::NoSuchGroup(id, domain) => Self::NoSuchGroup { id, domain },
             AppError::InvalidSubgroup(id, domain) => Self::InvalidSubgroup { id, domain },
             AppError::DuplicateSubgroup(id, domain) => Self::DuplicateSubgroup { id, domain },
+            AppError::RedundantMembership(username) => Self::RedundantMembership { username },
         }
     }
 }
@@ -96,6 +99,8 @@ impl InnerAppErrorDto {
             (Self::InvalidSubgroup { .. }, Language::Swedish) => "Ogiltig undergrupp",
             (Self::DuplicateSubgroup { .. }, Language::English) => "Duplicate Subgroup",
             (Self::DuplicateSubgroup { .. }, Language::Swedish) => "Duplicerat undergrupp",
+            (Self::RedundantMembership { .. }, Language::English) => "Redundant Membership",
+            (Self::RedundantMembership { .. }, Language::Swedish) => "Överflödigt medlemskap",
         }
     }
 
@@ -211,6 +216,18 @@ impl InnerAppErrorDto {
             }
             (Self::DuplicateSubgroup { id, domain }, Language::Swedish) => {
                 format!("Gruppen med ID \"{id}@{domain}\" är redan en undergrupp till denna grupp.")
+            }
+            (Self::RedundantMembership { username }, Language::English) => {
+                format!(
+                    "User \"{username}\" is already a member of this group under the specified \
+                     period with equivalent access rights."
+                )
+            }
+            (Self::RedundantMembership { username }, Language::Swedish) => {
+                format!(
+                    "Användaren \"{username}\" är redan medlem i denna grupp under den angivna \
+                     perioden med motsvarande åtkomsträttigheter."
+                )
             }
         }
     }

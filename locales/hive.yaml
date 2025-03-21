@@ -152,9 +152,12 @@ groups.details.info.membership.member:
 groups.details.info.membership.none:
   en: You're not a member of this group, but you can still view it
   sv: Du är inte medlem i den här gruppen, men du kan fortfarande visa den
+groups.details.members.add.member:
+  en: Add member
+  sv: Lägg till ny medlem
 groups.details.members.add.subgroup:
   en: Add subgroup
-  sv: Lägg till undergrupp
+  sv: Lägg till ny undergrupp
 groups.details.members.control.show-indirect:
   en: Show indirect members
   sv: Visa indirekta medlemmar
@@ -248,11 +251,11 @@ groups.list.empty:
   # we know it's a permissions problem because root@hive.internal always exists
   en: >
     You're not a member of any group.
-    If you think this is a mistake, contact a Group Manager and ask to be added
+    If you think this is a mistake, contact a Group Manager and ask to be added.
   sv: >
     Du är inte medlem i någon grupp.
     Om du tror att detta är ett misstag, kontakta en Gruppansvarig och be att få
-    läggas till
+    läggas till.
 groups.list.icon.direct-member:
   en: You're a direct member of this group
   sv: Du är en direkt medlem i den här gruppen
@@ -280,6 +283,36 @@ groups.list.stats.icon.n-total-members:
 groups.list.title:
   en: Groups
   sv: Grupper
+groups.members.add.member.field.from.label:
+  en: From
+  sv: Från
+groups.members.add.member.field.from.tip:
+  en: Inclusive
+  sv: Inklusive
+groups.members.add.member.field.manager.label:
+  en: Manager?
+  sv: Gruppansvarig?
+groups.members.add.member.field.manager.tip:
+  en: Whether they should be able to manage this group
+  sv: Om hen ska kunna hantera denna grupp
+groups.members.add.member.field.until.label:
+  en: Until
+  sv: Tills
+groups.members.add.member.field.until.tip:
+  en: Inclusive. Must be after "from"
+  sv: Inklusive. Måste vara efter "från"
+groups.members.add.member.field.username.label:
+  en: Username
+  sv: Användarnamn
+groups.members.add.member.field.username.placeholder:
+  en: e.g., rmfseo
+  sv: t.ex. rmfseo
+groups.members.add.member.field.username.tip:
+  en: This person will become a direct member of the group
+  sv: Den här personen blir en direkt medlem i gruppen
+groups.members.add.member.success:
+  en: Successfully added user "%{x}" to the group!
+  sv: Lade till användare "%{x}" till gruppen med framgång!
 groups.members.add.subgroup.field.child.label:
   en: Subgroup
   sv: Undergrupp
@@ -329,7 +362,7 @@ groups.members.list.col.type:
   sv: Typ
 groups.members.list.col.until:
   en: Until
-  sv: Until
+  sv: Tills
 groups.members.list.empty:
   en: This group does not have any members.
   sv: Den här gruppen har inga medlemmar.

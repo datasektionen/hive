@@ -124,6 +124,12 @@
             </summary>
             {% include "members/add-subgroup.html.j2" %}
         </details>
+        <details>
+            <summary role="button" class="secondary">
+                {{ ctx.t("groups.details.members.add.member") }}
+            </summary>
+            {% include "members/add-member.html.j2" %}
+        </details>
     </footer>
 </article>
 

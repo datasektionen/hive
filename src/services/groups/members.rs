@@ -2,7 +2,7 @@ use chrono::Local;
 use serde_json::json;
 
 use crate::{
-    dto::groups::AddSubgroupDto,
+    dto::groups::{AddMemberDto, AddSubgroupDto},
     errors::{AppError, AppResult},
     guards::user::User,
     models::{ActionKind, GroupMember, Subgroup, TargetKind},
@@ -154,4 +154,77 @@ where
     txn.commit().await?;
 
     Ok(())
+}
+
+pub async fn add_member<'v, 'x, X>(
+    id: &str,
+    domain: &str,
+    dto: &AddMemberDto<'v>,
+    db: X,
+    user: &User,
+) -> AppResult<GroupMember>
+where
+    X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
+{
+    let mut txn = db.begin().await?;
+
+    let redundant = sqlx::query_scalar(
+        "SELECT COUNT(*) > 0
+        FROM direct_memberships
+        WHERE username = $1
+            AND group_id = $2
+            AND group_domain = $3
+            AND \"from\" <= $4
+            AND \"until\" >= $5
+            AND manager >= $6",
+    )
+    .bind(dto.username)
+    .bind(id)
+    .bind(domain)
+    .bind(&dto.from)
+    .bind(&dto.until)
+    .bind(dto.manager)
+    .fetch_one(&mut *txn)
+    .await?;
+
+    if redundant {
+        return Err(AppError::RedundantMembership(dto.username.to_string()));
+    }
+
+    let added = sqlx::query_as(
+        "INSERT INTO direct_memberships(username, group_id, group_domain, \"from\", \"until\", \
+         manager)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *",
+    )
+    .bind(dto.username)
+    .bind(id)
+    .bind(domain)
+    .bind(&dto.from)
+    .bind(&dto.until)
+    .bind(dto.manager)
+    .fetch_one(&mut *txn)
+    .await?;
+
+    audit_logs::add_entry(
+        ActionKind::Create,
+        TargetKind::Membership,
+        format!("{}@{}", id, domain),
+        &user.username,
+        json!({
+            "new": {
+                "member_type": "member",
+                "username": dto.username,
+                "from": dto.from,
+                "until": dto.until,
+                "manager": dto.manager,
+            }
+        }),
+        &mut *txn,
+    )
+    .await?;
+
+    txn.commit().await?;
+
+    Ok(added)
 }

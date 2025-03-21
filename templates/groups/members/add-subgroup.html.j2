@@ -1,14 +1,18 @@
 {%- import "utils.html.j2" as utils -%}
 
-<form id="add-subgroup-form" method="post" action="/group/{{ group.domain}}/{{ group.id }}/subgroups" hx-boost="true"
+<form id="add-subgroup-form" method="post" action="/group/{{ group.domain }}/{{ group.id }}/subgroups" hx-boost="true"
     hx-push-url="false" hx-target="this" hx-indicator="#add-subgroup-submit" class="container-fluid">
     {% block inner_add_subgroup_form %}
     {% if let Some(subgroup) = add_subgroup_success %}
     <p class="success">
-        {{ ctx.t1("groups.members.add.subgroup.success", subgroup.group.localized_name(ctx.lang)) }}
+        <span class="material-icons">task_alt</span>
+        <strong>
+            {{ ctx.t1("groups.members.add.subgroup.success", subgroup.group.localized_name(ctx.lang)) }}
+        </strong>
     </p>
+    <br />
     <template>
-        <tbody hx-swap-oob="beforeend:#group-members-table[data-with-indirect=false] tbody">
+        <tbody hx-swap-oob="afterbegin:#group-members-table[data-with-indirect=false] tbody">
             <tr>
                 {% let can_manage = true %}
                 {% let group_id = group.id %}
@@ -18,6 +22,7 @@
         </tbody>
     </template>
     {% endif %}
+
     <label>
         {{ ctx.t("groups.members.add.subgroup.field.child.label") }}
         <div class="combobox">
