@@ -128,7 +128,11 @@ where
     .bind(dto.child.domain)
     .bind(dto.manager)
     .execute(&mut *txn)
-    .await?;
+    .await
+    .map_err(|e| {
+        AppError::DuplicateSubgroup(dto.child.id.to_string(), dto.child.domain.to_string())
+            .if_unique_violation(e)
+    })?;
 
     audit_logs::add_entry(
         ActionKind::Create,

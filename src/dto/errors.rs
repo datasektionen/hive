@@ -31,6 +31,8 @@ enum InnerAppErrorDto {
     NoSuchGroup { id: String, domain: String },
     #[serde(rename = "group.add.subgroup.invalid")]
     InvalidSubgroup { id: String, domain: String },
+    #[serde(rename = "group.add.subgroup.duplicate")]
+    DuplicateSubgroup { id: String, domain: String },
 }
 
 impl From<AppError> for InnerAppErrorDto {
@@ -51,6 +53,7 @@ impl From<AppError> for InnerAppErrorDto {
             AppError::DuplicatePermissionId(id) => Self::DuplicatePermissionId { id },
             AppError::NoSuchGroup(id, domain) => Self::NoSuchGroup { id, domain },
             AppError::InvalidSubgroup(id, domain) => Self::InvalidSubgroup { id, domain },
+            AppError::DuplicateSubgroup(id, domain) => Self::DuplicateSubgroup { id, domain },
         }
     }
 }
@@ -91,6 +94,8 @@ impl InnerAppErrorDto {
             (Self::NoSuchGroup { .. }, Language::Swedish) => "Okänt grupp",
             (Self::InvalidSubgroup { .. }, Language::English) => "Invalid Subgroup",
             (Self::InvalidSubgroup { .. }, Language::Swedish) => "Ogiltig undergrupp",
+            (Self::DuplicateSubgroup { .. }, Language::English) => "Duplicate Subgroup",
+            (Self::DuplicateSubgroup { .. }, Language::Swedish) => "Duplicerat undergrupp",
         }
     }
 
@@ -200,6 +205,12 @@ impl InnerAppErrorDto {
                      eftersom denna grupp redan är en (potentiellt indirekt) undergrupp av \
                      \"{id}@{domain}\"."
                 )
+            }
+            (Self::DuplicateSubgroup { id, domain }, Language::English) => {
+                format!("The group with ID \"{id}@{domain}\" is already a subgroup of this group.")
+            }
+            (Self::DuplicateSubgroup { id, domain }, Language::Swedish) => {
+                format!("Gruppen med ID \"{id}@{domain}\" är redan en undergrupp till denna grupp.")
             }
         }
     }
