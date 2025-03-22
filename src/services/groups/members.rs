@@ -156,6 +156,64 @@ where
     Ok(())
 }
 
+pub async fn remove_subgroup<'v, 'x, X>(
+    parent_id: &str,
+    parent_domain: &str,
+    child_id: &str,
+    child_domain: &str,
+    db: X,
+    user: &User,
+) -> AppResult<()>
+where
+    X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
+{
+    let mut txn = db.begin().await?;
+
+    let manager = sqlx::query_scalar(
+        "DELETE FROM subgroups
+        WHERE parent_id = $1
+            AND parent_domain = $2
+            AND child_id = $3
+            AND child_domain = $4
+        RETURNING manager",
+    )
+    .bind(parent_id)
+    .bind(parent_domain)
+    .bind(child_id)
+    .bind(child_domain)
+    .fetch_optional(&mut *txn)
+    .await?;
+
+    let manager: bool = if let Some(manager) = manager {
+        manager
+    } else {
+        // child was not a (direct) subgroup of parent, so there's nothing to do
+        // (just return without committing the transaction)
+        return Ok(());
+    };
+
+    audit_logs::add_entry(
+        ActionKind::Delete,
+        TargetKind::Membership,
+        format!("{}@{}", parent_id, parent_domain),
+        &user.username,
+        json!({
+            "old": {
+                "member_type": "subgroup",
+                "child_id": child_id,
+                "child_domain": child_domain,
+                "manager": manager,
+            }
+        }),
+        &mut *txn,
+    )
+    .await?;
+
+    txn.commit().await?;
+
+    Ok(())
+}
+
 pub async fn add_member<'v, 'x, X>(
     id: &str,
     domain: &str,
@@ -191,7 +249,7 @@ where
         return Err(AppError::RedundantMembership(dto.username.to_string()));
     }
 
-    let added = sqlx::query_as(
+    let added: GroupMember = sqlx::query_as(
         "INSERT INTO direct_memberships(username, group_id, group_domain, \"from\", \"until\", \
          manager)
         VALUES ($1, $2, $3, $4, $5, $6)
@@ -209,11 +267,13 @@ where
     audit_logs::add_entry(
         ActionKind::Create,
         TargetKind::Membership,
+        // FIXME: consider using added.id as target_id
         format!("{}@{}", id, domain),
         &user.username,
         json!({
             "new": {
                 "member_type": "member",
+                "id": added.id.as_ref().unwrap(),
                 "username": dto.username,
                 "from": dto.from,
                 "until": dto.until,

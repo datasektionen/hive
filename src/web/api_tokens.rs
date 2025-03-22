@@ -170,6 +170,8 @@ pub async fn delete_api_token(
 ) -> AppResult<Either<(), Redirect>> {
     // perms can only be checked later because they depend on the system
 
+    // TODO: anti-CSRF(?), DELETE isn't a normal form method
+
     let old = api_tokens::delete(&id, db.inner(), perms, &user).await?;
 
     if partial.is_some() {

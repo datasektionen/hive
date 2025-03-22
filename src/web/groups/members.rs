@@ -18,7 +18,7 @@ use crate::{
 };
 
 pub fn routes() -> RouteTree {
-    rocket::routes![list_members, add_subgroup, add_member].into()
+    rocket::routes![list_members, add_subgroup, add_member, remove_subgroup].into()
 }
 
 #[derive(Template)]
@@ -275,5 +275,47 @@ async fn add_member<'v>(
             let target = uri!(super::group_details(id, domain));
             Ok(Either::Right(Redirect::to(target)))
         }
+    }
+}
+
+#[rocket::delete("/group/<parent_domain>/<parent_id>/subgroup/<child_domain>/<child_id>")]
+#[allow(clippy::too_many_arguments)]
+async fn remove_subgroup<'v>(
+    parent_id: &str,
+    parent_domain: &str,
+    child_id: &str,
+    child_domain: &str,
+    db: &State<PgPool>,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<Either<(), Redirect>> {
+    groups::details::require_authority(
+        AuthorityInGroup::ManageMembers,
+        parent_id,
+        parent_domain,
+        db.inner(),
+        perms,
+        &user,
+    )
+    .await?;
+
+    // TODO: anti-CSRF(?), DELETE isn't a normal form method
+
+    groups::members::remove_subgroup(
+        parent_id,
+        parent_domain,
+        child_id,
+        child_domain,
+        db.inner(),
+        &user,
+    )
+    .await?;
+
+    if partial.is_some() {
+        Ok(Either::Left(()))
+    } else {
+        let target = uri!(super::group_details(parent_id, parent_domain));
+        Ok(Either::Right(Redirect::to(target)))
     }
 }
