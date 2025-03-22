@@ -13,7 +13,7 @@ use rocket::{
 };
 use sqlx::PgPool;
 
-use super::{filters, GracefulRedirect, RenderedTemplate};
+use super::{filters, Either, GracefulRedirect, RenderedTemplate};
 use crate::{
     dto::groups::EditGroupDto,
     errors::{AppError, AppResult},
@@ -32,7 +32,14 @@ mod members;
 
 pub fn routes() -> RouteTree {
     RouteTree::Branch(vec![
-        rocket::routes![list_groups, group_details, delete_group, edit_group].into(),
+        rocket::routes![
+            list_groups,
+            group_details,
+            delete_group,
+            edit_group,
+            group_info_tooltip
+        ]
+        .into(),
         members::routes(),
     ])
 }
@@ -86,6 +93,13 @@ struct GroupEditedView<'f, 'v> {
     group: Group,
     edit_form: &'f form::Context<'v>,
     edit_modal_open: bool,
+}
+
+#[derive(Template)]
+#[template(path = "groups/info-tooltip.html.j2")]
+struct GroupInfoTooltipView {
+    ctx: PageContext,
+    group: SimpleGroup,
 }
 
 #[derive(FromFormField, UriDisplayQuery, PartialEq, Eq, Default)]
@@ -379,4 +393,40 @@ pub async fn edit_group<'v>(
             Ok(EditGroupResponse::Invalid(RawHtml(template.render()?)))
         }
     }
+}
+
+#[rocket::get("/group/<domain>/<id>/tooltip")]
+async fn group_info_tooltip(
+    id: &str,
+    domain: &str,
+    db: &State<PgPool>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<Either<RenderedTemplate, Redirect>> {
+    if partial.is_none() {
+        // we only know how to render a tooltip, a tiny fragment, not a full
+        // page - so redirect to group details
+
+        let target = uri!(group_details(id = id, domain = domain));
+        return Ok(Either::Right(Redirect::to(target)));
+    }
+
+    groups::details::require_authority(
+        AuthorityInGroup::View,
+        id,
+        domain,
+        db.inner(),
+        perms,
+        &user,
+    )
+    .await?;
+
+    // no enumeration vuln because we already checked permissions
+    let group = groups::details::require_one(id, domain, db.inner()).await?;
+
+    let template = GroupInfoTooltipView { ctx, group };
+
+    Ok(Either::Left(RawHtml(template.render()?)))
 }

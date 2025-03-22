@@ -78,6 +78,11 @@ a.material-icons:hover {
   border-bottom: none;
 }
 
+a > [data-tooltip] {
+  border-bottom: none;
+  cursor: inherit;
+}
+
 [role="button"]:has(> .material-icons),
 [type="button"]:has(> .material-icons),
 [type="reset"]:has(> .material-icons),

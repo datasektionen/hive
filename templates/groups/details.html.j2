@@ -62,7 +62,10 @@
                 {% for path in relevance.paths %}
                 <li>
                     {% for node in path %}
-                    <a href="/group/{{ node.group_domain }}/{{ node.group_id }}" class="secondary">
+                    <a href="/group/{{ node.group_domain }}/{{ node.group_id }}" class="secondary"
+                        hx-get="/group/{{ node.group_domain }}/{{ node.group_id }}/tooltip" hx-trigger="mouseenter once"
+                        hx-indicator="head">
+                        {# hx-indicator cannot be disabled... see htmx#2515. head prevents loading spinner #}
                         <samp><strong>{{ node.group_id }}</strong>@{{ node.group_domain }}</samp></a>
                     {% if !loop.last %}
                     &gt;
