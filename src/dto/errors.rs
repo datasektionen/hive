@@ -29,6 +29,8 @@ enum InnerAppErrorDto {
 
     #[serde(rename = "group.unknown")]
     NoSuchGroup { id: String, domain: String },
+    #[serde(rename = "group.id.duplicate")]
+    DuplicateGroupId { id: String, domain: String },
     #[serde(rename = "group.add.subgroup.invalid")]
     InvalidSubgroup { id: String, domain: String },
     #[serde(rename = "group.add.subgroup.duplicate")]
@@ -54,6 +56,7 @@ impl From<AppError> for InnerAppErrorDto {
             AppError::AmbiguousAPIToken(description) => Self::AmbiguousAPIToken { description },
             AppError::DuplicatePermissionId(id) => Self::DuplicatePermissionId { id },
             AppError::NoSuchGroup(id, domain) => Self::NoSuchGroup { id, domain },
+            AppError::DuplicateGroupId(id, domain) => Self::DuplicateGroupId { id, domain },
             AppError::InvalidSubgroup(id, domain) => Self::InvalidSubgroup { id, domain },
             AppError::DuplicateSubgroup(id, domain) => Self::DuplicateSubgroup { id, domain },
             AppError::RedundantMembership(username) => Self::RedundantMembership { username },
@@ -95,6 +98,8 @@ impl InnerAppErrorDto {
             (Self::DuplicatePermissionId { .. }, Language::Swedish) => "Duplicerat behörighet-ID",
             (Self::NoSuchGroup { .. }, Language::English) => "Unknown Group",
             (Self::NoSuchGroup { .. }, Language::Swedish) => "Okänt grupp",
+            (Self::DuplicateGroupId { .. }, Language::English) => "Duplicate Group ID",
+            (Self::DuplicateGroupId { .. }, Language::Swedish) => "Duplicerat grupp-ID",
             (Self::InvalidSubgroup { .. }, Language::English) => "Invalid Subgroup",
             (Self::InvalidSubgroup { .. }, Language::Swedish) => "Ogiltig undergrupp",
             (Self::DuplicateSubgroup { .. }, Language::English) => "Duplicate Subgroup",
@@ -195,6 +200,12 @@ impl InnerAppErrorDto {
             }
             (Self::NoSuchGroup { id, domain }, Language::Swedish) => {
                 format!("Kunde inte hitta någon grupp med ID \"{id}@{domain}\".")
+            }
+            (Self::DuplicateGroupId { id, domain }, Language::English) => {
+                format!("ID \"{id}\" is already in use by another group in domain \"{domain}\".")
+            }
+            (Self::DuplicateGroupId { id, domain }, Language::Swedish) => {
+                format!("ID \"{id}\" används redan av en annan grupp i domänen \"{domain}\".")
             }
             (Self::InvalidSubgroup { id, domain }, Language::English) => {
                 format!(

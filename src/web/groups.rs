@@ -15,12 +15,13 @@ use sqlx::PgPool;
 
 use super::{filters, Either, GracefulRedirect, RenderedTemplate};
 use crate::{
-    dto::groups::EditGroupDto,
+    dto::groups::{CreateGroupDto, EditGroupDto},
     errors::{AppError, AppResult},
     guards::{
         context::PageContext, headers::HxRequest, lang::Language, perms::PermsEvaluator, user::User,
     },
     models::{Group, GroupMember, SimpleGroup, Subgroup},
+    perms::{GroupsScope, HivePermission},
     routing::RouteTree,
     services::groups::{
         self, list::GroupOverviewSummary, AuthorityInGroup, GroupMembershipKind, GroupRelevance,
@@ -34,6 +35,7 @@ pub fn routes() -> RouteTree {
     RouteTree::Branch(vec![
         rocket::routes![
             list_groups,
+            create_group,
             group_details,
             delete_group,
             edit_group,
@@ -46,13 +48,16 @@ pub fn routes() -> RouteTree {
 
 #[derive(Template)]
 #[template(path = "groups/list.html.j2")]
-struct ListGroupsView<'r> {
+struct ListGroupsView<'r, 'f, 'v> {
     ctx: PageContext,
     summaries: Vec<GroupOverviewSummary>,
     q: Option<&'r str>,
     sort: ListGroupsSort,
     domain_filter: Option<&'r str>,
     domains: Vec<String>,
+    fully_authorized: bool,
+    create_form: &'f form::Context<'v>,
+    create_modal_open: bool,
 }
 
 #[derive(Template)]
@@ -61,6 +66,13 @@ struct PartialListGroupsView<'q> {
     ctx: PageContext,
     summaries: Vec<GroupOverviewSummary>,
     q: Option<&'q str>,
+}
+
+#[derive(Template)]
+#[template(path = "groups/create.html.j2", block = "inner_create_form")]
+struct PartialCreateGroupView<'f, 'v> {
+    ctx: PageContext,
+    create_form: &'f form::Context<'v>,
 }
 
 #[derive(Template)]
@@ -191,12 +203,12 @@ async fn list_groups(
 
     let mut summaries = groups::list::list_summaries(q, domain, db.inner(), perms, &user).await?;
 
+    // unstable is faster, and we should have no equal elements anyway
+    summaries.sort_unstable_by(|a, b| sort.ordering(a, b, &ctx.lang));
+
     let mut domains: Vec<_> = summaries.iter().map(|s| s.group.domain.clone()).collect();
     domains.sort();
     domains.dedup();
-
-    // unstable is faster, and we should have no equal elements anyway
-    summaries.sort_unstable_by(|a, b| sort.ordering(a, b, &ctx.lang));
 
     if partial.is_some() {
         let template = PartialListGroupsView { ctx, summaries, q };
@@ -210,6 +222,10 @@ async fn list_groups(
             }
         }
 
+        let fully_authorized = perms
+            .satisfies(HivePermission::ManageGroups(GroupsScope::Wildcard))
+            .await?;
+
         let template = ListGroupsView {
             ctx,
             summaries,
@@ -217,9 +233,80 @@ async fn list_groups(
             sort,
             domain_filter: domain,
             domains,
+            fully_authorized,
+            create_form: &form::Context::default(),
+            create_modal_open: false,
         };
 
         Ok(RawHtml(template.render()?))
+    }
+}
+
+#[rocket::post("/groups", data = "<form>")]
+async fn create_group<'v>(
+    form: Form<Contextual<'v, CreateGroupDto<'v>>>,
+    db: &State<PgPool>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<Either<RenderedTemplate, GracefulRedirect>> {
+    perms
+        .require(HivePermission::ManageGroups(GroupsScope::Wildcard))
+        .await?;
+
+    // TODO: anti-CSRF
+
+    if let Some(dto) = &form.value {
+        // validation passed
+
+        groups::management::create(dto, db.inner(), &user).await?;
+
+        Ok(Either::Right(GracefulRedirect::to(
+            uri!(group_details(id = *dto.id, domain = *dto.domain)),
+            partial.is_some(),
+        )))
+    } else {
+        // some errors are present; show the form again
+        debug!("Create group form errors: {:?}", &form.context);
+
+        if partial.is_some() {
+            let template = PartialCreateGroupView {
+                ctx,
+                create_form: &form.context,
+            };
+
+            Ok(Either::Left(RawHtml(template.render()?)))
+        } else {
+            // FIXME: the list route handler is pretty complex, so we really
+            // shouldn't be replicating it here... but we also want to make sure
+            // that form progress is not lost
+
+            let sort = <ListGroupsSort as Default>::default();
+
+            let mut summaries =
+                groups::list::list_summaries(None, None, db.inner(), perms, &user).await?;
+            // unstable is faster, and we should have no equal elements anyway
+            summaries.sort_unstable_by(|a, b| sort.ordering(a, b, &ctx.lang));
+
+            let mut domains: Vec<_> = summaries.iter().map(|s| s.group.domain.clone()).collect();
+            domains.sort();
+            domains.dedup();
+
+            let template = ListGroupsView {
+                ctx,
+                summaries,
+                q: None,
+                sort,
+                domain_filter: None,
+                domains,
+                fully_authorized: true, // we already checked
+                create_form: &form.context,
+                create_modal_open: true,
+            };
+
+            Ok(Either::Left(RawHtml(template.render()?)))
+        }
     }
 }
 

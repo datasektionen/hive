@@ -4,6 +4,15 @@
 
 {% block title %}{{ ctx.t("groups.list.title") }}{% endblock title %}
 
+{% block action_buttons %}
+{% if fully_authorized %}
+<button onclick="openModal('create-group')">
+    <span class="material-icons">add</span>
+    {{ ctx.t("groups.list.action.create") }}
+</button>
+{% endif %}
+{% endblock action_buttons %}
+
 {% block content %}
 <form method="get" hx-boost="true" hx-target="#listing-block" hx-indicator="#listing-block"
     hx-trigger="submit, change, search, input changed delay:500ms">
@@ -129,4 +138,6 @@
     </p>
     {% endblock inner_groups_listing %}
 </div>
+
+{% include "create.html.j2" %}
 {% endblock content %}

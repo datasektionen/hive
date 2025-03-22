@@ -1,32 +1,39 @@
 {%- import "utils.html.j2" as utils -%}
 
-<dialog id="edit-group">
+<dialog id="create-group">
     <article>
-        <h2>{{ ctx.t("groups.edit.title") }}</h2>
-        <form id="edit-group-form" onsubmit="event.preventDefault()" hx-patch="/group/{{ group.domain }}/{{ group.id }}"
-            hx-target="this" hx-indicator="#edit-group-submit">
-            {% block inner_edit_form %}
+        <h2>{{ ctx.t("groups.create.title") }}</h2>
+        <p>{{ ctx.t("groups.create.description") }}</p>
+        <form id="create-group-form" method="post" hx-boost="true" hx-push-url="false" hx-target="this"
+            hx-indicator="#create-group-submit">
+            {% block inner_create_form %}
             <div class="grid">
                 <label>
                     {{ ctx.t("groups.form.field.id.label") }}
-                    <input disabled value="{{ group.id }}" />
+                    <input {% call utils::field(create_form, "id" ) %}
+                        placeholder='{{ ctx.t("groups.form.field.id.placeholder") }}' required
+                        pattern="[a-z0-9]+(-[a-z0-9]+)*" aria-describedby="id-tip" />
+                    <small id="id-tip">{{ ctx.t("groups.form.field.id.tip") }}</small>
                 </label>
                 <label>
                     {{ ctx.t("groups.form.field.domain.label") }}
-                    <input disabled value="{{ group.domain }}" />
+                    <input {% call utils::field(create_form, "domain" ) %}
+                        placeholder='{{ ctx.t("groups.form.field.domain.placeholder") }}' required
+                        pattern="[\-a-z0-9]+\.[a-z]+" aria-describedby="domain-tip" />
+                    <small id="domain-tip">{{ ctx.t("groups.form.field.domain.tip") }}</small>
                 </label>
             </div>
             <div class="grid">
                 <label>
                     {{ ctx.t("groups.form.field.name-sv.label") }}
-                    <input {% call utils::field_with_default(edit_form, "name_sv" , group.name_sv) %}
+                    <input {% call utils::field(create_form, "name_sv" ) %}
                         placeholder='{{ ctx.t("groups.form.field.name-sv.placeholder") }}' required minlength="3"
                         aria-describedby="name-sv-tip" />
                     <small id="name-sv-tip">{{ ctx.t("groups.form.field.name-sv.tip") }}</small>
                 </label>
                 <label>
                     {{ ctx.t("groups.form.field.name-en.label") }}
-                    <input {% call utils::field_with_default(edit_form, "name_en" , group.name_en) %}
+                    <input {% call utils::field(create_form, "name_en" ) %}
                         placeholder='{{ ctx.t("groups.form.field.name-en.placeholder") }}' required minlength="3"
                         aria-describedby="name-en-tip" />
                     <small id="name-en-tip">{{ ctx.t("groups.form.field.name-en.tip") }}</small>
@@ -34,35 +41,35 @@
             </div>
             <label>
                 {{ ctx.t("groups.form.field.description-sv.label") }}
-                {% let value = edit_form.field_value("description_sv").unwrap_or(group.description_sv) %}
-                <textarea name="description_sv" {% call utils::field_validation(edit_form, "description_sv" ) %}
+                {% let value = create_form.field_value("description_sv").unwrap_or_default() %}
+                <textarea name="description_sv" {% call utils::field_validation(create_form, "description_sv" ) %}
                     placeholder='{{ ctx.t("groups.form.field.description-sv.placeholder") }}' required minlength="10"
                     aria-describedby="description-sv-tip">{{ value }}</textarea>
                 <small id="description-sv-tip">{{ ctx.t("groups.form.field.description-sv.tip") }}</small>
             </label>
             <label>
                 {{ ctx.t("groups.form.field.description-en.label") }}
-                {% let value = edit_form.field_value("description_en").unwrap_or(group.description_en) %}
-                <textarea name="description_en" {% call utils::field_validation(edit_form, "description_en" ) %}
+                {% let value = create_form.field_value("description_en").unwrap_or_default() %}
+                <textarea name="description_en" {% call utils::field_validation(create_form, "description_en" ) %}
                     placeholder='{{ ctx.t("groups.form.field.description-en.placeholder") }}' required minlength="10"
                     aria-describedby="description-en-tip">{{ value }}</textarea>
                 <small id="description-en-tip">{{ ctx.t("groups.form.field.description-en.tip") }}</small>
             </label>
-            {% endblock inner_edit_form %}
+            {% endblock inner_create_form %}
         </form>
         <footer>
-            <button form="edit-group-form" type="reset" class="secondary" onclick="closeModal('edit-group')">
+            <button form="create-group-form" type="reset" class="secondary" onclick="closeModal('create-group')">
                 {{ ctx.t("control.cancel") }}
             </button>
-            <button form="edit-group-form" id="edit-group-submit">
-                {{ ctx.t("control.save") }}
+            <button form="create-group-form" id="create-group-submit">
+                {{ ctx.t("control.create") }}
             </button>
         </footer>
     </article>
 </dialog>
 
-{% if edit_modal_open %}
+{% if create_modal_open %}
 <script>
-    window.addEventListener("load", () => openModal("edit-group"));
+    window.addEventListener("load", () => openModal("create-group"));
 </script>
 {% endif %}

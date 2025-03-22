@@ -110,9 +110,15 @@ errors.caught.unknown.description:
   sv: >
     Ett ospecificerat serverfel har inträffat och ingen ytterligare information
     kunde fastställas. Kontakta en administratör om problemet kvarstår.
-groups.delete.title:
-  en: Delete Group
-  sv: Radera grupp
+groups.create.description:
+  en: Add a new group to be managed by Hive
+  sv: Lägg till ett nytt grupp som ska hanteras av Hive
+groups.create.title:
+  en: Create New Group
+  sv: Skapa ny grupp
+groups.delete.confirmation.placeholder:
+  en: id@domain
+  sv: id@domän
 groups.delete.description:
   en: >
     This will <strong>permanently and irrecoverably</strong> delete
@@ -128,9 +134,9 @@ groups.delete.description:
     behörigheter kommer också att raderas.
     <em>Vänligen bekräfta dina avsikter genom att skriva in gruppens
     ID och domän nedan.</em>
-groups.delete.confirmation.placeholder:
-  en: id@domain
-  sv: id@domän
+groups.delete.title:
+  en: Delete Group
+  sv: Radera grupp
 groups.details.info.description:
   en: Description (English)
   sv: Beskrivning (svenska)
@@ -202,9 +208,21 @@ groups.form.field.description-sv.tip:
 groups.form.field.domain.label:
   en: Domain
   sv: Domän
+groups.form.field.domain.placeholder:
+  en: e.g., example.com
+  sv: t.ex. example.com
+groups.form.field.domain.tip:
+  en: Administrative namespace to which the group belongs
+  sv: Administrativt namnområde som gruppen tillhör
 groups.form.field.id.label:
   en: Group ID
   sv: Grupp-ID
+groups.form.field.id.placeholder:
+  en: e.g., sn
+  sv: t.ex. sn
+groups.form.field.id.tip:
+  en: Use only lowercase letters, numbers, or dashes
+  sv: Använd endast små bokstäver, siffror eller bindestreck
 groups.form.field.name-en.label:
   en: Name (English)
   sv: Namn (engelska)
@@ -223,6 +241,9 @@ groups.form.field.name-sv.placeholder:
 groups.form.field.name-sv.tip:
   en: Choose something clear and concise
   sv: Välj något tydligt och koncist
+groups.list.action.create:
+  en: Create
+  sv: Skapa ny
 groups.list.control.domain-filter.any:
   en: (Any domain)
   sv: (Alla domäner)

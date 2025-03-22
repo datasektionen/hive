@@ -50,6 +50,8 @@ pub enum AppError {
 
     #[error("could not find group with ID `{0}@{1}`")]
     NoSuchGroup(String, String),
+    #[error("ID `{0}` is already in use by another group in domain `{1}`")]
+    DuplicateGroupId(String, String),
     #[error("group `{0}@{1}` cannot be a subgroup of this system (loop detected)")]
     InvalidSubgroup(String, String),
     #[error("group with ID `{0}@{1}` is already a subgroup of this system")]
@@ -87,6 +89,7 @@ impl AppError {
             AppError::AmbiguousAPIToken(..) => Status::Conflict,
             AppError::DuplicatePermissionId(..) => Status::Conflict,
             AppError::NoSuchGroup(..) => Status::NotFound,
+            AppError::DuplicateGroupId(..) => Status::Conflict,
             AppError::InvalidSubgroup(..) => Status::BadRequest,
             AppError::DuplicateSubgroup(..) => Status::Conflict,
             AppError::RedundantMembership(..) => Status::Conflict,

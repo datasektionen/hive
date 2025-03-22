@@ -4,13 +4,58 @@ use log::*;
 use serde_json::json;
 
 use crate::{
-    dto::groups::EditGroupDto,
+    dto::groups::{CreateGroupDto, EditGroupDto},
     errors::{AppError, AppResult},
     guards::user::User,
     models::{ActionKind, Group, TargetKind},
     services::{audit_log_details_for_update, audit_logs, update_if_changed},
     HIVE_INTERNAL_DOMAIN,
 };
+
+pub async fn create<'v, 'x, X>(dto: &CreateGroupDto<'v>, db: X, user: &User) -> AppResult<()>
+where
+    X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
+{
+    let mut txn = db.begin().await?;
+
+    sqlx::query(
+        "INSERT INTO groups (id, domain, name_sv, name_en, description_sv, description_en)
+        VALUES ($1, $2, $3, $4, $5, $6)",
+    )
+    .bind(dto.id)
+    .bind(dto.domain)
+    .bind(dto.name_sv)
+    .bind(dto.name_en)
+    .bind(dto.description_sv)
+    .bind(dto.description_en)
+    .execute(&mut *txn)
+    .await
+    .map_err(|e| {
+        AppError::DuplicateGroupId(dto.id.to_string(), dto.domain.to_string())
+            .if_unique_violation(e)
+    })?;
+
+    audit_logs::add_entry(
+        ActionKind::Create,
+        TargetKind::Group,
+        format!("{}@{}", *dto.id, *dto.domain),
+        &user.username,
+        json!({
+            "new": {
+                "name_sv": dto.name_sv,
+                "name_en": dto.name_en,
+                "description_sv": dto.description_sv,
+                "description_en": dto.description_en,
+            }
+        }),
+        &mut *txn,
+    )
+    .await?;
+
+    txn.commit().await?;
+
+    Ok(())
+}
 
 pub async fn delete<'x, X>(id: &str, domain: &str, db: X, user: &User) -> AppResult<()>
 where
