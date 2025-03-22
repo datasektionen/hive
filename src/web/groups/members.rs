@@ -81,7 +81,7 @@ pub async fn list_members<'v>(
         // we only know how to render a table, not a full page;
         // redirect to group details
 
-        let target = uri!(super::group_details(id, domain));
+        let target = uri!(super::group_details(id = id, domain = domain));
         return Ok(Either::Right(Redirect::to(target)));
     }
 
@@ -192,7 +192,7 @@ async fn add_subgroup<'v>(
         } else {
             // FIXME: maybe allow passing ?added_subgroup=id@domain
 
-            let target = uri!(super::group_details(id, domain));
+            let target = uri!(super::group_details(id = id, domain = domain));
             Ok(Either::Right(Redirect::to(target)))
         }
     } else {
@@ -214,7 +214,7 @@ async fn add_subgroup<'v>(
             // any validation error indicators... but there isn't a great
             // alternative, and it might be fine for such a tiny form
 
-            let target = uri!(super::group_details(id, domain));
+            let target = uri!(super::group_details(id = id, domain = domain));
             Ok(Either::Right(Redirect::to(target)))
         }
     }
@@ -260,7 +260,7 @@ async fn add_member<'v>(
         } else {
             // FIXME: maybe allow passing ?added_member=id@domain
 
-            let target = uri!(super::group_details(id, domain));
+            let target = uri!(super::group_details(id = id, domain = domain));
             Ok(Either::Right(Redirect::to(target)))
         }
     } else {
@@ -280,7 +280,7 @@ async fn add_member<'v>(
             // any validation error indicators... but there isn't a great
             // alternative, and it might be fine for such a tiny form
 
-            let target = uri!(super::group_details(id, domain));
+            let target = uri!(super::group_details(id = id, domain = domain));
             Ok(Either::Right(Redirect::to(target)))
         }
     }
@@ -323,7 +323,7 @@ async fn remove_subgroup<'v>(
     if partial.is_some() {
         Ok(Either::Left(()))
     } else {
-        let target = uri!(super::group_details(parent_id, parent_domain));
+        let target = uri!(super::group_details(id = parent_id, domain = parent_domain));
         Ok(Either::Right(Redirect::to(target)))
     }
 }
@@ -343,7 +343,8 @@ async fn remove_member<'v>(
     let (group_id, group_domain) = groups::members::get_membership_group(&id, db.inner())
         .await?
         .ok_or_else(|| AppError::InsufficientAuthorityInGroup(AuthorityInGroup::ManageMembers))?;
-    // ^ not really true, the membership doesn't exist, but we want to prevent enumeration
+    // ^ not really true, the membership doesn't exist, but we want to prevent
+    // enumeration
 
     groups::details::require_authority(
         AuthorityInGroup::ManageMembers,
@@ -367,7 +368,7 @@ async fn remove_member<'v>(
     if partial.is_some() {
         Ok(Either::Left(()))
     } else {
-        let target = uri!(super::group_details(group_id, group_domain));
+        let target = uri!(super::group_details(id = group_id, domain = group_domain));
         Ok(Either::Right(Redirect::to(target)))
     }
 }
