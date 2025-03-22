@@ -6,10 +6,11 @@ use rocket::{
     uri, State,
 };
 use sqlx::PgPool;
+use uuid::Uuid;
 
 use crate::{
     dto::groups::{AddMemberDto, AddSubgroupDto},
-    errors::AppResult,
+    errors::{AppError, AppResult},
     guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
     models::{GroupMember, SimpleGroup, Subgroup},
     routing::RouteTree,
@@ -18,7 +19,14 @@ use crate::{
 };
 
 pub fn routes() -> RouteTree {
-    rocket::routes![list_members, add_subgroup, add_member, remove_subgroup].into()
+    rocket::routes![
+        list_members,
+        add_subgroup,
+        add_member,
+        remove_subgroup,
+        remove_member
+    ]
+    .into()
 }
 
 #[derive(Template)]
@@ -316,6 +324,50 @@ async fn remove_subgroup<'v>(
         Ok(Either::Left(()))
     } else {
         let target = uri!(super::group_details(parent_id, parent_domain));
+        Ok(Either::Right(Redirect::to(target)))
+    }
+}
+
+#[rocket::delete("/group-membership/<id>")]
+async fn remove_member<'v>(
+    id: Uuid,
+    db: &State<PgPool>,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<Either<(), Redirect>> {
+    // cannot check perms yet, with only this information
+
+    // TODO: anti-CSRF(?), DELETE isn't a normal form method
+
+    let (group_id, group_domain) = groups::members::get_membership_group(&id, db.inner())
+        .await?
+        .ok_or_else(|| AppError::InsufficientAuthorityInGroup(AuthorityInGroup::ManageMembers))?;
+    // ^ not really true, the membership doesn't exist, but we want to prevent enumeration
+
+    groups::details::require_authority(
+        AuthorityInGroup::ManageMembers,
+        group_id.as_str(),
+        group_domain.as_str(),
+        db.inner(),
+        perms,
+        &user,
+    )
+    .await?;
+
+    groups::members::remove_member(
+        &id,
+        group_id.as_str(),
+        group_domain.as_str(),
+        db.inner(),
+        &user,
+    )
+    .await?;
+
+    if partial.is_some() {
+        Ok(Either::Left(()))
+    } else {
+        let target = uri!(super::group_details(group_id, group_domain));
         Ok(Either::Right(Redirect::to(target)))
     }
 }

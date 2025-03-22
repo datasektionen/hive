@@ -16,6 +16,7 @@ mod services;
 mod web;
 
 const HIVE_SYSTEM_ID: &str = "hive";
+const HIVE_ROOT_GROUP_ID: &str = "root";
 const HIVE_INTERNAL_DOMAIN: &str = "hive.internal";
 
 rust_i18n::i18n!("./locales");
