@@ -102,6 +102,11 @@ impl hash::Hash for SimpleGroup {
     }
 }
 
+pub trait GroupModel: for<'r> sqlx::FromRow<'r, sqlx::postgres::PgRow> + Send + Unpin {}
+
+impl GroupModel for Group {}
+impl GroupModel for SimpleGroup {}
+
 #[derive(FromRow)]
 pub struct GroupMember {
     #[sqlx(default)]

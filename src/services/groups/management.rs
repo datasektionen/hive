@@ -65,7 +65,7 @@ where
 {
     let mut txn = db.begin().await?;
 
-    let old = super::details::require_one(id, domain, &mut *txn).await?;
+    let old: Group = super::details::require_one(id, domain, &mut *txn).await?;
     let key = old.key();
 
     let mut query = sqlx::QueryBuilder::new("UPDATE groups SET");

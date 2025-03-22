@@ -6,13 +6,13 @@ use super::{GroupRelevance, RoleInGroup};
 use crate::{
     errors::{AppError, AppResult},
     guards::{perms::PermsEvaluator, user::User},
-    models::{Group, GroupRef},
+    models::{GroupModel, GroupRef},
     perms::{GroupsScope, HivePermission, TagContent},
     services::{groups::AuthorityInGroup, pg_args},
     HIVE_SYSTEM_ID,
 };
 
-pub async fn get_one<'x, X>(id: &str, domain: &str, db: X) -> AppResult<Option<Group>>
+pub async fn get_one<'x, X, G: GroupModel>(id: &str, domain: &str, db: X) -> AppResult<Option<G>>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
@@ -25,7 +25,7 @@ where
     Ok(group)
 }
 
-pub async fn require_one<'x, X>(id: &str, domain: &str, db: X) -> AppResult<Group>
+pub async fn require_one<'x, X, G: GroupModel>(id: &str, domain: &str, db: X) -> AppResult<G>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
