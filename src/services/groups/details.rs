@@ -270,5 +270,25 @@ where
         paths.push(path);
     }
 
+    dedup_paths(&mut paths);
+
     Ok((role, paths))
+}
+
+// deduplicate paths with the same suffix, keeping only the shortest
+// (e.g., if we know B > A then C > B > A is redundant)
+fn dedup_paths<T: PartialEq + Clone>(paths: &mut Vec<Vec<T>>) {
+    paths.sort_by_key(Vec::len); // sort by length (shorter first)
+
+    let mut seen_suffixes: Vec<Vec<T>> = vec![];
+
+    paths.retain(|path| {
+        if seen_suffixes.iter().any(|suffix| path.ends_with(suffix)) {
+            false
+        } else {
+            seen_suffixes.push(path.clone());
+
+            true
+        }
+    });
 }

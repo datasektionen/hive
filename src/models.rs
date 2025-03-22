@@ -7,7 +7,7 @@ use uuid::Uuid;
 use crate::guards::lang::Language;
 
 // these are only needed in other sqlx::Type composite type records
-#[derive(sqlx::Type)]
+#[derive(sqlx::Type, PartialEq, Clone)]
 #[sqlx(type_name = "slug")]
 pub struct Slug(String);
 
@@ -17,7 +17,7 @@ impl fmt::Display for Slug {
     }
 }
 
-#[derive(sqlx::Type)]
+#[derive(sqlx::Type, PartialEq, Clone)]
 #[sqlx(type_name = "domain")]
 pub struct Domain(String);
 
@@ -57,7 +57,7 @@ impl Group {
     }
 }
 
-#[derive(sqlx::Type)]
+#[derive(sqlx::Type, PartialEq, Clone)]
 #[sqlx(type_name = "group_ref")]
 pub struct GroupRef {
     pub group_id: Slug,
