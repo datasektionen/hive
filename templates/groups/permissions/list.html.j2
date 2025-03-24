@@ -1,0 +1,21 @@
+<table id="group-permissions-table" class="striped">
+    <thead>
+        <tr>
+            <th scope="col">{{ ctx.t("groups.permissions.list.col.id") }}</th>
+            <th scope="col">{{ ctx.t("groups.permissions.list.col.description") }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="if-table-empty">
+            <td colspan="6">
+                <span class="material-icons">block</span>
+                {{ ctx.t("groups.permissions.list.empty") }}
+            </td>
+        </tr>
+        {% for assignment in permission_assignments %}
+        <tr>
+            {% include "row-cells.html.j2" %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

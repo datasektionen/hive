@@ -30,6 +30,7 @@ use crate::{
 };
 
 mod members;
+mod permissions;
 
 pub fn routes() -> RouteTree {
     RouteTree::Branch(vec![
@@ -43,6 +44,7 @@ pub fn routes() -> RouteTree {
         ]
         .into(),
         members::routes(),
+        permissions::routes(),
     ])
 }
 

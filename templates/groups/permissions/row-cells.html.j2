@@ -1,0 +1,10 @@
+<td>
+    <samp>
+        ${{ assignment.system_id }}:<strong>{{ assignment.perm_id }}</strong>
+        {%- if let Some(scope) = assignment.scope -%}
+        {%- let tooltip = ctx.t("groups.permissions.list.scope.tooltip") -%}
+        :<span class="primary" data-tooltip="{{ tooltip }}">{{ scope }}</span>
+        {%- endif -%}
+    </samp>
+</td>
+<td>{{ assignment.description }}</td>

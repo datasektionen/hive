@@ -160,6 +160,14 @@ impl Permission {
 }
 
 #[derive(FromRow)]
+pub struct PermissionAssignment {
+    pub system_id: String,
+    pub perm_id: String,
+    pub scope: Option<String>,
+    pub description: String,
+}
+
+#[derive(FromRow)]
 pub struct BasePermissionAssignment {
     pub system_id: String,
     pub perm_id: String,

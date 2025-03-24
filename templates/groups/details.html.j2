@@ -136,6 +136,18 @@
     </footer>
 </article>
 
+<article>
+    <header>
+        <h2>{{ ctx.t("groups.details.permissions.title") }}</h2>
+    </header>
+    <main class="overflow-auto">
+        <div hx-get="/group/{{ group.domain }}/{{ group.id }}/permissions" hx-trigger="load delay:100ms"
+            hx-swap="outerHTML">
+            {# delay is to give event listener time to be set, for aria-busy=true #}
+        </div>
+    </main>
+</article>
+
 {% include "edit.html.j2" %}
 {% include "delete.html.j2" %}
 {% endblock content %}

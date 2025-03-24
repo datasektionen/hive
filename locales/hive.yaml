@@ -170,6 +170,9 @@ groups.details.members.control.show-indirect:
 groups.details.members.title:
   en: Members
   sv: Medlemmar
+groups.details.permissions.title:
+  en: Permissions
+  sv: Behörigheter
 groups.details.title:
   en: "Group: %{x}"
   sv: "Grupp: %{x}"
@@ -399,6 +402,18 @@ groups.members.list.icon.user:
 groups.members.list.tooltip.inclusive:
   en: (Inclusive)
   sv: (Inklusive)
+groups.permissions.list.col.description:
+  en: Description
+  sv: Beskrivning
+groups.permissions.list.col.id:
+  en: ID
+  sv: ID
+groups.permissions.list.empty:
+  en: This group does not have any assigned permissions.
+  sv: Den här gruppen har inga tilldelade behörigheter.
+groups.permissions.list.scope.tooltip:
+  en: The permission assignment is limited to this scope
+  sv: Tillståndsuppdraget är begränsat till denna gräns
 indicator.datetime.never:
   en: Never
   sv: Aldrig
