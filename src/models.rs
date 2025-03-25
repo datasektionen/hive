@@ -154,7 +154,7 @@ pub struct Permission {
 }
 
 impl Permission {
-    pub fn full_id(&self) -> String {
+    pub fn key(&self) -> String {
         format!("${}:{}", self.system_id, self.perm_id)
     }
 }
@@ -169,7 +169,7 @@ pub struct PermissionAssignment {
 }
 
 impl PermissionAssignment {
-    pub fn full_id_escaped(&self) -> String {
+    pub fn scoped_key_escaped(&self) -> String {
         if let Some(scope) = &self.scope {
             format!(
                 "${}:{}:{}",

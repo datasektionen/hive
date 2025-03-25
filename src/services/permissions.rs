@@ -54,7 +54,7 @@ where
     audit_logs::add_entry(
         ActionKind::Create,
         TargetKind::Permission,
-        permission.full_id(),
+        permission.key(),
         &user.username,
         json!({
             "new": {

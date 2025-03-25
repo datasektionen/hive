@@ -42,7 +42,7 @@ enum InnerAppErrorDto {
 
     #[serde(rename = "group.unknown")]
     NoSuchGroup { id: String, domain: String },
-    #[serde(rename = "group.id.duplicate")]
+    #[serde(rename = "group.key.duplicate")]
     DuplicateGroupId { id: String, domain: String },
     #[serde(rename = "group.add.subgroup.invalid")]
     InvalidSubgroup { id: String, domain: String },
@@ -143,8 +143,8 @@ impl InnerAppErrorDto {
             }
             (Self::NoSuchGroup { .. }, Language::English) => "Unknown Group",
             (Self::NoSuchGroup { .. }, Language::Swedish) => "Okänt grupp",
-            (Self::DuplicateGroupId { .. }, Language::English) => "Duplicate Group ID",
-            (Self::DuplicateGroupId { .. }, Language::Swedish) => "Duplicerat grupp-ID",
+            (Self::DuplicateGroupId { .. }, Language::English) => "Duplicate Group Key",
+            (Self::DuplicateGroupId { .. }, Language::Swedish) => "Duplicerat gruppnyckel",
             (Self::InvalidSubgroup { .. }, Language::English) => "Invalid Subgroup",
             (Self::InvalidSubgroup { .. }, Language::Swedish) => "Ogiltig undergrupp",
             (Self::DuplicateSubgroup { .. }, Language::English) => "Duplicate Subgroup",
@@ -233,10 +233,10 @@ impl InnerAppErrorDto {
                  annat API-token för samma system."
             ),
             (Self::NoSuchPermission { system_id, perm_id }, Language::English) => {
-                format!("Could not find any permission with ID \"${system_id}:{perm_id}\".")
+                format!("Could not find any permission with key \"${system_id}:{perm_id}\".")
             }
             (Self::NoSuchPermission { system_id, perm_id }, Language::Swedish) => {
-                format!("Kunde inte hitta någon behörighet med ID \"${system_id}:{perm_id}\".")
+                format!("Kunde inte hitta någon behörighet med nyckel \"${system_id}:{perm_id}\".")
             }
             (Self::DuplicatePermissionId { id }, Language::English) => format!(
                 "ID \"{id}\" is already in use by another permission associated with the same \
@@ -282,33 +282,33 @@ impl InnerAppErrorDto {
             }
             (Self::MissingPermissionScope { system_id, perm_id }, Language::English) => {
                 format!(
-                    "Permission with ID \"${system_id}:{perm_id}\" requires a concrete scope to \
+                    "Permission with key \"${system_id}:{perm_id}\" requires a concrete scope to \
                      be specified on assignment."
                 )
             }
             (Self::MissingPermissionScope { system_id, perm_id }, Language::Swedish) => {
                 format!(
-                    "Behörighet med ID \"${system_id}:{perm_id}\" kräver att en konkret gräns \
+                    "Behörighet med nyckel \"${system_id}:{perm_id}\" kräver att en konkret gräns \
                      anges vid tilldelning."
                 )
             }
             (Self::ExtraneousPermissionScope { system_id, perm_id }, Language::English) => {
                 format!(
-                    "Permission with ID \"${system_id}:{perm_id}\" does not support being limited \
-                     to a concrete scope on assignment."
+                    "Permission with key \"${system_id}:{perm_id}\" does not support being \
+                     limited to a concrete scope on assignment."
                 )
             }
             (Self::ExtraneousPermissionScope { system_id, perm_id }, Language::Swedish) => {
                 format!(
-                    "Behörighet med ID \"${system_id}:{perm_id}\" stöder inte att begränsas till \
-                     en konkret gräns vid tilldelning."
+                    "Behörighet med nyckel \"${system_id}:{perm_id}\" stöder inte att begränsas \
+                     till en konkret gräns vid tilldelning."
                 )
             }
             (Self::NoSuchGroup { id, domain }, Language::English) => {
-                format!("Could not find any group with ID \"{id}@{domain}\".")
+                format!("Could not find any group with key \"{id}@{domain}\".")
             }
             (Self::NoSuchGroup { id, domain }, Language::Swedish) => {
-                format!("Kunde inte hitta någon grupp med ID \"{id}@{domain}\".")
+                format!("Kunde inte hitta någon grupp med nyckel \"{id}@{domain}\".")
             }
             (Self::DuplicateGroupId { id, domain }, Language::English) => {
                 format!("ID \"{id}\" is already in use by another group in domain \"{domain}\".")
@@ -318,24 +318,26 @@ impl InnerAppErrorDto {
             }
             (Self::InvalidSubgroup { id, domain }, Language::English) => {
                 format!(
-                    "The group with ID \"{id}@{domain}\" cannot be added as a subgroup to this \
+                    "The group with key \"{id}@{domain}\" cannot be added as a subgroup to this \
                      group because it would lead to an infinite membership loop, since this group \
                      is already a (potentially indirect) subgroup of \"{id}@{domain}\"."
                 )
             }
             (Self::InvalidSubgroup { id, domain }, Language::Swedish) => {
                 format!(
-                    "Gruppen med ID \"{id}@{domain}\" kan inte läggas till som en undergrupp till \
-                     den här gruppen på grund av att den skulle leda till en oändlig medlemsloop, \
-                     eftersom denna grupp redan är en (potentiellt indirekt) undergrupp av \
-                     \"{id}@{domain}\"."
+                    "Gruppen med nyckel \"{id}@{domain}\" kan inte läggas till som en undergrupp \
+                     till den här gruppen på grund av att den skulle leda till en oändlig \
+                     medlemsloop, eftersom denna grupp redan är en (potentiellt indirekt) \
+                     undergrupp av \"{id}@{domain}\"."
                 )
             }
             (Self::DuplicateSubgroup { id, domain }, Language::English) => {
-                format!("The group with ID \"{id}@{domain}\" is already a subgroup of this group.")
+                format!("The group with key \"{id}@{domain}\" is already a subgroup of this group.")
             }
             (Self::DuplicateSubgroup { id, domain }, Language::Swedish) => {
-                format!("Gruppen med ID \"{id}@{domain}\" är redan en undergrupp till denna grupp.")
+                format!(
+                    "Gruppen med nyckel \"{id}@{domain}\" är redan en undergrupp till denna grupp."
+                )
             }
             (Self::RedundantMembership { username }, Language::English) => {
                 format!(

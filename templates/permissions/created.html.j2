@@ -18,7 +18,7 @@
 <div hx-swap-oob="outerHTML:#create-permission-form">
     <strong class="success">
         <span class="material-icons">task_alt</span>
-        {{ ctx.t1("permissions.created.success", permission.full_id())|safe }}
+        {{ ctx.t1("permissions.created.success", permission.key())|safe }}
     </strong>
 </div>
 {% endblock permission_created_partial %}

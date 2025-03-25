@@ -57,13 +57,13 @@ pub enum AppError {
     #[error("permission with key `${0}:{1}` does not accept a scope on assignment")]
     ExtraneousPermissionScope(String, String),
 
-    #[error("could not find group with ID `{0}@{1}`")]
+    #[error("could not find group with key `{0}@{1}`")]
     NoSuchGroup(String, String),
     #[error("ID `{0}` is already in use by another group in domain `{1}`")]
     DuplicateGroupId(String, String),
     #[error("group `{0}@{1}` cannot be a subgroup of this system (loop detected)")]
     InvalidSubgroup(String, String),
-    #[error("group with ID `{0}@{1}` is already a subgroup of this system")]
+    #[error("group with key `{0}@{1}` is already a subgroup of this system")]
     DuplicateSubgroup(String, String),
     #[error("user `{0}` is already a member of this group within the specified period")]
     RedundantMembership(String),

@@ -146,9 +146,9 @@ groups.delete.title:
 groups.details.info.description:
   en: Description (English)
   sv: Beskrivning (svenska)
-groups.details.info.id:
-  en: Group ID
-  sv: Grupp-ID
+groups.details.info.key:
+  en: Group Key
+  sv: Gruppnyckel
 groups.details.info.membership.indirect:
   en: "You're an indirect member of this group via:"
   sv: "Du är en indirekt medlem i den här gruppen via:"
@@ -271,9 +271,9 @@ groups.list.control.sort.option.direct-members:
 groups.list.control.sort.option.domain:
   en: Group domain
   sv: Gruppdomän
-groups.list.control.sort.option.id:
-  en: Group ID
-  sv: Grupp-ID
+groups.list.control.sort.option.key:
+  en: Group key
+  sv: Gruppnyckel
 groups.list.control.sort.option.name:
   en: Group name
   sv: Gruppnamn
@@ -298,9 +298,9 @@ groups.list.icon.manager:
 groups.list.icon.member:
   en: You're a Member in this group
   sv: Du är Medlem i den här gruppen
-groups.list.id.tooltip:
-  en: Group ID
-  sv: Grupp-ID
+groups.list.key.tooltip:
+  en: Group Key
+  sv: Gruppnyckel
 groups.list.search.no-results:
   en: No matching groups were found. Try adjusting your search query?
   sv: Inga matchande grupper hittades. Testa att justera din sökfråga?
@@ -347,8 +347,8 @@ groups.members.add.member.success:
   en: Successfully added user "%{x}" to the group!
   sv: Lade till användare "%{x}" till gruppen med framgång!
 groups.members.add.subgroup.field.child.label:
-  en: Subgroup
-  sv: Undergrupp
+  en: Subgroup key
+  sv: Undergruppsnyckel
 groups.members.add.subgroup.field.child.placeholder:
   en: id@domain
   sv: id@domän
@@ -438,9 +438,9 @@ groups.permissions.assign.success:
 groups.permissions.list.col.description:
   en: Description
   sv: Beskrivning
-groups.permissions.list.col.id:
-  en: ID
-  sv: ID
+groups.permissions.list.col.key:
+  en: Key
+  sv: Nyckel
 groups.permissions.list.empty:
   en: This group does not have any assigned permissions.
   sv: Den här gruppen har inga tilldelade behörigheter.
@@ -512,9 +512,9 @@ permissions.created.success:
 permissions.list.col.description:
   en: Description
   sv: Beskrivning
-permissions.list.col.id:
-  en: ID
-  sv: ID
+permissions.list.col.key:
+  en: Key
+  sv: Nyckel
 permissions.list.empty:
   en: This system does not have any associated permissions.
   sv: Det här systemet har inga associerade behörigheter.

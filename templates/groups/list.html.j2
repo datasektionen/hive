@@ -26,8 +26,8 @@
                 <option {% call utils::option(ListGroupsSort::Name, sort) %}>
                     {{ ctx.t("groups.list.control.sort.option.name") }}
                 </option>
-                <option {% call utils::option(ListGroupsSort::Id, sort) %}>
-                    {{ ctx.t("groups.list.control.sort.option.id") }}
+                <option {% call utils::option(ListGroupsSort::Key, sort) %}>
+                    {{ ctx.t("groups.list.control.sort.option.key") }}
                 </option>
                 <option {% call utils::option(ListGroupsSort::Domain, sort) %}>
                     {{ ctx.t("groups.list.control.sort.option.domain") }}
@@ -113,7 +113,7 @@
                     {{ summary.n_permissions }}
                 </button>
             </div>
-            <samp data-tooltip='{{ ctx.t("groups.list.id.tooltip") }}'>
+            <samp data-tooltip='{{ ctx.t("groups.list.key.tooltip") }}'>
                 <strong>
                     {{- summary.group.id|e|highlight(q.unwrap_or("")) -}}
                 </strong><span class="primary">@

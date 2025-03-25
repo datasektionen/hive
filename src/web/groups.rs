@@ -124,7 +124,7 @@ struct GroupInfoTooltipView {
 enum ListGroupsSort {
     #[default]
     Name,
-    Id,
+    Key,
     Domain,
     #[field(value = "direct_members")]
     DirectMembers,
@@ -136,7 +136,7 @@ impl fmt::Display for ListGroupsSort {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Name => write!(f, "name"),
-            Self::Id => write!(f, "id"),
+            Self::Key => write!(f, "key"),
             Self::Domain => write!(f, "domain"),
             Self::DirectMembers => write!(f, "direct_members"),
             Self::TotalMembers => write!(f, "total_members"),
@@ -160,7 +160,7 @@ impl ListGroupsSort {
             Self::Name => {
                 (a_name, &a.group.id, &a.group.domain).cmp(&(b_name, &b.group.id, &b.group.domain))
             }
-            Self::Id => (&a.group.id, &a.group.domain).cmp(&(&b.group.id, &b.group.domain)),
+            Self::Key => (&a.group.id, &a.group.domain).cmp(&(&b.group.id, &b.group.domain)),
             Self::Domain => {
                 (&a.group.domain, a_name, &a.group.id).cmp(&(&b.group.domain, b_name, &b.group.id))
             }
