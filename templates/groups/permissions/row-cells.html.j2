@@ -1,6 +1,7 @@
 <td>
     <samp>
-        ${{ assignment.system_id }}:<strong>{{ assignment.perm_id }}</strong>
+        <span style="font-size: 1.2em">$</span>
+        {{- assignment.system_id }}:<strong>{{ assignment.perm_id }}</strong>
         {%- if let Some(scope) = assignment.scope -%}
         {%- let tooltip = ctx.t("groups.permissions.list.scope.tooltip") -%}
         :<span class="primary" data-tooltip="{{ tooltip }}">{{ scope }}</span>
