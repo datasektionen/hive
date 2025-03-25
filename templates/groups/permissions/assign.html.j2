@@ -15,6 +15,7 @@
     <template>
         <tbody hx-swap-oob="afterbegin:#group-permissions-table tbody">
             <tr>
+                {% let can_manage_any = true %}
                 {% include "groups/permissions/row-cells.html.j2" %}
             </tr>
         </tbody>

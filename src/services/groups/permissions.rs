@@ -13,11 +13,12 @@ pub async fn get_all_assignments<'x, X>(
     id: &str,
     domain: &str,
     db: X,
+    perms: &PermsEvaluator,
 ) -> AppResult<Vec<PermissionAssignment>>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
-    let assignments = sqlx::query_as(
+    let mut assignments: Vec<PermissionAssignment> = sqlx::query_as(
         "SELECT pa.*, ps.description
         FROM permission_assignments pa
         JOIN permissions ps
@@ -31,6 +32,14 @@ where
     .bind(domain)
     .fetch_all(db)
     .await?;
+
+    for assignment in &mut assignments {
+        let min = HivePermission::AssignPerms(SystemsScope::Id(assignment.system_id.clone()));
+        // query should be OK since perms are cached by perm_id
+        if perms.satisfies(min).await? {
+            assignment.can_manage = true;
+        }
+    }
 
     Ok(assignments)
 }
@@ -125,7 +134,8 @@ where
                 FROM permissions
                 WHERE system_id = $1
                     AND perm_id = $2
-            ) AS description",
+            ) AS description,
+            TRUE AS can_manage",
     )
     .bind(dto.perm.system_id)
     .bind(dto.perm.perm_id)

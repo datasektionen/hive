@@ -3,11 +3,15 @@
         <tr>
             <th scope="col">{{ ctx.t("groups.permissions.list.col.key") }}</th>
             <th scope="col">{{ ctx.t("groups.permissions.list.col.description") }}</th>
+            {% if can_manage_any %}
+            {# this doesn't count with assignments added later... #}
+            <th scope="col">{{ ctx.t("col.actions") }}</th>
+            {% endif %}
         </tr>
     </thead>
     <tbody>
         <tr class="if-table-empty">
-            <td colspan="2">
+            <td colspan="3">
                 <span class="material-icons">block</span>
                 {{ ctx.t("groups.permissions.list.empty") }}
             </td>

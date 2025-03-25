@@ -175,7 +175,7 @@ impl InnerAppErrorDto {
                     .to_owned()
             }
             (Self::SelfPreservation, Language::English) => {
-                "Your action was automatically disallowed because it compromises the system's \
+                "Your action was automatically disallowed because it would compromise the system's \
                  integrity. This incident will be reported."
                     .to_owned()
             }

@@ -27,6 +27,7 @@ pub fn routes() -> RouteTree {
 struct ListPermissionAssignmentsView {
     ctx: PageContext,
     permission_assignments: Vec<PermissionAssignment>,
+    can_manage_any: bool,
 }
 
 #[derive(Template)]
@@ -71,11 +72,16 @@ pub async fn list_permission_assignments(
     .await?;
 
     let permission_assignments =
-        groups::permissions::get_all_assignments(id, domain, db.inner()).await?;
+        groups::permissions::get_all_assignments(id, domain, db.inner(), perms).await?;
+
+    // this could've been directly in the template, but askama doesn't seem
+    // to support closures defined in the source (parsing error)
+    let can_manage_any = permission_assignments.iter().any(|a| a.can_manage);
 
     let template = ListPermissionAssignmentsView {
         ctx,
         permission_assignments,
+        can_manage_any,
     };
 
     Ok(Either::Left(RawHtml(template.render()?)))

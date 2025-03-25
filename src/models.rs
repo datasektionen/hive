@@ -166,9 +166,15 @@ pub struct PermissionAssignment {
     pub perm_id: String,
     pub scope: Option<String>,
     pub description: String,
+    #[sqlx(default)]
+    pub can_manage: bool, // whether current user can e.g. remove assignment
 }
 
 impl PermissionAssignment {
+    pub fn key(&self) -> String {
+        format!("${}:{}", self.system_id, self.perm_id)
+    }
+
     pub fn scoped_key_escaped(&self) -> String {
         if let Some(scope) = &self.scope {
             format!(
@@ -188,6 +194,22 @@ pub struct BasePermissionAssignment {
     pub system_id: String,
     pub perm_id: String,
     pub scope: Option<String>,
+}
+
+#[derive(FromRow)]
+pub struct AffiliatedPermissionAssignment {
+    pub system_id: String,
+    pub perm_id: String,
+    pub scope: Option<String>,
+    pub group_id: Option<String>,
+    pub group_domain: Option<String>,
+    pub api_token_id: Option<String>,
+}
+
+impl AffiliatedPermissionAssignment {
+    pub fn key(&self) -> String {
+        format!("${}:{}", self.system_id, self.perm_id)
+    }
 }
 
 #[derive(sqlx::Type)]

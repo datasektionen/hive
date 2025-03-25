@@ -435,6 +435,16 @@ groups.permissions.assign.field.scope.tip:
 groups.permissions.assign.success:
   en: Successfully assigned permission <samp>%{x}</samp> to the group!
   sv: Tilldelade behörigheten <samp>%{x}</samp> till gruppen!
+groups.permissions.list.action.delete.confirm:
+  en: >
+    Are you sure you want to unassign permission "%{x}" from this group?
+    All of its members will lose access immediately.
+  sv: >
+    Är du säker på att du vill avdela behörighet "%{x}" från denna grupp?
+    Alla dess medlemmar kommer att förlora åtkomst omedelbart.
+groups.permissions.list.action.delete.tooltip:
+  en: Revoke permission
+  sv: Återkalla behörigheten
 groups.permissions.list.col.description:
   en: Description
   sv: Beskrivning

@@ -9,3 +9,15 @@
     </samp>
 </td>
 <td>{{ assignment.description }}</td>
+{% if can_manage_any %}
+<td>
+    {% if assignment.can_manage %}
+    <button class="btn-danger" data-tooltip='{{ ctx.t("groups.permissions.list.action.delete.tooltip") }}'
+        data-placement="left" hx-delete="/permission-assignment/{{ assignment.id }}" hx-swap="delete"
+        hx-target="closest tr"
+        hx-confirm='{{ ctx.t1("groups.permissions.list.action.delete.confirm", assignment.key()) }}'>
+        <span class="material-icons">delete</span>
+    </button>
+    {% endif %}
+</td>
+{% endif %}

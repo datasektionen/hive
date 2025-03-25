@@ -6,6 +6,7 @@ use rocket::{
     uri, State,
 };
 use sqlx::PgPool;
+use uuid::Uuid;
 
 use super::{Either, RenderedTemplate};
 use crate::{
@@ -19,7 +20,7 @@ use crate::{
 };
 
 pub fn routes() -> RouteTree {
-    rocket::routes![list_permissions, create_permission].into()
+    rocket::routes![list_permissions, create_permission, unassign_permission].into()
 }
 
 #[derive(Template)]
@@ -152,5 +153,27 @@ async fn create_permission<'v>(
             let target = uri!(super::systems::system_details(system_id));
             Ok(Either::Right(Redirect::to(target)))
         }
+    }
+}
+
+#[rocket::delete("/permission-assignment/<id>")]
+async fn unassign_permission(
+    id: Uuid,
+    db: &State<PgPool>,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<Either<(), Redirect>> {
+    // perms can only be checked later, not enough info now
+
+    // TODO: anti-CSRF(?), DELETE isn't a normal form method
+
+    let old = permissions::unassign(id, db.inner(), perms, &user).await?;
+
+    if partial.is_some() {
+        Ok(Either::Left(()))
+    } else {
+        let target = uri!(super::systems::system_details(old.system_id));
+        Ok(Either::Right(Redirect::to(target)))
     }
 }
