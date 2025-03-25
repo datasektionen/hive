@@ -31,7 +31,7 @@ pub async fn create_new<'v, 'x, X>(
 where
     X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
 {
-    if system_id == "hive" {
+    if system_id == crate::HIVE_SYSTEM_ID {
         // we manage our own permissions via database migrations
         warn!("Disallowing permissions tampering from {}", user.username);
         return Err(AppError::SelfPreservation);

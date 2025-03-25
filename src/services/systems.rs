@@ -112,7 +112,7 @@ pub async fn delete<'x, X>(id: &str, db: X, user: &User) -> AppResult<()>
 where
     X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
 {
-    if id == "hive" {
+    if id == crate::HIVE_SYSTEM_ID {
         // shouldn't delete ourselves
         warn!("Disallowing self-deletion from {}", user.username);
         return Err(AppError::SelfPreservation);

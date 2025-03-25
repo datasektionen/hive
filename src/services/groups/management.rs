@@ -16,6 +16,15 @@ pub async fn create<'v, 'x, X>(dto: &CreateGroupDto<'v>, db: X, user: &User) -> 
 where
     X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
 {
+    if *dto.domain == HIVE_INTERNAL_DOMAIN {
+        // shouldn't allow masquerading system-critical internal groups
+        warn!(
+            "Disallowing fake internal group creation from {}",
+            user.username
+        );
+        return Err(AppError::SelfPreservation);
+    }
+
     let mut txn = db.begin().await?;
 
     sqlx::query(

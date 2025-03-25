@@ -72,7 +72,7 @@ impl TryFrom<BasePermissionAssignment> for HivePermission {
     type Error = InvalidHivePermissionError;
 
     fn try_from(perm: BasePermissionAssignment) -> Result<Self, Self::Error> {
-        if perm.system_id != "hive" {
+        if perm.system_id != crate::HIVE_SYSTEM_ID {
             return Err(InvalidHivePermissionError::System);
         }
 
