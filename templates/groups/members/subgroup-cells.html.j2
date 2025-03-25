@@ -15,6 +15,7 @@
 {% if can_manage %}
 <td>
     <button class="btn-danger" data-tooltip='{{ ctx.t("groups.members.list.action.delete.tooltip") }}'
+        data-placement="left"
         hx-delete="/group/{{ group_domain }}/{{ group_id }}/subgroup/{{ subgroup.group.domain }}/{{ subgroup.group.id }}"
         hx-swap="delete" hx-target="closest tr"
         hx-confirm='{{ ctx.t1("groups.members.list.action.delete.subgroup.confirm", subgroup.group.key()) }}'>

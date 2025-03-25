@@ -23,7 +23,7 @@
 <td>
     {% if let Some(id) = member.id %}
     <button class="btn-danger" data-tooltip='{{ ctx.t("groups.members.list.action.delete.tooltip") }}'
-        hx-delete="/group-membership/{{ id }}" hx-swap="delete" hx-target="closest tr"
+        data-placement="left" hx-delete="/group-membership/{{ id }}" hx-swap="delete" hx-target="closest tr"
         hx-confirm='{{ ctx.t1("groups.members.list.action.delete.direct-member.confirm", member.username) }}'>
         <span class="material-icons">person_remove</span>
     </button>
