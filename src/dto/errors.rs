@@ -24,8 +24,21 @@ enum InnerAppErrorDto {
 
     #[serde(rename = "api-token.description.ambiguous-in-system")]
     AmbiguousAPIToken { description: String },
+
+    #[serde(rename = "permission.unknown")]
+    NoSuchPermission { system_id: String, perm_id: String },
     #[serde(rename = "permission.id.duplicate-in-system")]
     DuplicatePermissionId { id: String },
+    #[serde(rename = "permission.assignment.duplicate")]
+    DuplicatePermissionAssignment {
+        system_id: String,
+        perm_id: String,
+        scope: Option<String>,
+    },
+    #[serde(rename = "permission.assignment.scope.missing")]
+    MissingPermissionScope { system_id: String, perm_id: String },
+    #[serde(rename = "permission.assignment.scope.extraneous")]
+    ExtraneousPermissionScope { system_id: String, perm_id: String },
 
     #[serde(rename = "group.unknown")]
     NoSuchGroup { id: String, domain: String },
@@ -54,7 +67,23 @@ impl From<AppError> for InnerAppErrorDto {
             AppError::NoSuchSystem(id) => Self::NoSuchSystem { id },
             AppError::DuplicateSystemId(id) => Self::DuplicateSystemId { id },
             AppError::AmbiguousAPIToken(description) => Self::AmbiguousAPIToken { description },
+            AppError::NoSuchPermission(system_id, perm_id) => {
+                Self::NoSuchPermission { system_id, perm_id }
+            }
             AppError::DuplicatePermissionId(id) => Self::DuplicatePermissionId { id },
+            AppError::DuplicatePermissionAssignment(perm_id, system_id, scope) => {
+                Self::DuplicatePermissionAssignment {
+                    system_id,
+                    perm_id,
+                    scope,
+                }
+            }
+            AppError::MissingPermissionScope(system_id, perm_id) => {
+                Self::MissingPermissionScope { system_id, perm_id }
+            }
+            AppError::ExtraneousPermissionScope(system_id, perm_id) => {
+                Self::ExtraneousPermissionScope { system_id, perm_id }
+            }
             AppError::NoSuchGroup(id, domain) => Self::NoSuchGroup { id, domain },
             AppError::DuplicateGroupId(id, domain) => Self::DuplicateGroupId { id, domain },
             AppError::InvalidSubgroup(id, domain) => Self::InvalidSubgroup { id, domain },
@@ -94,8 +123,24 @@ impl InnerAppErrorDto {
                 "Ambiguous API Token Description"
             }
             (Self::AmbiguousAPIToken { .. }, Language::Swedish) => "Tvetydig API-token beskrivning",
+            (Self::NoSuchPermission { .. }, Language::English) => "Unknown Permission",
+            (Self::NoSuchPermission { .. }, Language::Swedish) => "Okänt behörighet",
             (Self::DuplicatePermissionId { .. }, Language::English) => "Duplicate Permission ID",
             (Self::DuplicatePermissionId { .. }, Language::Swedish) => "Duplicerat behörighet-ID",
+            (Self::DuplicatePermissionAssignment { .. }, Language::English) => {
+                "Duplicate Permission Assignment"
+            }
+            (Self::DuplicatePermissionAssignment { .. }, Language::Swedish) => {
+                "Duplicerat behörighetstilldelning"
+            }
+            (Self::MissingPermissionScope { .. }, Language::English) => "Missing Permission Scope",
+            (Self::MissingPermissionScope { .. }, Language::Swedish) => "Behörighetsgräns saknas",
+            (Self::ExtraneousPermissionScope { .. }, Language::English) => {
+                "Extraneous Permission Scope"
+            }
+            (Self::ExtraneousPermissionScope { .. }, Language::Swedish) => {
+                "Vederlagsfri behörighetsgräns"
+            }
             (Self::NoSuchGroup { .. }, Language::English) => "Unknown Group",
             (Self::NoSuchGroup { .. }, Language::Swedish) => "Okänt grupp",
             (Self::DuplicateGroupId { .. }, Language::English) => "Duplicate Group ID",
@@ -187,6 +232,12 @@ impl InnerAppErrorDto {
                 "Beskrivning \"{description}\" är tvetydig eftersom den redan används av ett \
                  annat API-token för samma system."
             ),
+            (Self::NoSuchPermission { system_id, perm_id }, Language::English) => {
+                format!("Could not find any permission with ID \"${system_id}:{perm_id}\".")
+            }
+            (Self::NoSuchPermission { system_id, perm_id }, Language::Swedish) => {
+                format!("Kunde inte hitta någon behörighet med ID \"${system_id}:{perm_id}\".")
+            }
             (Self::DuplicatePermissionId { id }, Language::English) => format!(
                 "ID \"{id}\" is already in use by another permission associated with the same \
                  system."
@@ -195,6 +246,64 @@ impl InnerAppErrorDto {
                 "ID \"{id}\" används redan av ett annan behörighet som är kopplad till samma \
                  system."
             ),
+            (
+                Self::DuplicatePermissionAssignment {
+                    system_id,
+                    perm_id,
+                    scope,
+                },
+                Language::English,
+            ) => {
+                format!(
+                    "Permission \"{}\" is already assigned to this entity.",
+                    if let Some(scope) = scope {
+                        format!("${system_id}:{perm_id}:{scope}")
+                    } else {
+                        format!("${system_id}:{perm_id}")
+                    }
+                )
+            }
+            (
+                Self::DuplicatePermissionAssignment {
+                    system_id,
+                    perm_id,
+                    scope,
+                },
+                Language::Swedish,
+            ) => {
+                format!(
+                    "Behörighet \"{}\" har redan tilldelats den här entiteten.",
+                    if let Some(scope) = scope {
+                        format!("${system_id}:{perm_id}:{scope}")
+                    } else {
+                        format!("${system_id}:{perm_id}")
+                    }
+                )
+            }
+            (Self::MissingPermissionScope { system_id, perm_id }, Language::English) => {
+                format!(
+                    "Permission with ID \"${system_id}:{perm_id}\" requires a concrete scope to \
+                     be specified on assignment."
+                )
+            }
+            (Self::MissingPermissionScope { system_id, perm_id }, Language::Swedish) => {
+                format!(
+                    "Behörighet med ID \"${system_id}:{perm_id}\" kräver att en konkret gräns \
+                     anges vid tilldelning."
+                )
+            }
+            (Self::ExtraneousPermissionScope { system_id, perm_id }, Language::English) => {
+                format!(
+                    "Permission with ID \"${system_id}:{perm_id}\" does not support being limited \
+                     to a concrete scope on assignment."
+                )
+            }
+            (Self::ExtraneousPermissionScope { system_id, perm_id }, Language::Swedish) => {
+                format!(
+                    "Behörighet med ID \"${system_id}:{perm_id}\" stöder inte att begränsas till \
+                     en konkret gräns vid tilldelning."
+                )
+            }
             (Self::NoSuchGroup { id, domain }, Language::English) => {
                 format!("Could not find any group with ID \"{id}@{domain}\".")
             }

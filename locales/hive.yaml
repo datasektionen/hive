@@ -1,4 +1,7 @@
 _version: 2
+
+# see also: src/dto/errors.rs
+
 api-tokens.create.field.description.label:
   en: Description
   sv: Beskrivning
@@ -60,6 +63,9 @@ col.actions:
 control.add:
   en: Add
   sv: Lägg till
+control.assign:
+  en: Assign
+  sv: Tilldela
 control.back:
   en: Back
   sv: Tillbaka
@@ -170,6 +176,9 @@ groups.details.members.control.show-indirect:
 groups.details.members.title:
   en: Members
   sv: Medlemmar
+groups.details.permissions.assign:
+  en: Assign permission
+  sv: Tilldela behörighet
 groups.details.permissions.title:
   en: Permissions
   sv: Behörigheter
@@ -402,6 +411,30 @@ groups.members.list.icon.user:
 groups.members.list.tooltip.inclusive:
   en: (Inclusive)
   sv: (Inklusive)
+groups.permissions.assign.field.perm.indicator.scoped:
+  en: Scoped
+  sv: Avgränsat
+groups.permissions.assign.field.perm.label:
+  en: Permission
+  sv: Behörighet
+groups.permissions.assign.field.perm.placeholder:
+  en: e.g., $calypso:create-posts
+  sv: t.ex. $calypso:create-posts
+groups.permissions.assign.field.perm.tip:
+  en: Specify what permission should be granted to group <samp>%{x}</samp>
+  sv: Ange vilken behörighet som ska ges till gruppen <samp>%{x}</samp>
+groups.permissions.assign.field.scope.label:
+  en: Scope (if applicable)
+  sv: Gräns (om tillämpligt)
+groups.permissions.assign.field.scope.placeholder:
+  en: e.g., news
+  sv: t.ex. news
+groups.permissions.assign.field.scope.tip:
+  en: Scope access to a specific limit, or use * as wildcard (= everything)
+  sv: Omfång åtkomst till en specific gräns, eller använd * som joker (= allt)
+groups.permissions.assign.success:
+  en: Successfully assigned permission <samp>%{x}</samp> to the group!
+  sv: Tilldelade behörigheten <samp>%{x}</samp> till gruppen!
 groups.permissions.list.col.description:
   en: Description
   sv: Beskrivning

@@ -120,6 +120,7 @@
             {# delay is to give event listener time to be set, for aria-busy=true #}
         </div>
     </main>
+    {% if relevance.authority >= AuthorityInGroup::ManageMembers %}
     <footer>
         <details>
             <summary role="button" class="secondary">
@@ -134,6 +135,7 @@
             {% include "members/add-member.html.j2" %}
         </details>
     </footer>
+    {% endif %}
 </article>
 
 <article>
@@ -146,6 +148,16 @@
             {# delay is to give event listener time to be set, for aria-busy=true #}
         </div>
     </main>
+    {% if !assignable_permissions.is_empty() %}
+    <footer>
+        <details>
+            <summary role="button" class="secondary">
+                {{ ctx.t("groups.details.permissions.assign") }}
+            </summary>
+            {% include "permissions/assign.html.j2" %}
+        </details>
+    </footer>
+    {% endif %}
 </article>
 
 {% include "edit.html.j2" %}

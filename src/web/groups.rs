@@ -20,7 +20,7 @@ use crate::{
     guards::{
         context::PageContext, headers::HxRequest, lang::Language, perms::PermsEvaluator, user::User,
     },
-    models::{Group, GroupMember, SimpleGroup, Subgroup},
+    models::{Group, GroupMember, Permission, PermissionAssignment, SimpleGroup, Subgroup},
     perms::{GroupsScope, HivePermission},
     routing::RouteTree,
     services::groups::{
@@ -87,9 +87,13 @@ struct GroupDetailsView<'f, 'v> {
     add_subgroup_success: Option<Subgroup>,
     add_member_form: &'f form::Context<'v>,
     add_member_success: Option<GroupMember>,
+    assign_permission_form: &'f form::Context<'v>,
+    assign_permission_success: Option<PermissionAssignment>,
     edit_form: &'f form::Context<'v>,
     edit_modal_open: bool,
-    permissible_groups: Vec<SimpleGroup>, // for autocomplete
+    // for autocomplete
+    permissible_groups: Vec<SimpleGroup>,
+    assignable_permissions: Vec<Permission>,
 }
 
 #[derive(Template)]
@@ -331,6 +335,8 @@ async fn group_details(
     let permissible_groups =
         groups::list::list_all_permissible_sorted(&ctx.lang, db.inner(), perms, &user).await?;
 
+    let assignable_permissions = groups::permissions::get_all_assignable(perms, db.inner()).await?;
+
     let empty_form = form::Context::default();
     let template = GroupDetailsView {
         ctx,
@@ -340,9 +346,12 @@ async fn group_details(
         add_subgroup_success: None,
         add_member_form: &empty_form,
         add_member_success: None,
+        assign_permission_form: &empty_form,
+        assign_permission_success: None,
         edit_form: &empty_form,
         edit_modal_open: false,
         permissible_groups,
+        assignable_permissions,
     };
 
     Ok(RawHtml(template.render()?))
@@ -465,6 +474,9 @@ pub async fn edit_group<'v>(
                 groups::list::list_all_permissible_sorted(&ctx.lang, db.inner(), perms, &user)
                     .await?;
 
+            let assignable_permissions =
+                groups::permissions::get_all_assignable(perms, db.inner()).await?;
+
             let empty_form = form::Context::default();
             let template = GroupDetailsView {
                 ctx,
@@ -474,9 +486,12 @@ pub async fn edit_group<'v>(
                 add_subgroup_success: None,
                 add_member_form: &empty_form,
                 add_member_success: None,
+                assign_permission_form: &empty_form,
+                assign_permission_success: None,
                 edit_form: &form.context,
                 edit_modal_open: true,
                 permissible_groups,
+                assignable_permissions,
             };
 
             Ok(EditGroupResponse::Invalid(RawHtml(template.render()?)))

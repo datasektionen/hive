@@ -2,6 +2,10 @@
   position: relative;
 }
 
+label > .combobox > input {
+  margin-top: calc(var(--pico-spacing) * 0.25);
+}
+
 .combobox ul {
   position: absolute;
   top: 100%;

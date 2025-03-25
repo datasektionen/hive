@@ -1,0 +1,72 @@
+{%- import "utils.html.j2" as utils -%}
+
+<form id="assign-permission-form" method="post" action="/group/{{ group.domain }}/{{ group.id }}/permissions"
+    hx-boost="true" hx-push-url="false" hx-target="this" hx-indicator="#assign-permission-submit"
+    class="container-fluid">
+    {% block inner_assign_permission_form %}
+    {% if let Some(assignment) = assign_permission_success %}
+    <p class="success">
+        <span class="material-icons">task_alt</span>
+        <strong>
+            {{ ctx.t1("groups.permissions.assign.success", assignment.full_id_escaped())|safe }}
+        </strong>
+    </p>
+    <br />
+    <template>
+        <tbody hx-swap-oob="afterbegin:#group-permissions-table tbody">
+            <tr>
+                {% include "groups/permissions/row-cells.html.j2" %}
+            </tr>
+        </tbody>
+    </template>
+    {% endif %}
+
+    <div class="grid">
+        <label>
+            {{ ctx.t("groups.permissions.assign.field.perm.label") }}
+            <div class="combobox">
+                <input {% call utils::field(assign_permission_form, "perm" ) %}
+                    placeholder='{{ ctx.t("groups.permissions.assign.field.perm.placeholder") }}' required
+                    pattern="\$[a-z0-9]+(-[a-z0-9]+)*:[a-z0-9]+(-[a-z0-9]+)*"
+                    aria-describedby="assignment-permission-tip" />
+                <small id="assignment-permission-tip">
+                    {{ ctx.t1("groups.permissions.assign.field.perm.tip", group.key())|safe }}
+                </small>
+                <ul>
+                    {% for permission in assignable_permissions %}
+
+                    {% let attr %}
+                    {% if permission.has_scope %}
+                    {% let attr = "data-combobox-enable" %}
+                    {% else %}
+                    {% let attr = "data-combobox-disable" %}
+                    {% endif %}
+                    <li data-combobox-value="{{ permission.full_id() }}" {{ attr }}="assign-permission-scope"
+                        class="flex-between" tabindex="0">
+                        <samp>{{ permission.full_id() }}</samp>
+                        {% if permission.has_scope %}
+                        <em class="secondary">
+                            {{ ctx.t("groups.permissions.assign.field.perm.indicator.scoped") }}
+                        </em>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </label>
+        <label>
+            {{ ctx.t("groups.permissions.assign.field.scope.label") }}
+            <input {% call utils::field(assign_permission_form, "scope" ) %} id="assign-permission-scope" disabled
+                placeholder='{{ ctx.t("groups.permissions.assign.field.scope.placeholder") }}'
+                aria-describedby="assignment-scope-tip" />
+            <small id="assignment-scope-tip">{{ ctx.t("groups.permissions.assign.field.scope.tip") }}</small>
+        </label>
+    </div>
+    <div class="flex-end">
+        <button id="assign-permission-submit">
+            <span class="material-icons">add</span>
+            {{ ctx.t("control.assign") }}
+        </button>
+    </div>
+    {% endblock inner_assign_permission_form %}
+</form>

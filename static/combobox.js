@@ -12,6 +12,19 @@ for (const ul of document.querySelectorAll(".combobox ul")) {
     for (const li of ul.querySelectorAll("li[data-combobox-value]")) {
       if (input.value == li.dataset.comboboxValue) {
         // matched
+
+        if (li.dataset.comboboxEnable) {
+          const other = document.getElementById(li.dataset.comboboxEnable);
+          other.toggleAttribute("required", true);
+          other.toggleAttribute("disabled", false);
+        }
+        if (li.dataset.comboboxDisable) {
+          const other = document.getElementById(li.dataset.comboboxDisable);
+          other.toggleAttribute("required", false);
+          other.toggleAttribute("disabled", true);
+          other.value = "";
+        }
+
         return;
       }
     }

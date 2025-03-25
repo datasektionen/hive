@@ -67,7 +67,7 @@ struct PartialAddMemberView<'f, 'v> {
 
 #[rocket::get("/group/<domain>/<id>/members?<show_indirect>")]
 #[allow(clippy::too_many_arguments)]
-pub async fn list_members<'v>(
+pub async fn list_members(
     id: &str,
     domain: &str,
     show_indirect: bool,

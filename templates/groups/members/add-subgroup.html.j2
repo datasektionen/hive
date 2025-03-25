@@ -26,7 +26,7 @@
     <label>
         {{ ctx.t("groups.members.add.subgroup.field.child.label") }}
         <div class="combobox">
-            <input {% call utils::field(add_subgroup_form, "child" ) %} id="subgroup-child-field"
+            <input {% call utils::field(add_subgroup_form, "child" ) %}
                 placeholder='{{ ctx.t("groups.members.add.subgroup.field.child.placeholder") }}' required minlength="3"
                 pattern="[a-z0-9]+(-[a-z0-9]+)*@[\-a-z0-9]+\.[a-z]+" aria-describedby="subgroup-child-tip" />
             <small id="subgroup-child-tip">

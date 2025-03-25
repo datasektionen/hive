@@ -55,6 +55,7 @@ impl PartialOrd for HivePermission {
             (Self::ManageMembers(a), Self::ManageMembers(b)) => a.partial_cmp(b),
             (Self::ManageSystem(a), Self::ManageSystem(b)) => a.partial_cmp(b),
             (Self::ManagePerms(a), Self::ManagePerms(b)) => a.partial_cmp(b),
+            (Self::AssignPerms(a), Self::AssignPerms(b)) => a.partial_cmp(b),
             _ => None,
         }
     }
@@ -97,6 +98,11 @@ impl TryFrom<BasePermissionAssignment> for HivePermission {
                 let scope = SystemsScope::try_from(scope)?;
 
                 Ok(Self::ManagePerms(scope))
+            }
+            ("assign-perms", Some(scope)) => {
+                let scope = SystemsScope::try_from(scope)?;
+
+                Ok(Self::AssignPerms(scope))
             }
             _ => Err(InvalidHivePermissionError::Id),
         }

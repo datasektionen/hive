@@ -45,8 +45,17 @@ pub enum AppError {
 
     #[error("description `{0}` is already in use by another API token for this system")]
     AmbiguousAPIToken(String),
+
+    #[error("could not find permission with key `${0}:{1}`")]
+    NoSuchPermission(String, String),
     #[error("ID `{0}` is already in use by another permission for this system")]
     DuplicatePermissionId(String),
+    #[error("permission `${0}:{1}:{scope}` is already assigned to this entity", scope = .2.as_deref().unwrap_or("/"))]
+    DuplicatePermissionAssignment(String, String, Option<String>),
+    #[error("permission with key `${0}:{1}` requires a scope to be specified on assignment")]
+    MissingPermissionScope(String, String),
+    #[error("permission with key `${0}:{1}` does not accept a scope on assignment")]
+    ExtraneousPermissionScope(String, String),
 
     #[error("could not find group with ID `{0}@{1}`")]
     NoSuchGroup(String, String),
@@ -87,7 +96,11 @@ impl AppError {
             AppError::NoSuchSystem(..) => Status::NotFound,
             AppError::DuplicateSystemId(..) => Status::Conflict,
             AppError::AmbiguousAPIToken(..) => Status::Conflict,
+            AppError::NoSuchPermission(..) => Status::NotFound,
             AppError::DuplicatePermissionId(..) => Status::Conflict,
+            AppError::DuplicatePermissionAssignment(..) => Status::Conflict,
+            AppError::MissingPermissionScope(..) => Status::BadRequest,
+            AppError::ExtraneousPermissionScope(..) => Status::BadRequest,
             AppError::NoSuchGroup(..) => Status::NotFound,
             AppError::DuplicateGroupId(..) => Status::Conflict,
             AppError::InvalidSubgroup(..) => Status::BadRequest,

@@ -161,10 +161,26 @@ impl Permission {
 
 #[derive(FromRow)]
 pub struct PermissionAssignment {
+    pub id: Uuid,
     pub system_id: String,
     pub perm_id: String,
     pub scope: Option<String>,
     pub description: String,
+}
+
+impl PermissionAssignment {
+    pub fn full_id_escaped(&self) -> String {
+        if let Some(scope) = &self.scope {
+            format!(
+                "${}:{}:{}",
+                self.system_id,
+                self.perm_id,
+                rinja::filters::escape(scope, rinja::filters::Html).expect("infallible")
+            )
+        } else {
+            format!("${}:{}", self.system_id, self.perm_id)
+        }
+    }
 }
 
 #[derive(FromRow)]
