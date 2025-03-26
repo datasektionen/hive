@@ -284,11 +284,11 @@ fn dedup_paths<T: PartialEq + Clone>(paths: &mut Vec<Vec<T>>) {
 
     paths.retain(|path| {
         if seen_suffixes.iter().any(|suffix| path.ends_with(suffix)) {
-            false
-        } else {
+            return false;
+        } else if !path.is_empty() {
             seen_suffixes.push(path.clone());
-
-            true
         }
+
+        true
     });
 }
