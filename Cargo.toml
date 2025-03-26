@@ -7,6 +7,7 @@ description = "Group and permissions management system"
 repository = "https://github.com/datasektionen/hive"
 license = "GPL-3.0-or-later"
 publish = false
+rust-version = "1.82"
 
 [dependencies]
 chrono = { version = "0.4.39", features = ["serde"] }
