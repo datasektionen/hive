@@ -12,7 +12,7 @@ use crate::{
     dto::groups::{AddMemberDto, AddSubgroupDto},
     errors::{AppError, AppResult},
     guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
-    models::{GroupMember, SimpleGroup, Subgroup},
+    models::{GroupMember, GroupRef, SimpleGroup, Subgroup},
     routing::RouteTree,
     services::groups::{self, AuthorityInGroup},
     web::{Either, RenderedTemplate},
@@ -24,7 +24,8 @@ pub fn routes() -> RouteTree {
         add_subgroup,
         add_member,
         remove_subgroup,
-        remove_member
+        remove_member,
+        get_membership_details
     ]
     .into()
 }
@@ -59,10 +60,21 @@ struct PartialAddSubgroupView<'f, 'v> {
     path = "groups/members/add-member.html.j2",
     block = "inner_add_member_form"
 )]
-struct PartialAddMemberView<'f, 'v> {
+struct PartialAddMemberView<'r, 'f, 'v> {
     ctx: PageContext,
+    group_id: &'r str,
+    group_domain: &'r str,
     add_member_form: &'f form::Context<'v>,
     add_member_success: Option<GroupMember>,
+}
+
+#[derive(Template)]
+#[template(path = "groups/members/member-details.html.j2")]
+struct PartialMembershipDetailsView<'r> {
+    ctx: PageContext,
+    username: &'r str,
+    paths: Vec<Vec<GroupRef>>, // empty => not indirect member (but not <=!)
+    is_direct_member: bool,    // false doesn't mean indirect! might be none
 }
 
 #[rocket::get("/group/<domain>/<id>/members?<show_indirect>")]
@@ -252,6 +264,8 @@ async fn add_member<'v>(
         if partial.is_some() {
             let template = PartialAddMemberView {
                 ctx,
+                group_id: id,
+                group_domain: domain,
                 add_member_form: &form::Context::default(),
                 add_member_success: Some(added),
             };
@@ -270,6 +284,8 @@ async fn add_member<'v>(
         if partial.is_some() {
             let template = PartialAddMemberView {
                 ctx,
+                group_id: id,
+                group_domain: domain,
                 add_member_form: &form.context,
                 add_member_success: None,
             };
@@ -371,4 +387,59 @@ async fn remove_member<'v>(
         let target = uri!(super::group_details(id = group_id, domain = group_domain));
         Ok(Either::Right(Redirect::to(target)))
     }
+}
+
+#[rocket::get("/group/<domain>/<id>/member/<username>")]
+#[allow(clippy::too_many_arguments)]
+pub async fn get_membership_details(
+    id: &str,
+    domain: &str,
+    username: &str,
+    db: &State<PgPool>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<Either<RenderedTemplate, Redirect>> {
+    if partial.is_none() {
+        // we only know how to render a table, not a full page;
+        // redirect to group details
+
+        let target = uri!(super::group_details(id = id, domain = domain));
+        return Ok(Either::Right(Redirect::to(target)));
+    }
+
+    groups::details::require_authority(
+        AuthorityInGroup::View,
+        id,
+        domain,
+        db.inner(),
+        perms,
+        &user,
+    )
+    .await?;
+
+    let mut paths = groups::details::get_role_in_group_with_paths(username, id, domain, db.inner())
+        .await?
+        .1;
+
+    let mut is_direct_member = false;
+    paths.retain(|path| {
+        if path.is_empty() {
+            is_direct_member = true;
+
+            false
+        } else {
+            true
+        }
+    });
+
+    let template = PartialMembershipDetailsView {
+        ctx,
+        username,
+        paths,
+        is_direct_member,
+    };
+
+    Ok(Either::Left(RawHtml(template.render()?)))
 }

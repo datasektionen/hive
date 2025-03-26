@@ -1,10 +1,17 @@
-{% if !show_indirect %}
-<td>
-    <span class="material-icons" data-tooltip='{{ ctx.t("groups.members.list.icon.user") }}' data-placement="right">
+<td style="text-align: center">
+    {% if show_indirect %}
+    <a id="member-details-toggle-{{ member.username }}" class="secondary"
+        data-tooltip='{{ ctx.t("groups.members.list.icon.expand") }}'
+        hx-get="/group/{{ group_domain }}/{{ group_id }}/member/{{ member.username }}" hx-target="closest tr"
+        hx-swap="afterend">
+        <span class="material-icons">chevron_right</span>
+    </a>
+    {% else %}
+    <span class="material-icons" data-tooltip='{{ ctx.t("groups.members.list.icon.user") }}'>
         person
     </span>
+    {% endif %}
 </td>
-{% endif %}
 <td>
     <strong>{{ member.username }}</strong>
     {% if member.manager %}

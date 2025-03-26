@@ -1,0 +1,38 @@
+<template>
+    <span hx-swap-oob="outerHTML" id="member-details-toggle-{{ username }}" class="secondary material-icons">
+        expand_more
+    </span>
+</template>
+
+<tr>
+    <td colspan="5">
+        <ul class="collapse-if-single less-padding mb-0">
+            {% if is_direct_member %}
+            <li>
+                {{ ctx.t("groups.members.list.details.membership.direct") }}
+                <span class="material-icons">verified_user</span>
+            </li>
+            {% endif %}
+
+            {% if !paths.is_empty() %}
+            <li>{{ ctx.t("groups.members.list.details.membership.indirect") }}
+                <ul class="collapse-if-single">
+                    {% for path in paths %}
+                    <li>
+                        {% for node in path %}
+                        <span class="secondary" hx-get="/group/{{ node.group_domain }}/{{ node.group_id }}/tooltip"
+                            hx-trigger="mouseenter once" hx-indicator="head">
+                            {# hx-indicator cannot be disabled... see htmx#2515. head prevents loading spinner #}
+                            <samp><strong>{{ node.group_id }}</strong>@{{ node.group_domain }}</samp></a>
+                            {% if !loop.last %}
+                            &gt;
+                            {% endif %}
+                            {% endfor %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </li>
+            {% endif %}
+        </ul>
+    </td>
+</tr>

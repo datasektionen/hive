@@ -1,9 +1,13 @@
 <table id="group-members-table" class="striped" data-with-indirect="{{ show_indirect }}">
     <thead>
         <tr>
-            {% if !show_indirect %}
-            <th scope="col">{{ ctx.t("groups.members.list.col.type") }}</th>
-            {% endif %}
+            <th scope="col" style="text-align: center">
+                {% if show_indirect %}
+                {{ ctx.t("groups.members.list.col.details") }}
+                {% else %}
+                {{ ctx.t("groups.members.list.col.type") }}
+                {% endif %}
+            </th>
             <th scope="col">{{ ctx.t("groups.members.list.col.id") }}</th>
             <th scope="col">{{ ctx.t("groups.members.list.col.name") }}</th>
             <th scope="col">

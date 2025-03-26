@@ -15,6 +15,22 @@
             <tr>
                 {% let show_indirect = false %}
                 {% let can_manage = true %}
+
+                {# FIXME: there must definitely be a better way to do this... #}
+                {% let x_group_id %}
+                {% if group is defined %}
+                {% let x_group_id = group.id %}
+                {% else %}
+                {% let x_group_id = group_id %}
+                {% endif %}
+                {% let x_group_domain %}
+                {% if group is defined %}
+                {% let x_group_domain = group.domain %}
+                {% else %}
+                {% let x_group_domain = group_domain %}
+                {% endif %}
+                {% let group_id = x_group_id %}
+                {% let group_domain = x_group_domain %}
                 {% include "groups/members/member-cells.html.j2" %}
             </tr>
         </tbody>

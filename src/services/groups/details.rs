@@ -232,7 +232,7 @@ where
     Ok(role)
 }
 
-async fn get_role_in_group_with_paths<'x, X>(
+pub async fn get_role_in_group_with_paths<'x, X>(
     username: &str,
     id: &str,
     domain: &str,

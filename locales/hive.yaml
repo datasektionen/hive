@@ -149,12 +149,12 @@ groups.details.info.description:
 groups.details.info.key:
   en: Group Key
   sv: Gruppnyckel
-groups.details.info.membership.indirect:
-  en: "You're an indirect member of this group via:"
-  sv: "Du är en indirekt medlem i den här gruppen via:"
 groups.details.info.membership.direct:
   en: You're a direct member of this group
   sv: Du är en indirekt medlem i den här gruppen
+groups.details.info.membership.indirect:
+  en: "You're an indirect member of this group via:"
+  sv: "Du är en indirekt medlem i den här gruppen via:"
 groups.details.info.membership.manager:
   en: You're a Group Manager
   sv: Du är Gruppansvarig
@@ -381,6 +381,9 @@ groups.members.list.action.delete.subgroup.confirm:
 groups.members.list.action.delete.tooltip:
   en: Revoke membership
   sv: Återkalla medlemskapet
+groups.members.list.col.details:
+  en: Details
+  sv: Detaljer
 groups.members.list.col.from:
   en: From
   sv: Från
@@ -396,9 +399,18 @@ groups.members.list.col.type:
 groups.members.list.col.until:
   en: Until
   sv: Tills
+groups.members.list.details.membership.direct:
+  en: Direct member of this group
+  sv: Direkt medlem i den här gruppen
+groups.members.list.details.membership.indirect:
+  en: "Indirect member of this group via:"
+  sv: "Indirekt medlem i den här gruppen via:"
 groups.members.list.empty:
   en: This group does not have any members.
   sv: Den här gruppen har inga medlemmar.
+groups.members.list.icon.expand:
+  en: Expand
+  sv: Expandera
 groups.members.list.icon.group:
   en: Subgroup
   sv: Undergrupp
