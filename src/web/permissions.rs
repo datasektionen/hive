@@ -55,24 +55,6 @@ struct PartialCreatePermissionView<'f, 'v> {
 }
 
 #[derive(Template)]
-#[template(path = "permissions/created.html.j2")]
-struct PermissionCreatedView<'a> {
-    ctx: PageContext,
-    system_id: &'a str,
-    permission: Permission,
-}
-
-#[derive(Template)]
-#[template(
-    path = "permissions/created.html.j2",
-    block = "permission_created_partial"
-)]
-struct PartialPermissionCreatedView {
-    ctx: PageContext,
-    permission: Permission,
-}
-
-#[derive(Template)]
 #[template(path = "permissions/details.html.j2")]
 struct PermissionDetailsView<'f, 'v> {
     ctx: PageContext,
@@ -179,7 +161,7 @@ async fn create_permission<'v>(
     perms: &PermsEvaluator,
     user: User,
     partial: Option<HxRequest<'_>>,
-) -> AppResult<Either<RenderedTemplate, Redirect>> {
+) -> AppResult<Either<RenderedTemplate, GracefulRedirect>> {
     let min = HivePermission::ManagePerms(SystemsScope::Id(system_id.to_owned()));
     perms.require(min).await?;
 
@@ -192,19 +174,13 @@ async fn create_permission<'v>(
 
         let permission = permissions::create_new(system_id, dto, db.inner(), &user).await?;
 
-        if partial.is_some() {
-            let template = PartialPermissionCreatedView { ctx, permission };
-
-            Ok(Either::Left(RawHtml(template.render()?)))
-        } else {
-            let template = PermissionCreatedView {
-                ctx,
-                system_id,
-                permission,
-            };
-
-            Ok(Either::Left(RawHtml(template.render()?)))
-        }
+        Ok(Either::Right(GracefulRedirect::to(
+            uri!(permission_details(
+                system_id = system_id,
+                perm_id = permission.perm_id
+            )),
+            partial.is_some(),
+        )))
     } else {
         // some errors are present; show the form again
         debug!("Create permission form errors: {:?}", &form.context);
@@ -222,7 +198,7 @@ async fn create_permission<'v>(
             // alternative, and it might be fine for such a tiny form
 
             let target = uri!(super::systems::system_details(system_id));
-            Ok(Either::Right(Redirect::to(target)))
+            Ok(Either::Right(GracefulRedirect::to(target, false)))
         }
     }
 }

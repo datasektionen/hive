@@ -574,12 +574,6 @@ permissions.create.field.scoped.tip:
     If checked, a concrete scope will need to be specified when this
     permission is assigned
   sv: Om markerad måste en konkret gräns anges när denna behörighet tilldelas
-permissions.created.heading:
-  en: New Permission
-  sv: Ny behörighet
-permissions.created.success:
-  en: Permission <samp>%{x}</samp> created successfully!
-  sv: Behörighet <samp>%{x}</samp> skapades framgångsrikt!
 permissions.delete.confirmation.placeholder:
   en: e.g., $calypso:create-posts
   sv: t.ex. $calypso:create-posts
