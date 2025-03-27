@@ -3,6 +3,7 @@ use log::*;
 use rocket::fs::{relative, FileServer};
 use sqlx::PgPool;
 
+mod api;
 mod config;
 mod dto;
 mod errors;
@@ -51,6 +52,7 @@ async fn rocket() -> _ {
         .manage(db)
         .attach(ErrorPageGenerator)
         .mount("/", &web::tree())
+        .mount("/api/v0", &api::v0::tree())
         .mount("/static", FileServer::from(relative!("./static")))
         .register("/", web::catchers())
 }

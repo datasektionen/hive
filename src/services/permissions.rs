@@ -1,3 +1,4 @@
+use chrono::Local;
 use log::*;
 use serde_json::json;
 use uuid::Uuid;
@@ -9,7 +10,10 @@ use crate::{
     },
     errors::{AppError, AppResult},
     guards::{lang::Language, perms::PermsEvaluator, user::User},
-    models::{ActionKind, AffiliatedPermissionAssignment, Permission, TargetKind},
+    models::{
+        ActionKind, AffiliatedPermissionAssignment, BasePermissionAssignment, Permission,
+        TargetKind,
+    },
     perms::{HivePermission, SystemsScope},
 };
 
@@ -54,6 +58,92 @@ where
     .await?;
 
     Ok(permissions)
+}
+
+pub async fn list_all_assignments_for_user<'x, X>(
+    username: &str,
+    db: X,
+) -> AppResult<Vec<BasePermissionAssignment>>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+{
+    let today = Local::now().date_naive();
+
+    let assignments = sqlx::query_as(
+        "SELECT pa.system_id, pa.perm_id, pa.scope
+        FROM permission_assignments pa
+        JOIN all_groups_of($1, $2) ag
+            ON ag.id = pa.group_id
+            AND ag.domain = pa.group_domain
+        ORDER BY pa.system_id, pa.perm_id, pa.scope",
+    )
+    .bind(username)
+    .bind(today)
+    .fetch_all(db)
+    .await?;
+
+    Ok(assignments)
+}
+
+pub async fn list_all_assignments_for_user_system<'x, X>(
+    username: &str,
+    system_id: &str,
+    db: X,
+) -> AppResult<Vec<BasePermissionAssignment>>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+{
+    let today = Local::now().date_naive();
+
+    let assignments = sqlx::query_as(
+        "SELECT pa.system_id, pa.perm_id, pa.scope
+        FROM permission_assignments pa
+        JOIN all_groups_of($1, $2) ag
+            ON ag.id = pa.group_id
+            AND ag.domain = pa.group_domain
+        WHERE pa.system_id = $3
+        ORDER BY pa.perm_id, pa.scope",
+    )
+    .bind(username)
+    .bind(today)
+    .bind(system_id)
+    .fetch_all(db)
+    .await?;
+
+    Ok(assignments)
+}
+
+pub async fn user_has_permission<'x, X>(
+    username: &str,
+    system_id: &str,
+    perm_id: &str,
+    scope: Option<&str>,
+    db: X,
+) -> AppResult<bool>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+{
+    let today = Local::now().date_naive();
+
+    let authorized = sqlx::query_scalar(
+        "SELECT COUNT(pa.*) > 0
+        FROM permission_assignments pa
+        JOIN all_groups_of($1, $2) ag
+            ON ag.id = pa.group_id
+            AND ag.domain = pa.group_domain
+        WHERE pa.system_id = $3
+            AND pa.perm_id = $4
+            AND pa.scope IS NOT DISTINCT FROM $5",
+    )
+    .bind(username)
+    .bind(today)
+    .bind(system_id)
+    .bind(perm_id)
+    .bind(scope)
+    .fetch_one(db)
+    .await?;
+
+    Ok(authorized)
 }
 
 pub async fn list_group_assignments<'x, X>(
