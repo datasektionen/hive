@@ -1,0 +1,28 @@
+<table id="tag-groups-table" class="striped">
+    <thead>
+        <tr>
+            <th scope="col">{{ ctx.t("tags.groups.list.col.key") }}</th>
+            <th scope="col">{{ ctx.t("tags.groups.list.col.name") }}</th>
+            {% if has_content %}
+            <th scope="col">{{ ctx.t("tags.groups.list.col.content") }}</th>
+            {% endif %}
+            {% if can_manage_any %}
+            {# this doesn't count with assignments added later... #}
+            <th scope="col">{{ ctx.t("col.actions") }}</th>
+            {% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="if-table-empty">
+            <td colspan="4">
+                <span class="material-icons">block</span>
+                {{ ctx.t("tags.groups.list.empty") }}
+            </td>
+        </tr>
+        {% for assignment in tag_assignments %}
+        <tr>
+            {% include "row-cells.html.j2" %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

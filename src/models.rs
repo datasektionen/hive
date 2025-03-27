@@ -248,6 +248,37 @@ impl Tag {
     }
 }
 
+#[derive(FromRow)]
+pub struct AffiliatedTagAssignment {
+    pub id: Uuid,
+    pub system_id: String,
+    pub tag_id: String,
+    pub content: Option<String>,
+    pub group_id: Option<String>,
+    pub group_domain: Option<String>,
+    pub username: Option<String>,
+    #[sqlx(default)]
+    pub label: Option<String>, // group name or user username
+    #[sqlx(default)]
+    pub can_manage: Option<bool>, // whether current user can e.g. unassign
+}
+
+impl AffiliatedTagAssignment {
+    pub fn key(&self) -> String {
+        format!("#{}:{}", self.system_id, self.tag_id)
+    }
+
+    pub fn group_key(&self) -> Option<String> {
+        if let Some(group_id) = &self.group_id {
+            if let Some(group_domain) = &self.group_domain {
+                return Some(format!("{}@{}", group_id, group_domain));
+            }
+        }
+
+        None
+    }
+}
+
 #[derive(sqlx::Type)]
 #[sqlx(type_name = "action_kind", rename_all = "snake_case")]
 pub enum ActionKind {

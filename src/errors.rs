@@ -64,6 +64,12 @@ pub enum AppError {
     NoSuchTag(String, String),
     #[error("ID `{0}` is already in use by another tag for this system")]
     DuplicateTagId(String),
+    #[error("tag `${0}:{1}:{content}` is already assigned to this entity", content = .2.as_deref().unwrap_or("/"))]
+    DuplicateTagAssignment(String, String, Option<String>),
+    #[error("tag with key `${0}:{1}` requires a content value to be specified on assignment")]
+    MissingTagContent(String, String),
+    #[error("tag with key `${0}:{1}` does not accept a content value on assignment")]
+    ExtraneousTagContent(String, String),
 
     #[error("could not find group with key `{0}@{1}`")]
     NoSuchGroup(String, String),
@@ -112,6 +118,9 @@ impl AppError {
             AppError::ExtraneousPermissionScope(..) => Status::BadRequest,
             AppError::NoSuchTag(..) => Status::NotFound,
             AppError::DuplicateTagId(..) => Status::Conflict,
+            AppError::DuplicateTagAssignment(..) => Status::Conflict,
+            AppError::MissingTagContent(..) => Status::BadRequest,
+            AppError::ExtraneousTagContent(..) => Status::BadRequest,
             AppError::NoSuchGroup(..) => Status::NotFound,
             AppError::DuplicateGroupId(..) => Status::Conflict,
             AppError::InvalidSubgroup(..) => Status::BadRequest,

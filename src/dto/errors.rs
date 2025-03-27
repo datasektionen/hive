@@ -47,6 +47,16 @@ enum InnerAppErrorDto {
     NoSuchTag { system_id: String, tag_id: String },
     #[serde(rename = "tag.id.duplicate-in-system")]
     DuplicateTagId { id: String },
+    #[serde(rename = "tag.assignment.duplicate")]
+    DuplicateTagAssignment {
+        system_id: String,
+        tag_id: String,
+        content: Option<String>,
+    },
+    #[serde(rename = "tag.assignment.content.missing")]
+    MissingTagContent { system_id: String, tag_id: String },
+    #[serde(rename = "tag.assignment.content.extraneous")]
+    ExtraneousTagContent { system_id: String, tag_id: String },
 
     #[serde(rename = "group.unknown")]
     NoSuchGroup { id: String, domain: String },
@@ -80,7 +90,7 @@ impl From<AppError> for InnerAppErrorDto {
                 Self::NoSuchPermission { system_id, perm_id }
             }
             AppError::DuplicatePermissionId(id) => Self::DuplicatePermissionId { id },
-            AppError::DuplicatePermissionAssignment(perm_id, system_id, scope) => {
+            AppError::DuplicatePermissionAssignment(system_id, perm_id, scope) => {
                 Self::DuplicatePermissionAssignment {
                     system_id,
                     perm_id,
@@ -95,6 +105,19 @@ impl From<AppError> for InnerAppErrorDto {
             }
             AppError::NoSuchTag(system_id, tag_id) => Self::NoSuchTag { system_id, tag_id },
             AppError::DuplicateTagId(id) => Self::DuplicateTagId { id },
+            AppError::DuplicateTagAssignment(system_id, tag_id, content) => {
+                Self::DuplicateTagAssignment {
+                    system_id,
+                    tag_id,
+                    content,
+                }
+            }
+            AppError::MissingTagContent(system_id, tag_id) => {
+                Self::MissingTagContent { system_id, tag_id }
+            }
+            AppError::ExtraneousTagContent(system_id, tag_id) => {
+                Self::ExtraneousTagContent { system_id, tag_id }
+            }
             AppError::NoSuchGroup(id, domain) => Self::NoSuchGroup { id, domain },
             AppError::DuplicateGroupId(id, domain) => Self::DuplicateGroupId { id, domain },
             AppError::InvalidSubgroup(id, domain) => Self::InvalidSubgroup { id, domain },
@@ -158,6 +181,14 @@ impl InnerAppErrorDto {
             (Self::NoSuchTag { .. }, Language::Swedish) => "Okänt tagg",
             (Self::DuplicateTagId { .. }, Language::English) => "Duplicate Tag ID",
             (Self::DuplicateTagId { .. }, Language::Swedish) => "Duplicerat tagg-ID",
+            (Self::DuplicateTagAssignment { .. }, Language::English) => "Duplicate Tag Assignment",
+            (Self::DuplicateTagAssignment { .. }, Language::Swedish) => {
+                "Duplicerat tagg-tilldelning"
+            }
+            (Self::MissingTagContent { .. }, Language::English) => "Missing Tag Content",
+            (Self::MissingTagContent { .. }, Language::Swedish) => "Taggsinnehåll saknas",
+            (Self::ExtraneousTagContent { .. }, Language::English) => "Extraneous Tag Content",
+            (Self::ExtraneousTagContent { .. }, Language::Swedish) => "Vederlagsfri taggsinnehåll",
             (Self::NoSuchGroup { .. }, Language::English) => "Unknown Group",
             (Self::NoSuchGroup { .. }, Language::Swedish) => "Okänt grupp",
             (Self::DuplicateGroupId { .. }, Language::English) => "Duplicate Group Key",
@@ -331,7 +362,7 @@ impl InnerAppErrorDto {
                 format!("Could not find any tag with key \"#{system_id}:{tag_id}\".")
             }
             (Self::NoSuchTag { system_id, tag_id }, Language::Swedish) => {
-                format!("Kunde inte hitta någon tagg med nyckel \"${system_id}:{tag_id}\".")
+                format!("Kunde inte hitta någon tagg med nyckel \"#{system_id}:{tag_id}\".")
             }
             (Self::DuplicateTagId { id }, Language::English) => format!(
                 "ID \"{id}\" is already in use by another tag associated with the same system."
@@ -339,6 +370,58 @@ impl InnerAppErrorDto {
             (Self::DuplicateTagId { id }, Language::Swedish) => format!(
                 "ID \"{id}\" används redan av ett annan tagg som är kopplad till samma system."
             ),
+            (
+                Self::DuplicateTagAssignment {
+                    system_id,
+                    tag_id,
+                    content,
+                },
+                Language::English,
+            ) => {
+                format!(
+                    "Tag \"{}\" is already assigned to this entity.",
+                    if let Some(content) = content {
+                        format!("#{system_id}:{tag_id}:{content}")
+                    } else {
+                        format!("#{system_id}:{tag_id}")
+                    }
+                )
+            }
+            (
+                Self::DuplicateTagAssignment {
+                    system_id,
+                    tag_id,
+                    content,
+                },
+                Language::Swedish,
+            ) => {
+                format!(
+                    "Tagg \"{}\" har redan tilldelats den här entiteten.",
+                    if let Some(content) = content {
+                        format!("#{system_id}:{tag_id}:{content}")
+                    } else {
+                        format!("#{system_id}:{tag_id}")
+                    }
+                )
+            }
+            (Self::MissingTagContent { system_id, tag_id }, Language::English) => {
+                format!(
+                    "Tag with key \"#{system_id}:{tag_id}\" requires a concrete content value to \
+                     be specified on assignment."
+                )
+            }
+            (Self::MissingTagContent { system_id, tag_id }, Language::Swedish) => {
+                format!(
+                    "Tagg med nyckel \"#{system_id}:{tag_id}\" kräver att en konkret \
+                     innehållsvärde anges vid tilldelning."
+                )
+            }
+            (Self::ExtraneousTagContent { system_id, tag_id }, Language::English) => {
+                format!("Tag with key \"#{system_id}:{tag_id}\" does not support a content value.")
+            }
+            (Self::ExtraneousTagContent { system_id, tag_id }, Language::Swedish) => {
+                format!("Tagg med nyckel \"#{system_id}:{tag_id}\" stöder inte en innehållsvärde.")
+            }
             (Self::NoSuchGroup { id, domain }, Language::English) => {
                 format!("Could not find any group with key \"{id}@{domain}\".")
             }

@@ -807,12 +807,67 @@ tags.delete.description:
 tags.delete.title:
   en: Delete Tag
   sv: Radera tagg
+tags.details.groups.assign:
+  en: Create new assignment
+  sv: Skapa ny tilldelning
+tags.details.groups.title:
+  en: Assignments to Groups
+  sv: Tilldelningar till grupper
+tags.details.users.assign:
+  en: Create new assignment
+  sv: Skapa ny tilldelning
+tags.details.users.title:
+  en: Assignments to Users
+  sv: Tilldelningar till användare
 tags.details.title:
   en: "Tag: %{x}"
   sv: "Tagg: %{x}"
 tags.details.title.pre:
   en: "Tag:"
   sv: "Tagg:"
+tags.groups.assign.field.group.label:
+  en: Group key
+  sv: Gruppnyckel
+tags.groups.assign.field.group.placeholder:
+  en: e.g., sn@example.com
+  sv: t.ex. sn@example.com
+tags.groups.assign.field.group.tip:
+  en: Specify the group that will be tagged with <samp>%{x}</samp>
+  sv: Ange gruppen som ska taggas med <samp>%{x}</samp>
+tags.groups.assign.field.content.label:
+  en: Content
+  sv: Innehåll
+tags.groups.assign.field.content.placeholder:
+  en: e.g., https://static.example.com/logos/sn.svg
+  sv: t.ex. https://static.example.com/logos/sn.svg
+tags.groups.assign.field.content.tip:
+  en: Specify a concrete value to be held in connection with this tag
+  sv: Ange ett konkret värde som ska hållas i samband med denna tagg
+tags.groups.assign.success:
+  en: Successfully assigned this tag to group <samp>%{x}</samp>!
+  sv: Tilldelade den här tagg till gruppen <samp>%{x}</samp>!
+tags.groups.list.action.delete.tooltip:
+  en: Untag group
+  sv: Avtagga gruppen
+tags.groups.list.action.delete.confirm:
+  en: >
+    Are you sure you want to unassign this tag from group "%{x}"?
+    This will have immediate repercussions for relying services.
+  sv: >
+    Är du säker på att du vill avdela den här taggen från gruppen "%{x}"?
+    Detta kommer att få omedelbara återverkningar för förlitande tjänster.
+tags.groups.list.col.key:
+  en: Group key
+  sv: Gruppnyckel
+tags.groups.list.col.name:
+  en: Group name
+  sv: Gruppnamn
+tags.groups.list.col.content:
+  en: Content
+  sv: Innehåll
+tags.groups.list.empty:
+  en: This tag has not yet been assigned to any group.
+  sv: Denna tagg har ännu inte tilldelats någon grupp.
 tags.key.content.indicator:
   en: Contentful
   sv: Innehållsfylld
@@ -837,3 +892,46 @@ tags.list.col.supports-users:
 tags.list.empty:
   en: This system does not have any associated tags.
   sv: Det här systemet har inga associerade taggar.
+tags.users.assign.field.user.label:
+  en: Username
+  sv: Användarnamn
+tags.users.assign.field.user.placeholder:
+  en: e.g., rmfseo
+  sv: t.ex. rmfseo
+tags.users.assign.field.user.tip:
+  en: Specify the user that will be tagged with <samp>%{x}</samp>
+  sv: Ange användaren som ska taggas med <samp>%{x}</samp>
+tags.users.assign.field.content.label:
+  en: Content
+  sv: Innehåll
+tags.users.assign.field.content.placeholder:
+  en: e.g., 2025
+  sv: t.ex. 2025
+tags.users.assign.field.content.tip:
+  en: Specify a concrete value to be held in connection with this tag
+  sv: Ange ett konkret värde som ska hållas i samband med denna tagg
+tags.users.assign.success:
+  en: Successfully assigned this tag to user <samp>%{x}</samp>!
+  sv: Tilldelade den här tagg till user <samp>%{x}</samp>!
+tags.users.list.action.delete.tooltip:
+  en: Untag user
+  sv: Avtagga user
+tags.users.list.action.delete.confirm:
+  en: >
+    Are you sure you want to unassign this tag from user "%{x}"?
+    This will have immediate repercussions for relying services.
+  sv: >
+    Är du säker på att du vill avdela den här taggen från användaren "%{x}"?
+    Detta kommer att få omedelbara återverkningar för förlitande tjänster.
+tags.users.list.col.username:
+  en: Username
+  sv: Användarnamn
+tags.users.list.col.name:
+  en: Name
+  sv: Namn
+tags.users.list.col.content:
+  en: Content
+  sv: Innehåll
+tags.users.list.empty:
+  en: This tag has not yet been assigned to any user.
+  sv: Denna tagg har ännu inte tilldelats någon användare.

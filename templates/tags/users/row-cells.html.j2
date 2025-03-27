@@ -1,0 +1,19 @@
+<td>
+    <samp>{{ assignment.username.as_deref().unwrap_or("?") }}</samp>
+</td>
+{% let label = assignment.label.as_deref().unwrap_or("?") %}
+<td>{{ label }}</td>
+{% if let Some(content) = assignment.content %}
+<td><samp class="primary">{{ content }}</samp></td>
+{% endif %}
+{% if can_manage_any %}
+<td>
+    {% if let Some(true) = assignment.can_manage %}
+    <button class="btn-danger" data-tooltip='{{ ctx.t("tags.users.list.action.delete.tooltip") }}' data-placement="left"
+        hx-delete="/tag-assignment/{{ assignment.id }}" hx-swap="delete" hx-target="closest tr"
+        hx-confirm='{{ ctx.t1("tags.users.list.action.delete.confirm", label) }}'>
+        <span class="material-icons">delete</span>
+    </button>
+    {% endif %}
+</td>
+{% endif %}

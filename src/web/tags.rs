@@ -6,20 +6,32 @@ use rocket::{
     uri, State,
 };
 use sqlx::PgPool;
+use uuid::Uuid;
 
 use super::{Either, GracefulRedirect, RenderedTemplate};
 use crate::{
-    dto::tags::CreateTagDto,
+    dto::tags::{AssignTagToGroupDto, AssignTagToUserDto, CreateTagDto},
     errors::AppResult,
     guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
-    models::Tag,
+    models::{AffiliatedTagAssignment, Tag},
     perms::{HivePermission, SystemsScope},
     routing::RouteTree,
     services::{systems, tags},
 };
 
 pub fn routes() -> RouteTree {
-    rocket::routes![list_tags, create_tag, tag_details, delete_tag].into()
+    rocket::routes![
+        list_tags,
+        create_tag,
+        tag_details,
+        delete_tag,
+        list_tag_groups,
+        list_tag_users,
+        assign_tag_to_group,
+        assign_tag_to_user,
+        unassign_tag
+    ]
+    .into()
 }
 
 #[derive(Template)]
@@ -39,10 +51,56 @@ struct PartialCreateTagView<'f, 'v> {
 
 #[derive(Template)]
 #[template(path = "tags/details.html.j2")]
-struct TagDetailsView {
+struct TagDetailsView<'f, 'v> {
     ctx: PageContext,
     tag: Tag,
     fully_authorized: bool,
+    assign_to_group_form: &'f form::Context<'v>,
+    assign_to_group_success: Option<AffiliatedTagAssignment>,
+    assign_to_user_form: &'f form::Context<'v>,
+    assign_to_user_success: Option<AffiliatedTagAssignment>,
+}
+
+#[derive(Template)]
+#[template(path = "tags/groups/list.html.j2")]
+struct PartialListTagGroupsView {
+    ctx: PageContext,
+    has_content: bool,
+    can_manage_any: bool,
+    tag_assignments: Vec<AffiliatedTagAssignment>,
+}
+
+#[derive(Template)]
+#[template(path = "tags/users/list.html.j2")]
+struct PartialListTagUsersView {
+    ctx: PageContext,
+    has_content: bool,
+    can_manage_any: bool,
+    tag_assignments: Vec<AffiliatedTagAssignment>,
+}
+
+#[derive(Template)]
+#[template(
+    path = "tags/groups/assign.html.j2",
+    block = "inner_assign_to_group_form"
+)]
+struct AssignTagToGroupView<'f, 'v> {
+    ctx: PageContext,
+    tag: Tag,
+    assign_to_group_form: &'f form::Context<'v>,
+    assign_to_group_success: Option<AffiliatedTagAssignment>,
+}
+
+#[derive(Template)]
+#[template(
+    path = "tags/users/assign.html.j2",
+    block = "inner_assign_to_user_form"
+)]
+struct AssignTagToUserView<'f, 'v> {
+    ctx: PageContext,
+    tag: Tag,
+    assign_to_user_form: &'f form::Context<'v>,
+    assign_to_user_success: Option<AffiliatedTagAssignment>,
 }
 
 #[rocket::get("/system/<system_id>/tags")]
@@ -154,11 +212,17 @@ async fn tag_details(
 
     let tag = tags::require_one(system_id, tag_id, db.inner()).await?;
 
+    let empty_form = form::Context::default();
+
     let min = possibilities.into_iter().last().unwrap();
     let template = TagDetailsView {
         ctx,
         tag,
         fully_authorized: perms.satisfies(min).await?,
+        assign_to_group_form: &empty_form,
+        assign_to_group_success: None,
+        assign_to_user_form: &empty_form,
+        assign_to_user_success: None,
     };
 
     Ok(RawHtml(template.render()?))
@@ -185,4 +249,220 @@ pub async fn delete_tag(
         uri!(super::systems::system_details(system_id)),
         partial.is_some(),
     ))
+}
+
+macro_rules! list_tag_assignments {
+    ($path:expr, $fname:ident, $lister:path, $template:ident) => {
+        #[rocket::get($path)]
+        async fn $fname(
+            system_id: &str,
+            tag_id: &str,
+            db: &State<PgPool>,
+            ctx: PageContext,
+            perms: &PermsEvaluator,
+            partial: Option<HxRequest<'_>>,
+        ) -> AppResult<Either<RenderedTemplate, Redirect>> {
+            if partial.is_none() {
+                // we only know how to render a table, not a full page;
+                // redirect to tag details
+
+                #[allow(clippy::redundant_locals)] // unclear why necessary
+                let target = uri!(tag_details(system_id = system_id, tag_id = tag_id));
+                return Ok(Either::Right(Redirect::to(target)));
+            }
+
+            perms
+                .require_any_of(&[
+                    HivePermission::AssignTags(SystemsScope::Id(system_id.to_owned())),
+                    HivePermission::ManageTags(SystemsScope::Id(system_id.to_owned())),
+                ])
+                .await?;
+
+            let has_content = tags::has_content(system_id, tag_id, db.inner()).await?;
+
+            let tag_assignments =
+                $lister(system_id, tag_id, Some(&ctx.lang), db.inner(), perms).await?;
+
+            // this could've been directly in the template, but askama doesn't seem
+            // to support closures defined in the source (parsing error)
+            let can_manage_any = tag_assignments
+                .iter()
+                .any(|a| matches!(a.can_manage, Some(true)));
+
+            let template = $template {
+                ctx,
+                has_content,
+                can_manage_any,
+                tag_assignments,
+            };
+
+            Ok(Either::Left(RawHtml(template.render()?)))
+        }
+    };
+}
+
+list_tag_assignments!(
+    "/system/<system_id>/tag/<tag_id>/groups",
+    list_tag_groups,
+    tags::list_group_assignments,
+    PartialListTagGroupsView
+);
+
+list_tag_assignments!(
+    "/system/<system_id>/tag/<tag_id>/users",
+    list_tag_users,
+    tags::list_user_assignments,
+    PartialListTagUsersView
+);
+
+#[rocket::post("/system/<system_id>/tag/<tag_id>/groups", data = "<form>")]
+#[allow(clippy::too_many_arguments)]
+async fn assign_tag_to_group<'v>(
+    system_id: &str,
+    tag_id: &str,
+    form: Form<Contextual<'v, AssignTagToGroupDto<'v>>>,
+    db: &State<PgPool>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<Either<RenderedTemplate, Redirect>> {
+    let min = HivePermission::AssignTags(SystemsScope::Id(system_id.to_string()));
+    perms.require(min).await?;
+
+    // TODO: anti-CSRF
+
+    let tag = tags::require_one(system_id, tag_id, db.inner()).await?;
+
+    if let Some(dto) = &form.value {
+        // validation passed
+
+        let assignment =
+            tags::assign_to_group(system_id, tag_id, dto, Some(&ctx.lang), db.inner(), &user)
+                .await?;
+
+        if partial.is_some() {
+            let template = AssignTagToGroupView {
+                ctx,
+                tag,
+                assign_to_group_form: &form::Context::default(),
+                assign_to_group_success: Some(assignment),
+            };
+
+            Ok(Either::Left(RawHtml(template.render()?)))
+        } else {
+            // FIXME: maybe allow passing ?assigned_to_group=id@domain
+
+            let target = uri!(tag_details(system_id = system_id, tag_id = tag_id));
+            Ok(Either::Right(Redirect::to(target)))
+        }
+    } else {
+        // some errors are present; show the form again
+        debug!("Assign tag to group form errors: {:?}", &form.context);
+
+        if partial.is_some() {
+            let template = AssignTagToGroupView {
+                ctx,
+                tag,
+                assign_to_group_form: &form.context,
+                assign_to_group_success: None,
+            };
+
+            Ok(Either::Left(RawHtml(template.render()?)))
+        } else {
+            // FIXME: this just resets the form without actually showing
+            // any validation error indicators... but there isn't a great
+            // alternative, and it might be fine for such a tiny form
+
+            let target = uri!(tag_details(system_id = system_id, tag_id = tag_id));
+            Ok(Either::Right(Redirect::to(target)))
+        }
+    }
+}
+
+#[rocket::post("/system/<system_id>/tag/<tag_id>/users", data = "<form>")]
+#[allow(clippy::too_many_arguments)]
+async fn assign_tag_to_user<'v>(
+    system_id: &str,
+    tag_id: &str,
+    form: Form<Contextual<'v, AssignTagToUserDto<'v>>>,
+    db: &State<PgPool>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<Either<RenderedTemplate, Redirect>> {
+    let min = HivePermission::AssignTags(SystemsScope::Id(system_id.to_string()));
+    perms.require(min).await?;
+
+    // TODO: anti-CSRF
+
+    let tag = tags::require_one(system_id, tag_id, db.inner()).await?;
+
+    if let Some(dto) = &form.value {
+        // validation passed
+
+        let assignment =
+            tags::assign_to_user(system_id, tag_id, dto, Some(&ctx.lang), db.inner(), &user)
+                .await?;
+
+        if partial.is_some() {
+            let template = AssignTagToUserView {
+                ctx,
+                tag,
+                assign_to_user_form: &form::Context::default(),
+                assign_to_user_success: Some(assignment),
+            };
+
+            Ok(Either::Left(RawHtml(template.render()?)))
+        } else {
+            // FIXME: maybe allow passing ?assigned_to_user=username
+
+            let target = uri!(tag_details(system_id = system_id, tag_id = tag_id));
+            Ok(Either::Right(Redirect::to(target)))
+        }
+    } else {
+        // some errors are present; show the form again
+        debug!("Assign tag to user form errors: {:?}", &form.context);
+
+        if partial.is_some() {
+            let template = AssignTagToUserView {
+                ctx,
+                tag,
+                assign_to_user_form: &form.context,
+                assign_to_user_success: None,
+            };
+
+            Ok(Either::Left(RawHtml(template.render()?)))
+        } else {
+            // FIXME: this just resets the form without actually showing
+            // any validation error indicators... but there isn't a great
+            // alternative, and it might be fine for such a tiny form
+
+            let target = uri!(tag_details(system_id = system_id, tag_id = tag_id));
+            Ok(Either::Right(Redirect::to(target)))
+        }
+    }
+}
+
+#[rocket::delete("/tag-assignment/<id>")]
+async fn unassign_tag(
+    id: Uuid,
+    db: &State<PgPool>,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<Either<(), Redirect>> {
+    // perms can only be checked later, not enough info now
+
+    // TODO: anti-CSRF(?), DELETE isn't a normal form method
+
+    let old = tags::unassign(id, db.inner(), perms, &user).await?;
+
+    if partial.is_some() {
+        Ok(Either::Left(()))
+    } else {
+        let target = uri!(tag_details(system_id = old.system_id, tag_id = old.tag_id));
+        Ok(Either::Right(Redirect::to(target)))
+    }
 }

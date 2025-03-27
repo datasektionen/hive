@@ -30,6 +30,42 @@
 {% endblock action_buttons %}
 
 {% block content %}
+{% if tag.supports_groups %}
+<article class="overflow-auto">
+    <h2>{{ ctx.t("tags.details.groups.title") }}</h2>
+    <div hx-get="/system/{{ tag.system_id }}/tag/{{ tag.tag_id }}/groups" hx-trigger="load delay:100ms"
+        hx-swap="outerHTML">
+        {# delay is to give event listener time to be set, for aria-busy=true #}
+    </div>
+    <footer>
+        <details>
+            <summary role="button" class="secondary">
+                {{ ctx.t("tags.details.groups.assign") }}
+            </summary>
+            {% include "groups/assign.html.j2" %}
+        </details>
+    </footer>
+</article>
+{% endif %}
+
+{% if tag.supports_users %}
+<article class="overflow-auto">
+    <h2>{{ ctx.t("tags.details.users.title") }}</h2>
+    <div hx-get="/system/{{ tag.system_id }}/tag/{{ tag.tag_id }}/users" hx-trigger="load delay:100ms"
+        hx-swap="outerHTML">
+        {# delay is to give event listener time to be set, for aria-busy=true #}
+    </div>
+    <footer>
+        <details>
+            <summary role="button" class="secondary">
+                {{ ctx.t("tags.details.users.assign") }}
+            </summary>
+            {% include "users/assign.html.j2" %}
+        </details>
+    </footer>
+</article>
+{% endif %}
+
 {% if fully_authorized && tag.system_id != crate::HIVE_SYSTEM_ID %}
 {% include "delete.html.j2" %}
 {% endif %}

@@ -1,0 +1,54 @@
+{%- import "utils.html.j2" as utils -%}
+
+<form method="post" action="/system/{{ tag.system_id }}/tag/{{ tag.tag_id }}/users" hx-boost="true" hx-push-url="false"
+    hx-target="this" hx-indicator="#assign-to-user-submit" class="container-fluid">
+    {% block inner_assign_to_user_form %}
+    {% if let Some(assignment) = assign_to_user_success %}
+    <p class="success">
+        <span class="material-icons">task_alt</span>
+        <strong>
+            {% let username = assignment.username.as_deref().unwrap_or("?") %}
+            {{ ctx.t1("tags.users.assign.success", username)|safe }}
+        </strong>
+    </p>
+    <br />
+    <template>
+        <tbody hx-swap-oob="beforeend:#tag-users-table tbody">
+            <tr>
+                {% let can_manage_any = true %}
+                {% include "tags/users/row-cells.html.j2" %}
+            </tr>
+        </tbody>
+    </template>
+    {% endif %}
+
+    <div class="grid">
+        <label>
+            {{ ctx.t("tags.users.assign.field.user.label") }}
+            <input {% call utils::field(assign_to_user_form, "user" ) %}
+                placeholder='{{ ctx.t("tags.users.assign.field.user.placeholder") }}' required pattern="[a-z0-9]{2,}"
+                aria-describedby="user-tip" />
+            <small id="user-tip">
+                {{ ctx.t1("tags.users.assign.field.user.tip", tag.key())|safe }}
+            </small>
+        </label>
+        {% if tag.has_content %}
+        <label>
+            {{ ctx.t("tags.users.assign.field.content.label") }}
+            <input {% call utils::field(assign_to_user_form, "content" ) %}
+                placeholder='{{ ctx.t("tags.users.assign.field.content.placeholder") }}' required
+                aria-describedby="user-content-tip" />
+            <small id="user-content-tip">
+                {{ ctx.t("tags.users.assign.field.content.tip") }}
+            </small>
+        </label>
+        {% endif %}
+    </div>
+    <div class="flex-end">
+        <button id="assign-to-user-submit">
+            <span class="material-icons">add</span>
+            {{ ctx.t("control.assign") }}
+        </button>
+    </div>
+    {% endblock inner_assign_to_user_form %}
+</form>

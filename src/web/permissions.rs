@@ -487,7 +487,10 @@ async fn unassign_permission(
     if partial.is_some() {
         Ok(Either::Left(()))
     } else {
-        let target = uri!(super::systems::system_details(old.system_id));
+        let target = uri!(permission_details(
+            system_id = old.system_id,
+            perm_id = old.perm_id
+        ));
         Ok(Either::Right(Redirect::to(target)))
     }
 }
