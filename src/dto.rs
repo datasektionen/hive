@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::ops::{Deref, RangeBounds};
 
 use regex::Regex;
 use rocket::form::{self, FromFormField};
@@ -84,5 +84,18 @@ fn valid_username<'v, T: Into<&'v str>>(s: T) -> form::Result<'v, ()> {
         Ok(())
     } else {
         Err(form::Error::validation("invalid username").into())
+    }
+}
+
+fn option_len<'v, V, L, R>(opt: &Option<V>, range: R) -> form::Result<'v, ()>
+where
+    V: form::validate::Len<L>,
+    L: Copy + PartialOrd,
+    R: RangeBounds<L>,
+{
+    if let Some(inner) = opt {
+        form::validate::len(inner, range)
+    } else {
+        Ok(())
     }
 }

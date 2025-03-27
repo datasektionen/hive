@@ -10,6 +10,7 @@ use rocket::{
     serde::json::Json,
     Request, Response,
 };
+use uuid::Uuid;
 
 use crate::{
     dto::errors::AppErrorDto,
@@ -43,8 +44,10 @@ pub enum AppError {
     #[error("ID `{0}` is already in use by another system")]
     DuplicateSystemId(String),
 
+    #[error("could not find API token with ID `{0}`")]
+    NoSuchApiToken(Uuid),
     #[error("description `{0}` is already in use by another API token for this system")]
-    AmbiguousAPIToken(String),
+    AmbiguousApiToken(String),
 
     #[error("could not find permission with key `${0}:{1}`")]
     NoSuchPermission(String, String),
@@ -95,7 +98,8 @@ impl AppError {
             AppError::SelfPreservation => Status::UnavailableForLegalReasons,
             AppError::NoSuchSystem(..) => Status::NotFound,
             AppError::DuplicateSystemId(..) => Status::Conflict,
-            AppError::AmbiguousAPIToken(..) => Status::Conflict,
+            AppError::NoSuchApiToken(..) => Status::NotFound,
+            AppError::AmbiguousApiToken(..) => Status::Conflict,
             AppError::NoSuchPermission(..) => Status::NotFound,
             AppError::DuplicatePermissionId(..) => Status::Conflict,
             AppError::DuplicatePermissionAssignment(..) => Status::Conflict,

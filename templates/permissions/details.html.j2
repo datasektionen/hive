@@ -45,4 +45,20 @@
         </details>
     </footer>
 </article>
+
+<article class="overflow-auto">
+    <h2>{{ ctx.t("permissions.details.api-tokens.title") }}</h2>
+    <div hx-get="/system/{{ permission.system_id }}/permission/{{ permission.perm_id }}/api-tokens"
+        hx-trigger="load delay:100ms" hx-swap="outerHTML">
+        {# delay is to give event listener time to be set, for aria-busy=true #}
+    </div>
+    <footer>
+        <details>
+            <summary role="button" class="secondary">
+                {{ ctx.t("permissions.details.api-tokens.assign") }}
+            </summary>
+            {% include "api-tokens/assign.html.j2" %}
+        </details>
+    </footer>
+</article>
 {% endblock content %}

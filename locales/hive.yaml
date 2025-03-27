@@ -499,6 +499,49 @@ nav.user.profile:
 nav.theme.toggle:
   en: Toggle UI theme
   sv: Växla UI-tema
+permissions.api-tokens.assign.field.scope.label:
+  en: Scope
+  sv: Gräns
+permissions.api-tokens.assign.field.scope.placeholder:
+  en: e.g., news
+  sv: t.ex. news
+permissions.api-tokens.assign.field.scope.tip:
+  en: Scope access to a specific limit, or use * as wildcard (= everything)
+  sv: Omfång åtkomst till en specific gräns, eller använd * som joker (= allt)
+permissions.api-tokens.assign.field.token.label:
+  en: API token ID
+  sv: API-token-ID
+permissions.api-tokens.assign.field.token.placeholder:
+  en: e.g., f81d4fae-7dec-11d0-a765-00a0c91e6bf6
+  sv: t.ex. f81d4fae-7dec-11d0-a765-00a0c91e6bf6
+permissions.api-tokens.assign.field.token.tip:
+  en: Specify the token that will be granted the <samp>%{x}</samp> permission
+  sv: Ange token som ska beviljas <samp>%{x}</samp>-behörighet
+permissions.api-tokens.assign.success:
+  en: Successfully assigned this permission to API token "%{x}"!
+  sv: Tilldelade den här behörigheten till API-token "%{x}"!
+permissions.api-tokens.list.action.delete.tooltip:
+  en: Revoke permission
+  sv: Återkalla behörigheten
+permissions.api-tokens.list.action.delete.confirm:
+  en: >
+    Are you sure you want to unassign this permission from API token "%{x}"?
+    All relying services will lose access immediately.
+  sv: >
+    Är du säker på att du vill avdela den här behörighet från API-token "%{x}"?
+    Alla förlitande tjänster kommer att förlora åtkomst omedelbart.
+permissions.api-tokens.list.col.description:
+  en: Token description
+  sv: Token-beskrivning
+permissions.api-tokens.list.col.id:
+  en: Token ID
+  sv: Token-ID
+permissions.api-tokens.list.col.scope:
+  en: Scope
+  sv: Gräns
+permissions.api-tokens.list.empty:
+  en: This permission has not yet been assigned to any API token.
+  sv: Denna behörighet har ännu inte tilldelats någon API-token.
 permissions.create.field.id.label:
   en: Permission ID
   sv: Behörighet-ID
@@ -531,6 +574,12 @@ permissions.created.heading:
 permissions.created.success:
   en: Permission <samp>%{x}</samp> created successfully!
   sv: Behörighet <samp>%{x}</samp> skapades framgångsrikt!
+permissions.details.api-tokens.assign:
+  en: Create new assignment
+  sv: Skapa ny tilldelning
+permissions.details.api-tokens.title:
+  en: Assignments to API Tokens
+  sv: Tilldelningar till API-token:er
 permissions.details.groups.assign:
   en: Create new assignment
   sv: Skapa ny tilldelning

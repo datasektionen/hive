@@ -4,7 +4,9 @@ use uuid::Uuid;
 
 use super::{audit_logs, pg_args};
 use crate::{
-    dto::permissions::{AssignPermissionToGroupDto, CreatePermissionDto},
+    dto::permissions::{
+        AssignPermissionToApiTokenDto, AssignPermissionToGroupDto, CreatePermissionDto,
+    },
     errors::{AppError, AppResult},
     guards::{lang::Language, perms::PermsEvaluator, user::User},
     models::{ActionKind, AffiliatedPermissionAssignment, Permission, TargetKind},
@@ -90,7 +92,47 @@ where
     query.push_bind(system_id);
     query.push(" AND pa.perm_id = ");
     query.push_bind(perm_id);
-    query.push(" AND group_id IS NOT NULL AND group_domain IS NOT NULL");
+    query.push(" AND pa.group_id IS NOT NULL AND pa.group_domain IS NOT NULL");
+
+    let mut assignments: Vec<AffiliatedPermissionAssignment> =
+        query.build_query_as().fetch_all(db).await?;
+
+    for assignment in &mut assignments {
+        let min = HivePermission::AssignPerms(SystemsScope::Id(assignment.system_id.clone()));
+        // query should be OK since perms are cached by perm_id
+        assignment.can_manage = Some(perms.satisfies(min).await?);
+    }
+
+    Ok(assignments)
+}
+
+pub async fn list_api_token_assignments<'x, X>(
+    system_id: &str,
+    perm_id: &str,
+    label_lang: Option<&Language>,
+    db: X,
+    perms: &PermsEvaluator,
+) -> AppResult<Vec<AffiliatedPermissionAssignment>>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+{
+    let mut query = sqlx::QueryBuilder::new("SELECT pa.*");
+
+    if label_lang.is_some() {
+        query.push(", at.description AS label");
+    }
+
+    query.push(" FROM permission_assignments pa");
+
+    if label_lang.is_some() {
+        query.push(" JOIN api_tokens at ON at.id = pa.api_token_id");
+    }
+
+    query.push(" WHERE pa.system_id = ");
+    query.push_bind(system_id);
+    query.push(" AND pa.perm_id = ");
+    query.push_bind(perm_id);
+    query.push(" AND pa.api_token_id IS NOT NULL");
 
     let mut assignments: Vec<AffiliatedPermissionAssignment> =
         query.build_query_as().fetch_all(db).await?;
@@ -239,6 +281,92 @@ where
                 "id": assignment.id,
                 "group_id": assignment.group_id,
                 "group_domain": assignment.group_domain,
+                "scope": assignment.scope,
+            }
+        }),
+        &mut *txn,
+    )
+    .await?;
+
+    txn.commit().await?;
+
+    Ok(assignment)
+}
+
+pub async fn assign_to_api_token<'v, 'x, X>(
+    system_id: &str,
+    perm_id: &str,
+    dto: &AssignPermissionToApiTokenDto<'v>,
+    label_lang: Option<&Language>,
+    db: X,
+    user: &User,
+) -> AppResult<AffiliatedPermissionAssignment>
+where
+    X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
+{
+    let mut txn = db.begin().await?;
+
+    let has_scope = has_scope(system_id, perm_id, &mut *txn).await?;
+
+    if has_scope && dto.scope.is_none() {
+        return Err(AppError::MissingPermissionScope(
+            system_id.to_string(),
+            perm_id.to_string(),
+        ));
+    } else if !has_scope && dto.scope.is_some() {
+        return Err(AppError::ExtraneousPermissionScope(
+            system_id.to_string(),
+            perm_id.to_string(),
+        ));
+    }
+
+    let mut query = sqlx::QueryBuilder::with_arguments(
+        "INSERT INTO permission_assignments (system_id, perm_id, scope, api_token_id)
+        VALUES ($1, $2, $3, $4)
+        RETURNING *, TRUE AS can_manage",
+        pg_args!(system_id, perm_id, dto.scope, dto.token),
+    );
+
+    if label_lang.is_some() {
+        query.push(
+            ", (
+                SELECT description
+                FROM api_tokens at
+                WHERE at.id = $4
+            ) AS label",
+        );
+    }
+
+    let mut assignment: AffiliatedPermissionAssignment = query
+        .build_query_as()
+        .fetch_one(&mut *txn)
+        .await
+        .map_err(|e| match e {
+            sqlx::Error::Database(err) if err.is_unique_violation() => {
+                AppError::DuplicatePermissionAssignment(
+                    system_id.to_string(),
+                    perm_id.to_string(),
+                    dto.scope.as_deref().map(ToString::to_string),
+                )
+            }
+            sqlx::Error::Database(err) if err.is_foreign_key_violation() => {
+                AppError::NoSuchApiToken(dto.token)
+            }
+            _ => e.into(),
+        })?;
+
+    assignment.can_manage = Some(true);
+
+    audit_logs::add_entry(
+        ActionKind::Create,
+        TargetKind::PermissionAssignment,
+        format!("${}:{}", assignment.system_id, assignment.perm_id),
+        &user.username,
+        json!({
+            "new": {
+                "entity_type": "api_token",
+                "id": assignment.id,
+                "api_token_id": assignment.api_token_id,
                 "scope": assignment.scope,
             }
         }),

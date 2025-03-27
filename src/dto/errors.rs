@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::{errors::AppError, guards::lang::Language, services::groups::AuthorityInGroup};
 
@@ -22,8 +23,10 @@ enum InnerAppErrorDto {
     #[serde(rename = "system.id.duplicate")]
     DuplicateSystemId { id: String },
 
+    #[serde(rename = "api-token.unknown")]
+    NoSuchApiToken { id: Uuid },
     #[serde(rename = "api-token.description.ambiguous-in-system")]
-    AmbiguousAPIToken { description: String },
+    AmbiguousApiToken { description: String },
 
     #[serde(rename = "permission.unknown")]
     NoSuchPermission { system_id: String, perm_id: String },
@@ -66,7 +69,8 @@ impl From<AppError> for InnerAppErrorDto {
             AppError::SelfPreservation => Self::SelfPreservation,
             AppError::NoSuchSystem(id) => Self::NoSuchSystem { id },
             AppError::DuplicateSystemId(id) => Self::DuplicateSystemId { id },
-            AppError::AmbiguousAPIToken(description) => Self::AmbiguousAPIToken { description },
+            AppError::NoSuchApiToken(id) => Self::NoSuchApiToken { id },
+            AppError::AmbiguousApiToken(description) => Self::AmbiguousApiToken { description },
             AppError::NoSuchPermission(system_id, perm_id) => {
                 Self::NoSuchPermission { system_id, perm_id }
             }
@@ -119,10 +123,12 @@ impl InnerAppErrorDto {
             (Self::NoSuchSystem { .. }, Language::Swedish) => "Okänt system",
             (Self::DuplicateSystemId { .. }, Language::English) => "Duplicate System ID",
             (Self::DuplicateSystemId { .. }, Language::Swedish) => "Duplicerat system-ID",
-            (Self::AmbiguousAPIToken { .. }, Language::English) => {
+            (Self::NoSuchApiToken { .. }, Language::English) => "Unknown API Token",
+            (Self::NoSuchApiToken { .. }, Language::Swedish) => "Okänt API-token",
+            (Self::AmbiguousApiToken { .. }, Language::English) => {
                 "Ambiguous API Token Description"
             }
-            (Self::AmbiguousAPIToken { .. }, Language::Swedish) => "Tvetydig API-token beskrivning",
+            (Self::AmbiguousApiToken { .. }, Language::Swedish) => "Tvetydig API-token beskrivning",
             (Self::NoSuchPermission { .. }, Language::English) => "Unknown Permission",
             (Self::NoSuchPermission { .. }, Language::Swedish) => "Okänt behörighet",
             (Self::DuplicatePermissionId { .. }, Language::English) => "Duplicate Permission ID",
@@ -222,13 +228,19 @@ impl InnerAppErrorDto {
             (Self::DuplicateSystemId { id }, Language::Swedish) => {
                 format!("ID \"{id}\" används redan av ett annat system.")
             }
-            (Self::AmbiguousAPIToken { description }, Language::English) => {
+            (Self::NoSuchApiToken { id }, Language::English) => {
+                format!("Could not find any API token with ID \"{id}\".")
+            }
+            (Self::NoSuchApiToken { id }, Language::Swedish) => {
+                format!("Kunde inte hitta något API-token med ID \"{id}\".")
+            }
+            (Self::AmbiguousApiToken { description }, Language::English) => {
                 format!(
                     "Description \"{description}\" is ambiguous because it is already in use by \
                      another API token for the same system."
                 )
             }
-            (Self::AmbiguousAPIToken { description }, Language::Swedish) => format!(
+            (Self::AmbiguousApiToken { description }, Language::Swedish) => format!(
                 "Beskrivning \"{description}\" är tvetydig eftersom den redan används av ett \
                  annat API-token för samma system."
             ),

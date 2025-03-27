@@ -52,7 +52,7 @@ where
     .bind(&dto.expiration)
     .fetch_one(&mut *txn)
     .await
-    .map_err(|e| AppError::AmbiguousAPIToken(dto.description.to_string()).if_unique_violation(e))?;
+    .map_err(|e| AppError::AmbiguousApiToken(dto.description.to_string()).if_unique_violation(e))?;
 
     audit_logs::add_entry(
         ActionKind::Create,

@@ -1,0 +1,19 @@
+<td>
+    <samp>{{ assignment.api_token_id.unwrap_or(Uuid::nil()) }}</samp>
+</td>
+{% let label = assignment.label.as_deref().unwrap_or("?") %}
+<td>{{ label }}</td>
+{% if let Some(scope) = assignment.scope %}
+<td><samp class="primary">{{ scope }}</samp></td>
+{% endif %}
+{% if can_manage_any %}
+<td>
+    {% if let Some(true) = assignment.can_manage %}
+    <button class="btn-danger" data-tooltip='{{ ctx.t("permissions.api-tokens.list.action.delete.tooltip") }}'
+        data-placement="left" hx-delete="/permission-assignment/{{ assignment.id }}" hx-swap="delete"
+        hx-target="closest tr" hx-confirm='{{ ctx.t1("permissions.api-tokens.list.action.delete.confirm", label) }}'>
+        <span class="material-icons">delete</span>
+    </button>
+    {% endif %}
+</td>
+{% endif %}

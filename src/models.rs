@@ -204,7 +204,7 @@ pub struct AffiliatedPermissionAssignment {
     pub scope: Option<String>,
     pub group_id: Option<String>,
     pub group_domain: Option<String>,
-    pub api_token_id: Option<String>,
+    pub api_token_id: Option<Uuid>,
     #[sqlx(default)]
     pub label: Option<String>, // group name or token description
     #[sqlx(default)]

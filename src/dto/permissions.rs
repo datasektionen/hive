@@ -2,6 +2,7 @@ use rocket::{
     form::{self, FromFormField},
     FromForm,
 };
+use uuid::Uuid;
 
 use super::{groups::GroupRefDto, TrimmedStr};
 
@@ -17,14 +18,21 @@ pub struct CreatePermissionDto<'v> {
 #[derive(FromForm)]
 pub struct AssignPermissionDto<'v> {
     pub perm: PermissionKey<'v>,
-    #[field(validate = with(|o| o.map(|s| !s.is_empty()).unwrap_or(true), "invalid empty scope"))]
+    #[field(validate = super::option_len(1..))]
     pub scope: Option<TrimmedStr<'v>>,
 }
 
 #[derive(FromForm)]
 pub struct AssignPermissionToGroupDto<'v> {
     pub group: GroupRefDto<'v>,
-    #[field(validate = with(|o| o.map(|s| !s.is_empty()).unwrap_or(true), "invalid empty scope"))]
+    #[field(validate = super::option_len(1..))]
+    pub scope: Option<TrimmedStr<'v>>,
+}
+
+#[derive(FromForm)]
+pub struct AssignPermissionToApiTokenDto<'v> {
+    pub token: Uuid,
+    #[field(validate = super::option_len(1..))]
     pub scope: Option<TrimmedStr<'v>>,
 }
 

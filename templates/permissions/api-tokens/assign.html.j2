@@ -1,0 +1,58 @@
+{%- import "utils.html.j2" as utils -%}
+
+<form method="post" action="/system/{{ permission.system_id }}/permission/{{ permission.perm_id }}/api-tokens"
+    hx-boost="true" hx-push-url="false" hx-target="this" hx-indicator="#assign-to-api-token-submit"
+    class="container-fluid">
+    {% block inner_assign_to_api_token_form %}
+    {% if let Some(assignment) = assign_to_api_token_success %}
+    <p class="success">
+        <span class="material-icons">task_alt</span>
+        <strong>
+            {% let label = assignment.label.as_deref().unwrap_or("?") %}
+            {{ ctx.t1("permissions.api-tokens.assign.success", label) }}
+        </strong>
+    </p>
+    <br />
+    <template>
+        <tbody hx-swap-oob="beforeend:#permission-api-tokens-table tbody">
+            <tr>
+                {% let can_manage_any = true %}
+                {% include "permissions/api-tokens/row-cells.html.j2" %}
+            </tr>
+        </tbody>
+    </template>
+    {% endif %}
+
+    <div class="grid">
+        <label>
+            {# not a combobox to reduce enumeration of all API tokens #}
+            {# (but brute-force-submitting and looking for errors is still possible) #}
+            {{ ctx.t("permissions.api-tokens.assign.field.token.label") }}
+            <input {% call utils::field(assign_to_api_token_form, "token" ) %}
+                placeholder='{{ ctx.t("permissions.api-tokens.assign.field.token.placeholder") }}' required
+                pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+                aria-describedby="api-token-tip" />
+            <small id="api-token-tip">
+                {{ ctx.t1("permissions.api-tokens.assign.field.token.tip", permission.key())|safe }}
+            </small>
+        </label>
+        {% if permission.has_scope %}
+        <label>
+            {{ ctx.t("permissions.api-tokens.assign.field.scope.label") }}
+            <input {% call utils::field(assign_to_api_token_form, "scope" ) %}
+                placeholder='{{ ctx.t("permissions.api-tokens.assign.field.scope.placeholder") }}' required
+                aria-describedby="group-scope-tip" />
+            <small id="group-scope-tip">
+                {{ ctx.t("permissions.api-tokens.assign.field.scope.tip") }}
+            </small>
+        </label>
+        {% endif %}
+    </div>
+    <div class="flex-end">
+        <button id="assign-to-group-submit">
+            <span class="material-icons">add</span>
+            {{ ctx.t("control.assign") }}
+        </button>
+    </div>
+    {% endblock inner_assign_to_api_token_form %}
+</form>
