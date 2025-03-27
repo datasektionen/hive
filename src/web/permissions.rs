@@ -13,14 +13,21 @@ use crate::{
     dto::permissions::CreatePermissionDto,
     errors::AppResult,
     guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
-    models::Permission,
+    models::{AffiliatedPermissionAssignment, Permission},
     perms::{HivePermission, SystemsScope},
     routing::RouteTree,
     services::{permissions, systems},
 };
 
 pub fn routes() -> RouteTree {
-    rocket::routes![list_permissions, create_permission, unassign_permission].into()
+    rocket::routes![
+        list_permissions,
+        create_permission,
+        permission_details,
+        list_permission_groups,
+        unassign_permission
+    ]
+    .into()
 }
 
 #[derive(Template)]
@@ -59,6 +66,23 @@ struct PartialPermissionCreatedView {
     permission: Permission,
 }
 
+#[derive(Template)]
+#[template(path = "permissions/details.html.j2")]
+struct PermissionDetailsView {
+    ctx: PageContext,
+    permission: Permission,
+    fully_authorized: bool,
+}
+
+#[derive(Template)]
+#[template(path = "permissions/groups/list.html.j2")]
+struct PartialListPermissionGroupsView {
+    ctx: PageContext,
+    has_scope: bool,
+    can_manage_any: bool,
+    permission_assignments: Vec<AffiliatedPermissionAssignment>,
+}
+
 #[rocket::get("/system/<system_id>/permissions")]
 async fn list_permissions(
     system_id: &str,
@@ -89,11 +113,15 @@ async fn list_permissions(
         systems::ensure_exists(system_id, db.inner()).await?;
     }
 
-    let min = HivePermission::ManagePerms(SystemsScope::Id(system_id.to_owned()));
     let template = ListPermissionsView {
         ctx,
         permissions,
-        can_manage: perms.satisfies(min).await?,
+        can_manage: perms
+            .satisfies_any_of(&[
+                HivePermission::AssignPerms(SystemsScope::Id(system_id.to_owned())),
+                HivePermission::ManagePerms(SystemsScope::Id(system_id.to_owned())),
+            ])
+            .await?,
     };
 
     Ok(Either::Left(RawHtml(template.render()?)))
@@ -154,6 +182,79 @@ async fn create_permission<'v>(
             Ok(Either::Right(Redirect::to(target)))
         }
     }
+}
+
+#[rocket::get("/system/<system_id>/permission/<perm_id>")]
+async fn permission_details(
+    system_id: &str,
+    perm_id: &str,
+    db: &State<PgPool>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+) -> AppResult<RenderedTemplate> {
+    let possibilities = [
+        HivePermission::AssignPerms(SystemsScope::Id(system_id.to_owned())),
+        HivePermission::ManagePerms(SystemsScope::Id(system_id.to_owned())),
+    ];
+
+    perms.require_any_of(&possibilities).await?;
+
+    let permission = permissions::require_one(system_id, perm_id, db.inner()).await?;
+
+    let min = possibilities.into_iter().last().unwrap();
+    let template = PermissionDetailsView {
+        ctx,
+        permission,
+        fully_authorized: perms.satisfies(min).await?,
+    };
+
+    Ok(RawHtml(template.render()?))
+}
+
+#[rocket::get("/system/<system_id>/permission/<perm_id>/groups")]
+async fn list_permission_groups(
+    system_id: &str,
+    perm_id: &str,
+    db: &State<PgPool>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<Either<RenderedTemplate, Redirect>> {
+    if partial.is_none() {
+        // we only know how to render a table, not a full page;
+        // redirect to permission details
+
+        let target = uri!(permission_details(system_id = system_id, perm_id = perm_id));
+        return Ok(Either::Right(Redirect::to(target)));
+    }
+
+    perms
+        .require_any_of(&[
+            HivePermission::AssignPerms(SystemsScope::Id(system_id.to_owned())),
+            HivePermission::ManagePerms(SystemsScope::Id(system_id.to_owned())),
+        ])
+        .await?;
+
+    let has_scope = permissions::has_scope(system_id, perm_id, db.inner()).await?;
+
+    let permission_assignments =
+        permissions::list_group_assignments(system_id, perm_id, Some(&ctx.lang), db.inner(), perms)
+            .await?;
+
+    // this could've been directly in the template, but askama doesn't seem
+    // to support closures defined in the source (parsing error)
+    let can_manage_any = permission_assignments
+        .iter()
+        .any(|a| matches!(a.can_manage, Some(true)));
+
+    let template = PartialListPermissionGroupsView {
+        ctx,
+        has_scope,
+        can_manage_any,
+        permission_assignments,
+    };
+
+    Ok(Either::Left(RawHtml(template.render()?)))
 }
 
 #[rocket::delete("/permission-assignment/<id>")]

@@ -1,17 +1,23 @@
 <td>
-    <samp>
-        <span style="font-size: 1.2em">$</span>
-        {{- assignment.system_id }}:<strong>{{ assignment.perm_id }}</strong>
-        {%- if let Some(scope) = assignment.scope -%}
-        {%- let tooltip = ctx.t("groups.permissions.list.scope.tooltip") -%}
-        :<span class="primary" data-tooltip="{{ tooltip }}">{{ scope }}</span>
-        {%- endif -%}
-    </samp>
+    {% if let Some(true) = assignment.can_manage %}
+    <a href="/system/{{ assignment.system_id }}/permission/{{ assignment.perm_id }}" class="secondary reset-color">
+        {% endif %}
+        <samp>
+            <span style="font-size: 1.2em">$</span>
+            {{- assignment.system_id }}:<strong>{{ assignment.perm_id }}</strong>
+            {%- if let Some(scope) = assignment.scope -%}
+            {%- let tooltip = ctx.t("groups.permissions.list.scope.tooltip") -%}
+            :<span class="primary" data-tooltip="{{ tooltip }}">{{ scope }}</span>
+            {%- endif -%}
+        </samp>
+        {% if let Some(true) = assignment.can_manage %}
+    </a>
+    {% endif %}
 </td>
 <td>{{ assignment.description }}</td>
 {% if can_manage_any %}
 <td>
-    {% if assignment.can_manage %}
+    {% if let Some(true) = assignment.can_manage %}
     <button class="btn-danger" data-tooltip='{{ ctx.t("groups.permissions.list.action.delete.tooltip") }}'
         data-placement="left" hx-delete="/permission-assignment/{{ assignment.id }}" hx-swap="delete"
         hx-target="closest tr"

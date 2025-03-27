@@ -1,0 +1,28 @@
+<table id="group-permissions-table" class="striped">
+    <thead>
+        <tr>
+            <th scope="col">{{ ctx.t("permissions.groups.list.col.key") }}</th>
+            <th scope="col">{{ ctx.t("permissions.groups.list.col.name") }}</th>
+            {% if has_scope %}
+            <th scope="col">{{ ctx.t("permissions.groups.list.col.scope") }}</th>
+            {% endif %}
+            {% if can_manage_any %}
+            {# this doesn't count with assignments added later... #}
+            <th scope="col">{{ ctx.t("col.actions") }}</th>
+            {% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="if-table-empty">
+            <td colspan="4">
+                <span class="material-icons">block</span>
+                {{ ctx.t("permissions.groups.list.empty") }}
+            </td>
+        </tr>
+        {% for assignment in permission_assignments %}
+        <tr>
+            {% include "row-cells.html.j2" %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

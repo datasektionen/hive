@@ -1,17 +1,12 @@
 <td>
-    <samp>
-        <span style="font-size: 1.2em">$</span>
-        {{- permission.system_id }}:<strong>{{ permission.perm_id }}</strong>
-        {%- if permission.has_scope -%}
-        {%- let tooltip = ctx.t("permissions.list.scope.tooltip") -%}
-        {%- let var = ctx.t("permissions.list.scope.var") -%}
-        :<span class="primary" data-tooltip="{{ tooltip }}">&lt;{{ var }}&gt;</span>
-        {%- endif -%}
-    </samp>
+    {% include "key.html.j2" %}
 </td>
 <td>{{ permission.description }}</td>
 {% if can_manage %}
 <td>
-    <button>Test</button>
+    <a href="/system/{{ permission.system_id }}/permission/{{ permission.perm_id }}" role="button"
+        class="secondary material-icons" data-tooltip='{{ ctx.t("control.manage") }}' data-placement="left">
+        arrow_forward
+    </a>
 </td>
 {% endif %}

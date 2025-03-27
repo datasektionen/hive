@@ -76,7 +76,9 @@ pub async fn list_permission_assignments(
 
     // this could've been directly in the template, but askama doesn't seem
     // to support closures defined in the source (parsing error)
-    let can_manage_any = permission_assignments.iter().any(|a| a.can_manage);
+    let can_manage_any = permission_assignments
+        .iter()
+        .any(|a| matches!(a.can_manage, Some(true)));
 
     let template = ListPermissionAssignmentsView {
         ctx,

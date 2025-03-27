@@ -6,10 +6,36 @@ use super::audit_logs;
 use crate::{
     dto::permissions::CreatePermissionDto,
     errors::{AppError, AppResult},
-    guards::{perms::PermsEvaluator, user::User},
+    guards::{lang::Language, perms::PermsEvaluator, user::User},
     models::{ActionKind, AffiliatedPermissionAssignment, Permission, TargetKind},
     perms::{HivePermission, SystemsScope},
 };
+
+pub async fn get_one<'x, X>(system_id: &str, perm_id: &str, db: X) -> AppResult<Option<Permission>>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+{
+    let permission = sqlx::query_as(
+        "SELECT *
+            FROM permissions
+            WHERE system_id = $1 AND perm_id = $2",
+    )
+    .bind(system_id)
+    .bind(perm_id)
+    .fetch_optional(db)
+    .await?;
+
+    Ok(permission)
+}
+
+pub async fn require_one<'x, X>(system_id: &str, perm_id: &str, db: X) -> AppResult<Permission>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+{
+    get_one(system_id, perm_id, db)
+        .await?
+        .ok_or_else(|| AppError::NoSuchPermission(system_id.to_owned(), perm_id.to_owned()))
+}
 
 pub async fn list_for_system<'x, X>(system_id: &str, db: X) -> AppResult<Vec<Permission>>
 where
@@ -26,6 +52,56 @@ where
     .await?;
 
     Ok(permissions)
+}
+
+pub async fn list_group_assignments<'x, X>(
+    system_id: &str,
+    perm_id: &str,
+    label_lang: Option<&Language>,
+    db: X,
+    perms: &PermsEvaluator,
+) -> AppResult<Vec<AffiliatedPermissionAssignment>>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+{
+    let mut query = sqlx::QueryBuilder::new("SELECT pa.*");
+
+    match label_lang {
+        Some(Language::Swedish) => {
+            query.push(", gs.name_sv AS label");
+        }
+        Some(Language::English) => {
+            query.push(", gs.name_en AS label");
+        }
+        None => {}
+    }
+
+    query.push(" FROM permission_assignments pa");
+
+    if label_lang.is_some() {
+        query.push(
+            " JOIN groups gs
+                ON gs.id = pa.group_id
+                AND gs.domain = pa.group_domain",
+        );
+    }
+
+    query.push(" WHERE pa.system_id = ");
+    query.push_bind(system_id);
+    query.push(" AND pa.perm_id = ");
+    query.push_bind(perm_id);
+    query.push(" AND group_id IS NOT NULL AND group_domain IS NOT NULL");
+
+    let mut assignments: Vec<AffiliatedPermissionAssignment> =
+        query.build_query_as().fetch_all(db).await?;
+
+    for assignment in &mut assignments {
+        let min = HivePermission::AssignPerms(SystemsScope::Id(assignment.system_id.clone()));
+        // query should be OK since perms are cached by perm_id
+        assignment.can_manage = Some(perms.satisfies(min).await?);
+    }
+
+    Ok(assignments)
 }
 
 pub async fn create_new<'v, 'x, X>(
@@ -154,4 +230,21 @@ where
     txn.commit().await?;
 
     Ok(old)
+}
+
+pub async fn has_scope<'x, X>(system_id: &str, perm_id: &str, db: X) -> AppResult<bool>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+{
+    sqlx::query_scalar(
+        "SELECT has_scope
+        FROM permissions
+        WHERE system_id = $1
+            AND perm_id = $2",
+    )
+    .bind(system_id)
+    .bind(perm_id)
+    .fetch_optional(db)
+    .await?
+    .ok_or_else(|| AppError::NoSuchPermission(system_id.to_string(), perm_id.to_string()))
 }

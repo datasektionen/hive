@@ -167,7 +167,7 @@ pub struct PermissionAssignment {
     pub scope: Option<String>,
     pub description: String,
     #[sqlx(default)]
-    pub can_manage: bool, // whether current user can e.g. remove assignment
+    pub can_manage: Option<bool>, // whether current user can e.g. unassign
 }
 
 impl PermissionAssignment {
@@ -198,12 +198,17 @@ pub struct BasePermissionAssignment {
 
 #[derive(FromRow)]
 pub struct AffiliatedPermissionAssignment {
+    pub id: Uuid,
     pub system_id: String,
     pub perm_id: String,
     pub scope: Option<String>,
     pub group_id: Option<String>,
     pub group_domain: Option<String>,
     pub api_token_id: Option<String>,
+    #[sqlx(default)]
+    pub label: Option<String>, // group name or token description
+    #[sqlx(default)]
+    pub can_manage: Option<bool>, // whether current user can e.g. unassign
 }
 
 impl AffiliatedPermissionAssignment {

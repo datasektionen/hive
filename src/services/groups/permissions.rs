@@ -6,7 +6,7 @@ use crate::{
     guards::{perms::PermsEvaluator, user::User},
     models::{ActionKind, Permission, PermissionAssignment, TargetKind},
     perms::{HivePermission, SystemsScope},
-    services::audit_logs,
+    services::{audit_logs, permissions},
 };
 
 pub async fn get_all_assignments<'x, X>(
@@ -36,9 +36,7 @@ where
     for assignment in &mut assignments {
         let min = HivePermission::AssignPerms(SystemsScope::Id(assignment.system_id.clone()));
         // query should be OK since perms are cached by perm_id
-        if perms.satisfies(min).await? {
-            assignment.can_manage = true;
-        }
+        assignment.can_manage = Some(perms.satisfies(min).await?);
     }
 
     Ok(assignments)
@@ -98,19 +96,7 @@ where
 {
     let mut txn = db.begin().await?;
 
-    let has_scope = sqlx::query_scalar(
-        "SELECT has_scope
-        FROM permissions
-        WHERE system_id = $1
-            AND perm_id = $2",
-    )
-    .bind(dto.perm.system_id)
-    .bind(dto.perm.perm_id)
-    .fetch_optional(&mut *txn)
-    .await?
-    .ok_or_else(|| {
-        AppError::NoSuchPermission(dto.perm.system_id.to_string(), dto.perm.perm_id.to_string())
-    })?;
+    let has_scope = permissions::has_scope(dto.perm.system_id, dto.perm.perm_id, &mut *txn).await?;
 
     if has_scope && dto.scope.is_none() {
         return Err(AppError::MissingPermissionScope(

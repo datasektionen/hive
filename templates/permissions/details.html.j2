@@ -1,0 +1,40 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ ctx.t1("permissions.details.title", permission.key()) }}{% endblock title %}
+
+{% block heading %}
+<hgroup>
+    <h1>
+        {{ ctx.t("permissions.details.title.pre") }}
+        <samp>
+            <span style="font-size: 1.2em">$</span>
+            {{- permission.system_id }}:<strong>{{ permission.perm_id }}</strong></samp>
+        {% if permission.has_scope %}
+        <button class="outline" data-tooltip='{{ ctx.t("permissions.key.scope.tooltip") }}'>
+            <span class="material-icons" style="--pico-font-size: initial">adjust</span>
+            {{ ctx.t("permissions.key.scope.indicator") }}
+        </button>
+        {% endif %}
+    </h1>
+    <h3>{{ permission.description }}</h3>
+</hgroup>
+{% endblock heading %}
+
+{% block action_buttons %}
+{% if fully_authorized && permission.system_id != crate::HIVE_SYSTEM_ID %}
+<button class="btn-danger" onclick="openModal('delete-permission')">
+    <span class="material-icons">delete</span>
+    {{ ctx.t("control.delete") }}
+</button>
+{% endif %}
+{% endblock action_buttons %}
+
+{% block content %}
+<article class="overflow-auto">
+    <h2>{{ ctx.t("permissions.details.groups.title") }}</h2>
+    <div hx-get="/system/{{ permission.system_id }}/permission/{{ permission.perm_id }}/groups"
+        hx-trigger="load delay:100ms" hx-swap="outerHTML">
+        {# delay is to give event listener time to be set, for aria-busy=true #}
+    </div>
+</article>
+{% endblock content %}

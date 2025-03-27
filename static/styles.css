@@ -32,6 +32,10 @@
   color: var(--pico-color);
 }
 
+.reset-color {
+  --pico-color: inherit;
+}
+
 .btn-danger {
   --pico-background-color: var(--pico-form-element-invalid-focus-color);
   --pico-border-color: var(--pico-form-element-invalid-border-color);
