@@ -61,4 +61,8 @@
         </details>
     </footer>
 </article>
+
+{% if fully_authorized && permission.system_id != crate::HIVE_SYSTEM_ID %}
+{% include "delete.html.j2" %}
+{% endif %}
 {% endblock content %}

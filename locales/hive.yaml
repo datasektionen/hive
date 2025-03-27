@@ -577,6 +577,25 @@ permissions.created.heading:
 permissions.created.success:
   en: Permission <samp>%{x}</samp> created successfully!
   sv: Behörighet <samp>%{x}</samp> skapades framgångsrikt!
+permissions.delete.confirmation.placeholder:
+  en: e.g., $calypso:create-posts
+  sv: t.ex. $calypso:create-posts
+permissions.delete.description:
+  en: >
+    This will <strong>permanently and irrecoverably</strong> delete
+    permission <strong><samp>%{x}</samp>!</strong>
+    All assignments to groups and API tokens will also be revoked.
+    <em>Please confirm your intentions by typing the permission's key
+    below.</em>
+  sv: >
+    Detta kommer att <strong>permanent och oåterkalleligt</strong>
+    ta bort behörigheten <strong><samp>%{x}</samp>!</strong>
+    Alla tilldelningar till grupper och API-tokens kommer också att återkallas.
+    <em>Vänligen bekräfta dina avsikter genom att skriva in behörighetsnyckeln
+    nedan.</em>
+permissions.delete.title:
+  en: Delete Permission
+  sv: Radera behörighet
 permissions.details.api-tokens.assign:
   en: Create new assignment
   sv: Skapa ny tilldelning
@@ -662,9 +681,9 @@ systems.create.description:
 systems.create.title:
   en: Create New System
   sv: Skapa ny system
-systems.delete.title:
-  en: Delete System
-  sv: Radera system
+systems.delete.confirmation.placeholder:
+  en: System ID
+  sv: System-ID
 systems.delete.description:
   en: >
     This will <strong>permanently and irrecoverably</strong> delete
@@ -680,9 +699,9 @@ systems.delete.description:
     kommer också att raderas.
     <em>Vänligen bekräfta dina avsikter genom att skriva in systemets
     ID nedan.</em>
-systems.delete.confirmation.placeholder:
-  en: System ID
-  sv: System-ID
+systems.delete.title:
+  en: Delete System
+  sv: Radera system
 systems.details.title:
   en: "System: %{x}"
   sv: "System: %{x}"

@@ -1,0 +1,21 @@
+<dialog id="delete-permission">
+    <article>
+        <h2>{{ ctx.t("permissions.delete.title") }}</h2>
+        <p>{{ ctx.t1("permissions.delete.description", permission.key())|safe }}</p>
+        {# input must be in a form to trigger browser validation #}
+        <form id="delete-permission-confirmation-form" onsubmit="event.preventDefault()">
+            <input placeholder='{{ ctx.t("permissions.delete.confirmation.placeholder") }}' required
+                pattern="\{{ permission.key() }}" />
+        </form>
+        <footer>
+            <button form="delete-permission-confirmation-form" type="reset" class="secondary"
+                onclick="closeModal('delete-permission')">
+                {{ ctx.t("control.cancel") }}
+            </button>
+            <button form="delete-permission-confirmation-form" data-require-validity class="btn-danger"
+                hx-delete="/system/{{ permission.system_id }}/permission/{{ permission.perm_id }}">
+                {{ ctx.t("control.delete") }}
+            </button>
+        </footer>
+    </article>
+</dialog>

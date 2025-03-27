@@ -196,6 +196,50 @@ where
     Ok(permission)
 }
 
+pub async fn delete<'x, X>(system_id: &str, perm_id: &str, db: X, user: &User) -> AppResult<()>
+where
+    X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
+{
+    if system_id == crate::HIVE_SYSTEM_ID {
+        // we manage our own permissions via database migrations
+        warn!("Disallowing permissions tampering from {}", user.username);
+        return Err(AppError::SelfPreservation);
+    }
+
+    let mut txn = db.begin().await?;
+
+    let old: Permission = sqlx::query_as(
+        "DELETE FROM permissions
+        WHERE system_id = $1
+            AND perm_id = $2
+        RETURNING *",
+    )
+    .bind(system_id)
+    .bind(perm_id)
+    .fetch_optional(&mut *txn)
+    .await?
+    .ok_or_else(|| AppError::NoSuchPermission(system_id.to_owned(), perm_id.to_owned()))?;
+
+    audit_logs::add_entry(
+        ActionKind::Delete,
+        TargetKind::Permission,
+        old.key(),
+        &user.username,
+        json!({
+            "old": {
+                "has_scope": old.has_scope,
+                "description": old.description,
+            }
+        }),
+        &mut *txn,
+    )
+    .await?;
+
+    txn.commit().await?;
+
+    Ok(())
+}
+
 pub async fn assign_to_group<'v, 'x, X>(
     system_id: &str,
     perm_id: &str,

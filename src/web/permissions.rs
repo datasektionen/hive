@@ -8,7 +8,7 @@ use rocket::{
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use super::{Either, RenderedTemplate};
+use super::{Either, GracefulRedirect, RenderedTemplate};
 use crate::{
     dto::permissions::{
         AssignPermissionToApiTokenDto, AssignPermissionToGroupDto, CreatePermissionDto,
@@ -26,6 +26,7 @@ pub fn routes() -> RouteTree {
         list_permissions,
         create_permission,
         permission_details,
+        delete_permission,
         list_permission_groups,
         list_permission_api_tokens,
         assign_permission_to_group,
@@ -256,6 +257,29 @@ async fn permission_details(
     };
 
     Ok(RawHtml(template.render()?))
+}
+
+#[rocket::delete("/system/<system_id>/permission/<perm_id>")]
+pub async fn delete_permission(
+    system_id: &str,
+    perm_id: &str,
+    db: &State<PgPool>,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<GracefulRedirect> {
+    let min = HivePermission::ManagePerms(SystemsScope::Id(system_id.to_owned()));
+    perms.require(min).await?;
+
+    // TODO: anti-CSRF(?), DELETE isn't a normal form method
+
+    permissions::delete(system_id, perm_id, db.inner(), &user).await?;
+
+    // TODO: show visual confirmation of successful delete in permissions list
+    Ok(GracefulRedirect::to(
+        uri!(super::systems::system_details(system_id)),
+        partial.is_some(),
+    ))
 }
 
 macro_rules! list_permission_assignments {
