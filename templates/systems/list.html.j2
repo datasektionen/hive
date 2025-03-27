@@ -45,5 +45,7 @@
     {% endblock inner_systems_listing %}
 </div>
 
+{% if fully_authorized %}
 {% include "create.html.j2" %}
+{% endif %}
 {% endblock content %}

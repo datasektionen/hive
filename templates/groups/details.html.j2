@@ -160,6 +160,10 @@
     {% endif %}
 </article>
 
+{% if relevance.authority == AuthorityInGroup::FullyAuthorized %}
 {% include "edit.html.j2" %}
+{% if group.domain != crate::HIVE_INTERNAL_DOMAIN %}
 {% include "delete.html.j2" %}
+{% endif %}
+{% endif %}
 {% endblock content %}

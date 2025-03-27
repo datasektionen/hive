@@ -139,5 +139,7 @@
     {% endblock inner_groups_listing %}
 </div>
 
+{% if can_create %}
 {% include "create.html.j2" %}
+{% endif %}
 {% endblock content %}
