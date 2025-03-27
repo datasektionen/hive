@@ -1,0 +1,71 @@
+{%- import "utils.html.j2" as utils -%}
+
+<form method="post" action="/group/{{ group.domain }}/{{ group.id }}/tags" hx-boost="true" hx-push-url="false"
+    hx-target="this" hx-indicator="#assign-tag-submit" class="container-fluid">
+    {% block inner_assign_tag_form %}
+    {% if let Some(assignment) = assign_tag_success %}
+    <p class="success">
+        <span class="material-icons">task_alt</span>
+        <strong>
+            {{ ctx.t1("groups.tags.assign.success", assignment.contentful_key_escaped())|safe }}
+        </strong>
+    </p>
+    <br />
+    <template>
+        <tbody hx-swap-oob="beforeend:#group-tags-table tbody">
+            <tr>
+                {% let can_manage_any = true %}
+                {% include "groups/tags/row-cells.html.j2" %}
+            </tr>
+        </tbody>
+    </template>
+    {% endif %}
+
+    <div class="grid">
+        <label>
+            {{ ctx.t("groups.tags.assign.field.tag.label") }}
+            <div class="combobox">
+                <input {% call utils::field(assign_tag_form, "tag" ) %}
+                    placeholder='{{ ctx.t("groups.tags.assign.field.tag.placeholder") }}' required
+                    pattern="#[a-z0-9]+(-[a-z0-9]+)*:[a-z0-9]+(-[a-z0-9]+)*" aria-describedby="assignment-tag-tip" />
+                <small id="assignment-tag-tip">
+                    {{ ctx.t1("groups.tags.assign.field.tag.tip", group.key())|safe }}
+                </small>
+                <ul>
+                    {% for tag in assignable_tags %}
+
+                    {% let attr %}
+                    {% if tag.has_content %}
+                    {% let attr = "data-combobox-enable" %}
+                    {% else %}
+                    {% let attr = "data-combobox-disable" %}
+                    {% endif %}
+                    <li data-combobox-value="{{ tag.key() }}" {{ attr }}="assign-tag-content" class="flex-between"
+                        tabindex="0">
+                        <samp>{{ tag.key() }}</samp>
+                        {% if tag.has_content %}
+                        <em class="secondary">
+                            {{ ctx.t("groups.tags.assign.field.tag.indicator.contentful") }}
+                        </em>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </label>
+        <label>
+            {{ ctx.t("groups.tags.assign.field.content.label") }}
+            <input {% call utils::field(assign_tag_form, "content" ) %} id="assign-tag-content" disabled
+                placeholder='{{ ctx.t("groups.tags.assign.field.content.placeholder") }}'
+                aria-describedby="assignment-content-tip" />
+            <small id="assignment-content-tip">{{ ctx.t("groups.tags.assign.field.content.tip") }}</small>
+        </label>
+    </div>
+    <div class="flex-end">
+        <button id="assign-tag-submit">
+            <span class="material-icons">new_label</span>
+            {{ ctx.t("control.assign") }}
+        </button>
+    </div>
+    {% endblock inner_assign_tag_form %}
+</form>

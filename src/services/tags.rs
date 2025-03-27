@@ -319,7 +319,7 @@ where
     audit_logs::add_entry(
         ActionKind::Create,
         TargetKind::TagAssignment,
-        format!("${}:{}", assignment.system_id, assignment.tag_id),
+        assignment.key(),
         &user.username,
         json!({
             "new": {
@@ -395,7 +395,7 @@ where
     audit_logs::add_entry(
         ActionKind::Create,
         TargetKind::TagAssignment,
-        format!("${}:{}", assignment.system_id, assignment.tag_id),
+        assignment.key(),
         &user.username,
         json!({
             "new": {

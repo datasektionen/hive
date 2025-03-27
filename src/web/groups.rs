@@ -20,7 +20,10 @@ use crate::{
     guards::{
         context::PageContext, headers::HxRequest, lang::Language, perms::PermsEvaluator, user::User,
     },
-    models::{Group, GroupMember, Permission, PermissionAssignment, SimpleGroup, Subgroup},
+    models::{
+        Group, GroupMember, Permission, PermissionAssignment, SimpleGroup, Subgroup, Tag,
+        TagAssignment,
+    },
     perms::{GroupsScope, HivePermission},
     routing::RouteTree,
     services::groups::{
@@ -31,6 +34,7 @@ use crate::{
 
 mod members;
 mod permissions;
+mod tags;
 
 pub fn routes() -> RouteTree {
     RouteTree::Branch(vec![
@@ -45,6 +49,7 @@ pub fn routes() -> RouteTree {
         .into(),
         members::routes(),
         permissions::routes(),
+        tags::routes(),
     ])
 }
 
@@ -89,11 +94,14 @@ struct GroupDetailsView<'f, 'v> {
     add_member_success: Option<GroupMember>,
     assign_permission_form: &'f form::Context<'v>,
     assign_permission_success: Option<PermissionAssignment>,
+    assign_tag_form: &'f form::Context<'v>,
+    assign_tag_success: Option<TagAssignment>,
     edit_form: &'f form::Context<'v>,
     edit_modal_open: bool,
     // for autocomplete
     permissible_groups: Vec<SimpleGroup>,
     assignable_permissions: Vec<Permission>,
+    assignable_tags: Vec<Tag>,
 }
 
 #[derive(Template)]
@@ -341,6 +349,7 @@ async fn group_details(
         groups::list::list_all_permissible_sorted(&ctx.lang, db.inner(), perms, &user).await?;
 
     let assignable_permissions = groups::permissions::get_all_assignable(perms, db.inner()).await?;
+    let assignable_tags = groups::tags::get_all_assignable(perms, db.inner()).await?;
 
     let empty_form = form::Context::default();
     let template = GroupDetailsView {
@@ -353,10 +362,13 @@ async fn group_details(
         add_member_success: None,
         assign_permission_form: &empty_form,
         assign_permission_success: None,
+        assign_tag_form: &empty_form,
+        assign_tag_success: None,
         edit_form: &empty_form,
         edit_modal_open: false,
         permissible_groups,
         assignable_permissions,
+        assignable_tags,
     };
 
     Ok(RawHtml(template.render()?))
@@ -481,6 +493,7 @@ pub async fn edit_group<'v>(
 
             let assignable_permissions =
                 groups::permissions::get_all_assignable(perms, db.inner()).await?;
+            let assignable_tags = groups::tags::get_all_assignable(perms, db.inner()).await?;
 
             let empty_form = form::Context::default();
             let template = GroupDetailsView {
@@ -493,10 +506,13 @@ pub async fn edit_group<'v>(
                 add_member_success: None,
                 assign_permission_form: &empty_form,
                 assign_permission_success: None,
+                assign_tag_form: &empty_form,
+                assign_tag_success: None,
                 edit_form: &form.context,
                 edit_modal_open: true,
                 permissible_groups,
                 assignable_permissions,
+                assignable_tags,
             };
 
             Ok(EditGroupResponse::Invalid(RawHtml(template.render()?)))

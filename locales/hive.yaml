@@ -185,6 +185,12 @@ groups.details.permissions.assign:
 groups.details.permissions.title:
   en: Permissions
   sv: Behörigheter
+groups.details.tags.assign:
+  en: Assign tag
+  sv: Tilldela tagg
+groups.details.tags.title:
+  en: Tags
+  sv: Taggar
 groups.details.title:
   en: "Group: %{x}"
   sv: "Grupp: %{x}"
@@ -472,6 +478,52 @@ groups.permissions.list.empty:
 groups.permissions.list.scope.tooltip:
   en: The permission assignment is limited to this scope
   sv: Tillståndsuppdraget är begränsat till denna gräns
+groups.tags.assign.field.tag.indicator.contentful:
+  en: Contentful
+  sv: Innehållsfylld
+groups.tags.assign.field.tag.label:
+  en: Tag
+  sv: Tagg
+groups.tags.assign.field.tag.placeholder:
+  en: e.g., $calypso:author-pseudonym
+  sv: t.ex. $calypso:author-pseudonym
+groups.tags.assign.field.tag.tip:
+  en: Specify what tag should be assigned to group <samp>%{x}</samp>
+  sv: Ange vilken tagg som ska ges till gruppen <samp>%{x}</samp>
+groups.tags.assign.field.content.label:
+  en: Content (if applicable)
+  sv: Innehåll (om tillämpligt)
+groups.tags.assign.field.content.placeholder:
+  en: e.g., Zorro
+  sv: t.ex. Zorro
+groups.tags.assign.field.content.tip:
+  en: Specify a concrete value to be held in connection with this tag
+  sv: Ange ett konkret värde som ska hållas i samband med denna tagg
+groups.tags.assign.success:
+  en: Successfully tagged the group with <samp>%{x}</samp>!
+  sv: Taggade gruppen med <samp>%{x}</samp>!
+groups.tags.list.action.delete.confirm:
+  en: >
+    Are you sure you want to unassign tag "%{x}" from this group?
+    This will have immediate repercussions for relying services.
+  sv: >
+    Är du säker på att du vill avdela taggen "%{x}" från den här gruppen?
+    Detta kommer att få omedelbara återverkningar för förlitande tjänster.
+groups.tags.list.action.delete.tooltip:
+  en: Untag
+  sv: Avtagga
+groups.tags.list.col.description:
+  en: Description
+  sv: Beskrivning
+groups.tags.list.col.key:
+  en: Key
+  sv: Nyckel
+groups.tags.list.empty:
+  en: This group does not have any assigned tags.
+  sv: Den här gruppen har inga tilldelade taggar.
+groups.tags.list.content.tooltip:
+  en: The tag assignment is associated with this value
+  sv: Tillståndsuppdraget är associerad med denna värde
 indicator.datetime.never:
   en: Never
   sv: Aldrig

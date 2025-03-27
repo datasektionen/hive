@@ -1,4 +1,7 @@
-use rocket::FromForm;
+use rocket::{
+    form::{self, FromFormField},
+    FromForm,
+};
 
 use super::{groups::GroupRefDto, TrimmedStr};
 
@@ -16,6 +19,13 @@ pub struct CreateTagDto<'v> {
 }
 
 #[derive(FromForm)]
+pub struct AssignTagDto<'v> {
+    pub tag: TagKey<'v>,
+    #[field(validate = super::option_len(1..))]
+    pub content: Option<TrimmedStr<'v>>,
+}
+
+#[derive(FromForm)]
 pub struct AssignTagToGroupDto<'v> {
     pub group: GroupRefDto<'v>,
     #[field(validate = super::option_len(1..))]
@@ -28,4 +38,30 @@ pub struct AssignTagToUserDto<'v> {
     pub user: TrimmedStr<'v>,
     #[field(validate = super::option_len(1..))]
     pub content: Option<TrimmedStr<'v>>,
+}
+
+pub struct TagKey<'v> {
+    pub system_id: &'v str,
+    pub tag_id: &'v str,
+}
+
+#[rocket::async_trait]
+impl<'v> FromFormField<'v> for TagKey<'v> {
+    fn from_value(field: form::ValueField<'v>) -> form::Result<'v, Self> {
+        if let Some(value) = field.value.trim().strip_prefix('#') {
+            let mut split = value.splitn(2, ':');
+
+            let system_id = split.next().unwrap();
+            let tag_id = split
+                .next()
+                .ok_or(form::Error::validation("missing : separator"))?;
+
+            super::valid_slug(system_id)?;
+            super::valid_slug(tag_id)?;
+
+            Ok(Self { system_id, tag_id })
+        } else {
+            Err(form::Error::validation("missing # prefix").into())
+        }
+    }
 }

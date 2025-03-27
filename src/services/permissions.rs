@@ -320,7 +320,7 @@ where
     audit_logs::add_entry(
         ActionKind::Create,
         TargetKind::PermissionAssignment,
-        format!("${}:{}", assignment.system_id, assignment.perm_id),
+        assignment.key(),
         &user.username,
         json!({
             "new": {
@@ -408,7 +408,7 @@ where
     audit_logs::add_entry(
         ActionKind::Create,
         TargetKind::PermissionAssignment,
-        format!("${}:{}", assignment.system_id, assignment.perm_id),
+        assignment.key(),
         &user.username,
         json!({
             "new": {

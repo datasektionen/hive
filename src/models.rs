@@ -249,6 +249,36 @@ impl Tag {
 }
 
 #[derive(FromRow)]
+pub struct TagAssignment {
+    pub id: Uuid,
+    pub system_id: String,
+    pub tag_id: String,
+    pub content: Option<String>,
+    pub description: String,
+    #[sqlx(default)]
+    pub can_manage: Option<bool>, // whether current user can e.g. unassign
+}
+
+impl TagAssignment {
+    pub fn key(&self) -> String {
+        format!("#{}:{}", self.system_id, self.tag_id)
+    }
+
+    pub fn contentful_key_escaped(&self) -> String {
+        if let Some(content) = &self.content {
+            format!(
+                "#{}:{}:{}",
+                self.system_id,
+                self.tag_id,
+                rinja::filters::escape(content, rinja::filters::Html).expect("infallible")
+            )
+        } else {
+            format!("#{}:{}", self.system_id, self.tag_id)
+        }
+    }
+}
+
+#[derive(FromRow)]
 pub struct AffiliatedTagAssignment {
     pub id: Uuid,
     pub system_id: String,

@@ -1,12 +1,12 @@
 use serde_json::json;
 
 use crate::{
-    dto::permissions::AssignPermissionDto,
+    dto::tags::AssignTagDto,
     errors::{AppError, AppResult},
     guards::{perms::PermsEvaluator, user::User},
-    models::{ActionKind, Permission, PermissionAssignment, TargetKind},
+    models::{ActionKind, Tag, TagAssignment, TargetKind},
     perms::{HivePermission, SystemsScope},
-    services::{audit_logs, permissions},
+    services::{audit_logs, tags},
 };
 
 pub async fn get_all_assignments<'x, X>(
@@ -14,19 +14,19 @@ pub async fn get_all_assignments<'x, X>(
     domain: &str,
     db: X,
     perms: &PermsEvaluator,
-) -> AppResult<Vec<PermissionAssignment>>
+) -> AppResult<Vec<TagAssignment>>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
-    let mut assignments: Vec<PermissionAssignment> = sqlx::query_as(
-        "SELECT pa.*, ps.description
-        FROM permission_assignments pa
-        JOIN permissions ps
-            ON pa.system_id = ps.system_id
-            AND pa.perm_id = ps.perm_id
-        WHERE pa.group_id = $1
-            AND pa.group_domain = $2
-        ORDER BY system_id, perm_id, scope",
+    let mut assignments: Vec<TagAssignment> = sqlx::query_as(
+        "SELECT ta.*, ts.description
+        FROM tag_assignments ta
+        JOIN tags ts
+            ON ta.system_id = ts.system_id
+            AND ta.tag_id = ts.tag_id
+        WHERE ta.group_id = $1
+            AND ta.group_domain = $2
+        ORDER BY system_id, tag_id, content",
     )
     .bind(id)
     .bind(domain)
@@ -34,7 +34,7 @@ where
     .await?;
 
     for assignment in &mut assignments {
-        let min = HivePermission::AssignPerms(SystemsScope::Id(assignment.system_id.clone()));
+        let min = HivePermission::AssignTags(SystemsScope::Id(assignment.system_id.clone()));
         // query should be OK since perms are cached by perm_id
         assignment.can_manage = Some(perms.satisfies(min).await?);
     }
@@ -42,13 +42,13 @@ where
     Ok(assignments)
 }
 
-pub async fn get_all_assignable<'x, X>(perms: &PermsEvaluator, db: X) -> AppResult<Vec<Permission>>
+pub async fn get_all_assignable<'x, X>(perms: &PermsEvaluator, db: X) -> AppResult<Vec<Tag>>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
     let systems_filter = get_systems_filter(perms).await?;
 
-    let mut query = sqlx::QueryBuilder::new("SELECT * FROM permissions");
+    let mut query = sqlx::QueryBuilder::new("SELECT * FROM tags");
 
     if let Some(system_ids) = systems_filter {
         if system_ids.is_empty() {
@@ -67,12 +67,12 @@ where
 
 async fn get_systems_filter(perms: &PermsEvaluator) -> AppResult<Option<Vec<String>>> {
     let hive_perms = perms
-        .fetch_all_related(HivePermission::AssignPerms(SystemsScope::Any))
+        .fetch_all_related(HivePermission::AssignTags(SystemsScope::Any))
         .await?;
 
     let mut systems_filter = vec![];
     for perm in hive_perms {
-        if let HivePermission::AssignPerms(scope) = perm {
+        if let HivePermission::AssignTags(scope) = perm {
             match scope {
                 SystemsScope::Wildcard => return Ok(None),
                 SystemsScope::Id(id) => systems_filter.push(id),
@@ -87,61 +87,61 @@ async fn get_systems_filter(perms: &PermsEvaluator) -> AppResult<Option<Vec<Stri
 pub async fn assign<'x, X>(
     group_id: &str,
     group_domain: &str,
-    dto: &AssignPermissionDto<'_>,
+    dto: &AssignTagDto<'_>,
     db: X,
     user: &User,
-) -> AppResult<PermissionAssignment>
+) -> AppResult<TagAssignment>
 where
     X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
 {
     let mut txn = db.begin().await?;
 
-    let has_scope = permissions::has_scope(dto.perm.system_id, dto.perm.perm_id, &mut *txn).await?;
+    let has_content = tags::has_content(dto.tag.system_id, dto.tag.tag_id, &mut *txn).await?;
 
-    if has_scope && dto.scope.is_none() {
-        return Err(AppError::MissingPermissionScope(
-            dto.perm.system_id.to_string(),
-            dto.perm.perm_id.to_string(),
+    if has_content && dto.content.is_none() {
+        return Err(AppError::MissingTagContent(
+            dto.tag.system_id.to_string(),
+            dto.tag.tag_id.to_string(),
         ));
-    } else if !has_scope && dto.scope.is_some() {
-        return Err(AppError::ExtraneousPermissionScope(
-            dto.perm.system_id.to_string(),
-            dto.perm.perm_id.to_string(),
+    } else if !has_content && dto.content.is_some() {
+        return Err(AppError::ExtraneousTagContent(
+            dto.tag.system_id.to_string(),
+            dto.tag.tag_id.to_string(),
         ));
     }
 
-    let assignment: PermissionAssignment = sqlx::query_as(
-        "INSERT INTO permission_assignments (system_id, perm_id, scope, group_id, group_domain)
+    let assignment: TagAssignment = sqlx::query_as(
+        "INSERT INTO tag_assignments (system_id, tag_id, content, group_id, group_domain)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING
             *,
             (
                 SELECT description
-                FROM permissions
+                FROM tags
                 WHERE system_id = $1
-                    AND perm_id = $2
+                    AND tag_id = $2
             ) AS description,
             TRUE AS can_manage",
     )
-    .bind(dto.perm.system_id)
-    .bind(dto.perm.perm_id)
-    .bind(dto.scope)
+    .bind(dto.tag.system_id)
+    .bind(dto.tag.tag_id)
+    .bind(dto.content)
     .bind(group_id)
     .bind(group_domain)
     .fetch_one(&mut *txn)
     .await
     .map_err(|e| {
-        AppError::DuplicatePermissionAssignment(
-            dto.perm.system_id.to_string(),
-            dto.perm.perm_id.to_string(),
-            dto.scope.as_deref().map(ToString::to_string),
+        AppError::DuplicateTagAssignment(
+            dto.tag.system_id.to_string(),
+            dto.tag.tag_id.to_string(),
+            dto.content.as_deref().map(ToString::to_string),
         )
         .if_unique_violation(e)
     })?;
 
     audit_logs::add_entry(
         ActionKind::Create,
-        TargetKind::PermissionAssignment,
+        TargetKind::TagAssignment,
         assignment.key(),
         &user.username,
         json!({
@@ -150,7 +150,7 @@ where
                 "id": assignment.id,
                 "group_id": group_id,
                 "group_domain": group_domain,
-                "scope": dto.scope,
+                "content": assignment.content,
             }
         }),
         &mut *txn,

@@ -12,6 +12,7 @@ pub mod list;
 pub mod management;
 pub mod members;
 pub mod permissions;
+pub mod tags;
 
 pub enum GroupMembershipKind {
     Indirect,

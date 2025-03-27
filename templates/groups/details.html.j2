@@ -160,6 +160,27 @@
     {% endif %}
 </article>
 
+<article>
+    <header>
+        <h2>{{ ctx.t("groups.details.tags.title") }}</h2>
+    </header>
+    <main class="overflow-auto">
+        <div hx-get="/group/{{ group.domain }}/{{ group.id }}/tags" hx-trigger="load delay:100ms" hx-swap="outerHTML">
+            {# delay is to give event listener time to be set, for aria-busy=true #}
+        </div>
+    </main>
+    {% if !assignable_tags.is_empty() %}
+    <footer>
+        <details>
+            <summary role="button" class="secondary">
+                {{ ctx.t("groups.details.tags.assign") }}
+            </summary>
+            {% include "tags/assign.html.j2" %}
+        </details>
+    </footer>
+    {% endif %}
+</article>
+
 {% if relevance.authority == AuthorityInGroup::FullyAuthorized %}
 {% include "edit.html.j2" %}
 {% if group.domain != crate::HIVE_INTERNAL_DOMAIN %}

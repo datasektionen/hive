@@ -1,0 +1,28 @@
+<td>
+    <samp>
+        {%- if let Some(true) = assignment.can_manage -%}
+        <a href="/system/{{ assignment.system_id }}/tag/{{ assignment.tag_id }}" class="secondary reset-color">
+            {%- endif -%}
+            <span style="font-size: 1.2em">#</span>
+            {{- assignment.system_id }}:<strong>{{ assignment.tag_id }}</strong>
+            {%- if let Some(true) = assignment.can_manage -%}
+        </a>
+        {%- endif -%}
+        {%- if let Some(content) = assignment.content -%}
+        {%- let tooltip = ctx.t("groups.tags.list.content.tooltip") -%}
+        :<span class="primary" data-tooltip="{{ tooltip }}">{{ content }}</span>
+        {%- endif -%}
+    </samp>
+</td>
+<td>{{ assignment.description }}</td>
+{% if can_manage_any %}
+<td>
+    {% if let Some(true) = assignment.can_manage %}
+    <button class="btn-danger" data-tooltip='{{ ctx.t("groups.tags.list.action.delete.tooltip") }}'
+        data-placement="left" hx-delete="/tag-assignment/{{ assignment.id }}" hx-swap="delete" hx-target="closest tr"
+        hx-confirm='{{ ctx.t1("groups.tags.list.action.delete.confirm", assignment.key()) }}'>
+        <span class="material-icons">label_off</span>
+    </button>
+    {% endif %}
+</td>
+{% endif %}
