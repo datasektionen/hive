@@ -1,0 +1,56 @@
+{%- import "utils.html.j2" as utils -%}
+
+<form method="post" action="/system/{{ permission.system_id }}/permission/{{ permission.perm_id }}/groups"
+    hx-boost="true" hx-push-url="false" hx-target="this" hx-indicator="#assign-to-group-submit" class="container-fluid">
+    {% block inner_assign_to_group_form %}
+    {% if let Some(assignment) = assign_to_group_success %}
+    <p class="success">
+        <span class="material-icons">task_alt</span>
+        <strong>
+            {% let group_key = assignment.group_key().unwrap_or("?".to_string()) %}
+            {{ ctx.t1("permissions.groups.assign.success", group_key)|safe }}
+        </strong>
+    </p>
+    <br />
+    <template>
+        <tbody hx-swap-oob="beforeend:#permission-groups-table tbody">
+            <tr>
+                {% let can_manage_any = true %}
+                {% include "permissions/groups/row-cells.html.j2" %}
+            </tr>
+        </tbody>
+    </template>
+    {% endif %}
+
+    <div class="grid">
+        <label>
+            {# not a combobox to reduce enumeration of all groups #}
+            {# (but brute-force-submitting and looking for errors is still possible) #}
+            {{ ctx.t("permissions.groups.assign.field.group.label") }}
+            <input {% call utils::field(assign_to_group_form, "group" ) %}
+                placeholder='{{ ctx.t("permissions.groups.assign.field.group.placeholder") }}' required
+                pattern="[a-z0-9]+(-[a-z0-9]+)*@[\-a-z0-9]+\.[a-z]+" aria-describedby="group-tip" />
+            <small id="group-tip">
+                {{ ctx.t1("permissions.groups.assign.field.group.tip", permission.key())|safe }}
+            </small>
+        </label>
+        {% if permission.has_scope %}
+        <label>
+            {{ ctx.t("permissions.groups.assign.field.scope.label") }}
+            <input {% call utils::field(assign_to_group_form, "scope" ) %}
+                placeholder='{{ ctx.t("permissions.groups.assign.field.scope.placeholder") }}' required
+                aria-describedby="group-scope-tip" />
+            <small id="group-scope-tip">
+                {{ ctx.t("permissions.groups.assign.field.scope.tip") }}
+            </small>
+        </label>
+        {% endif %}
+    </div>
+    <div class="flex-end">
+        <button id="assign-to-group-submit">
+            <span class="material-icons">add</span>
+            {{ ctx.t("control.assign") }}
+        </button>
+    </div>
+    {% endblock inner_assign_to_group_form %}
+</form>

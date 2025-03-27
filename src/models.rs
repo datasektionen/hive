@@ -215,6 +215,16 @@ impl AffiliatedPermissionAssignment {
     pub fn key(&self) -> String {
         format!("${}:{}", self.system_id, self.perm_id)
     }
+
+    pub fn group_key(&self) -> Option<String> {
+        if let Some(group_id) = &self.group_id {
+            if let Some(group_domain) = &self.group_domain {
+                return Some(format!("{}@{}", group_id, group_domain));
+            }
+        }
+
+        None
+    }
 }
 
 #[derive(sqlx::Type)]

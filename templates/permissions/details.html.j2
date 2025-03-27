@@ -36,5 +36,13 @@
         hx-trigger="load delay:100ms" hx-swap="outerHTML">
         {# delay is to give event listener time to be set, for aria-busy=true #}
     </div>
+    <footer>
+        <details>
+            <summary role="button" class="secondary">
+                {{ ctx.t("permissions.details.groups.assign") }}
+            </summary>
+            {% include "groups/assign.html.j2" %}
+        </details>
+    </footer>
 </article>
 {% endblock content %}

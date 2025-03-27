@@ -2,9 +2,9 @@ use log::*;
 use serde_json::json;
 use uuid::Uuid;
 
-use super::audit_logs;
+use super::{audit_logs, pg_args};
 use crate::{
-    dto::permissions::CreatePermissionDto,
+    dto::permissions::{AssignPermissionToGroupDto, CreatePermissionDto},
     errors::{AppError, AppResult},
     guards::{lang::Language, perms::PermsEvaluator, user::User},
     models::{ActionKind, AffiliatedPermissionAssignment, Permission, TargetKind},
@@ -154,7 +154,104 @@ where
     Ok(permission)
 }
 
-pub async fn unassign<'v, 'x, X>(
+pub async fn assign_to_group<'v, 'x, X>(
+    system_id: &str,
+    perm_id: &str,
+    dto: &AssignPermissionToGroupDto<'v>,
+    label_lang: Option<&Language>,
+    db: X,
+    user: &User,
+) -> AppResult<AffiliatedPermissionAssignment>
+where
+    X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
+{
+    let mut txn = db.begin().await?;
+
+    let has_scope = has_scope(system_id, perm_id, &mut *txn).await?;
+
+    if has_scope && dto.scope.is_none() {
+        return Err(AppError::MissingPermissionScope(
+            system_id.to_string(),
+            perm_id.to_string(),
+        ));
+    } else if !has_scope && dto.scope.is_some() {
+        return Err(AppError::ExtraneousPermissionScope(
+            system_id.to_string(),
+            perm_id.to_string(),
+        ));
+    }
+
+    let mut query = sqlx::QueryBuilder::with_arguments(
+        "INSERT INTO permission_assignments (system_id, perm_id, scope, group_id, group_domain)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING *, TRUE AS can_manage",
+        pg_args!(
+            system_id,
+            perm_id,
+            dto.scope,
+            dto.group.id,
+            dto.group.domain
+        ),
+    );
+
+    if let Some(lang) = label_lang {
+        query.push(", (SELECT ");
+        match lang {
+            Language::Swedish => query.push("name_sv"),
+            Language::English => query.push("name_en"),
+        };
+        query.push(
+            " FROM groups gs
+            WHERE gs.id = $4
+                AND gs.domain = $5
+            ) AS label",
+        );
+    }
+
+    let mut assignment: AffiliatedPermissionAssignment = query
+        .build_query_as()
+        .fetch_one(&mut *txn)
+        .await
+        .map_err(|e| match e {
+            sqlx::Error::Database(err) if err.is_unique_violation() => {
+                AppError::DuplicatePermissionAssignment(
+                    system_id.to_string(),
+                    perm_id.to_string(),
+                    dto.scope.as_deref().map(ToString::to_string),
+                )
+            }
+            sqlx::Error::Database(err) if err.is_foreign_key_violation() => {
+                AppError::NoSuchGroup(dto.group.id.to_string(), dto.group.domain.to_string())
+            }
+            _ => e.into(),
+        })?;
+
+    assignment.can_manage = Some(true);
+
+    audit_logs::add_entry(
+        ActionKind::Create,
+        TargetKind::PermissionAssignment,
+        format!("${}:{}", assignment.system_id, assignment.perm_id),
+        &user.username,
+        json!({
+            "new": {
+                "entity_type": "group",
+                "id": assignment.id,
+                "group_id": assignment.group_id,
+                "group_domain": assignment.group_domain,
+                "scope": assignment.scope,
+            }
+        }),
+        &mut *txn,
+    )
+    .await?;
+
+    txn.commit().await?;
+
+    Ok(assignment)
+}
+
+pub async fn unassign<'x, X>(
     assignment_id: Uuid,
     db: X,
     perms: &PermsEvaluator,

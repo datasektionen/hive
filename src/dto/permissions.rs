@@ -3,7 +3,7 @@ use rocket::{
     FromForm,
 };
 
-use super::TrimmedStr;
+use super::{groups::GroupRefDto, TrimmedStr};
 
 #[derive(FromForm)]
 pub struct CreatePermissionDto<'v> {
@@ -17,6 +17,13 @@ pub struct CreatePermissionDto<'v> {
 #[derive(FromForm)]
 pub struct AssignPermissionDto<'v> {
     pub perm: PermissionKey<'v>,
+    #[field(validate = with(|o| o.map(|s| !s.is_empty()).unwrap_or(true), "invalid empty scope"))]
+    pub scope: Option<TrimmedStr<'v>>,
+}
+
+#[derive(FromForm)]
+pub struct AssignPermissionToGroupDto<'v> {
+    pub group: GroupRefDto<'v>,
     #[field(validate = with(|o| o.map(|s| !s.is_empty()).unwrap_or(true), "invalid empty scope"))]
     pub scope: Option<TrimmedStr<'v>>,
 }

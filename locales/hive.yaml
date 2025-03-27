@@ -531,6 +531,9 @@ permissions.created.heading:
 permissions.created.success:
   en: Permission <samp>%{x}</samp> created successfully!
   sv: Behörighet <samp>%{x}</samp> skapades framgångsrikt!
+permissions.details.groups.assign:
+  en: Create new assignment
+  sv: Skapa ny tilldelning
 permissions.details.groups.title:
   en: Assignments to Groups
   sv: Tilldelningar till grupper
@@ -540,6 +543,27 @@ permissions.details.title:
 permissions.details.title.pre:
   en: "Permission:"
   sv: "Behörighet:"
+permissions.groups.assign.field.group.label:
+  en: Group key
+  sv: Gruppnyckel
+permissions.groups.assign.field.group.placeholder:
+  en: e.g., sn@example.com
+  sv: t.ex. sn@example.com
+permissions.groups.assign.field.group.tip:
+  en: Specify the group that will be granted the <samp>%{x}</samp> permission
+  sv: Ange gruppen som ska beviljas <samp>%{x}</samp>-behörighet
+permissions.groups.assign.field.scope.label:
+  en: Scope
+  sv: Gräns
+permissions.groups.assign.field.scope.placeholder:
+  en: e.g., news
+  sv: t.ex. news
+permissions.groups.assign.field.scope.tip:
+  en: Scope access to a specific limit, or use * as wildcard (= everything)
+  sv: Omfång åtkomst till en specific gräns, eller använd * som joker (= allt)
+permissions.groups.assign.success:
+  en: Successfully assigned this permission to group <samp>%{x}</samp>!
+  sv: Tilldelade den här behörigheten till gruppen <samp>%{x}</samp>!
 permissions.groups.list.action.delete.tooltip:
   en: Revoke permission
   sv: Återkalla behörigheten

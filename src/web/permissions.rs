@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use super::{Either, RenderedTemplate};
 use crate::{
-    dto::permissions::CreatePermissionDto,
+    dto::permissions::{AssignPermissionToGroupDto, CreatePermissionDto},
     errors::AppResult,
     guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
     models::{AffiliatedPermissionAssignment, Permission},
@@ -25,6 +25,7 @@ pub fn routes() -> RouteTree {
         create_permission,
         permission_details,
         list_permission_groups,
+        assign_permission_to_group,
         unassign_permission
     ]
     .into()
@@ -68,10 +69,12 @@ struct PartialPermissionCreatedView {
 
 #[derive(Template)]
 #[template(path = "permissions/details.html.j2")]
-struct PermissionDetailsView {
+struct PermissionDetailsView<'f, 'v> {
     ctx: PageContext,
     permission: Permission,
     fully_authorized: bool,
+    assign_to_group_form: &'f form::Context<'v>,
+    assign_to_group_success: Option<AffiliatedPermissionAssignment>,
 }
 
 #[derive(Template)]
@@ -81,6 +84,18 @@ struct PartialListPermissionGroupsView {
     has_scope: bool,
     can_manage_any: bool,
     permission_assignments: Vec<AffiliatedPermissionAssignment>,
+}
+
+#[derive(Template)]
+#[template(
+    path = "permissions/groups/assign.html.j2",
+    block = "inner_assign_to_group_form"
+)]
+struct AssignPermissionToGroupView<'f, 'v> {
+    ctx: PageContext,
+    permission: Permission,
+    assign_to_group_form: &'f form::Context<'v>,
+    assign_to_group_success: Option<AffiliatedPermissionAssignment>,
 }
 
 #[rocket::get("/system/<system_id>/permissions")]
@@ -206,6 +221,8 @@ async fn permission_details(
         ctx,
         permission,
         fully_authorized: perms.satisfies(min).await?,
+        assign_to_group_form: &form::Context::default(),
+        assign_to_group_success: None,
     };
 
     Ok(RawHtml(template.render()?))
@@ -255,6 +272,80 @@ async fn list_permission_groups(
     };
 
     Ok(Either::Left(RawHtml(template.render()?)))
+}
+
+#[rocket::post("/system/<system_id>/permission/<perm_id>/groups", data = "<form>")]
+#[allow(clippy::too_many_arguments)]
+async fn assign_permission_to_group<'v>(
+    system_id: &str,
+    perm_id: &str,
+    form: Form<Contextual<'v, AssignPermissionToGroupDto<'v>>>,
+    db: &State<PgPool>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<Either<RenderedTemplate, Redirect>> {
+    let min = HivePermission::AssignPerms(SystemsScope::Id(system_id.to_string()));
+    perms.require(min).await?;
+
+    // TODO: anti-CSRF
+
+    let permission = permissions::require_one(system_id, perm_id, db.inner()).await?;
+
+    if let Some(dto) = &form.value {
+        // validation passed
+
+        let assignment = permissions::assign_to_group(
+            system_id,
+            perm_id,
+            dto,
+            Some(&ctx.lang),
+            db.inner(),
+            &user,
+        )
+        .await?;
+
+        if partial.is_some() {
+            let template = AssignPermissionToGroupView {
+                ctx,
+                permission,
+                assign_to_group_form: &form::Context::default(),
+                assign_to_group_success: Some(assignment),
+            };
+
+            Ok(Either::Left(RawHtml(template.render()?)))
+        } else {
+            // FIXME: maybe allow passing ?assigned_to_group=id@domain
+
+            let target = uri!(permission_details(system_id = system_id, perm_id = perm_id));
+            Ok(Either::Right(Redirect::to(target)))
+        }
+    } else {
+        // some errors are present; show the form again
+        debug!(
+            "Assign permission to group form errors: {:?}",
+            &form.context
+        );
+
+        if partial.is_some() {
+            let template = AssignPermissionToGroupView {
+                ctx,
+                permission,
+                assign_to_group_form: &form.context,
+                assign_to_group_success: None,
+            };
+
+            Ok(Either::Left(RawHtml(template.render()?)))
+        } else {
+            // FIXME: this just resets the form without actually showing
+            // any validation error indicators... but there isn't a great
+            // alternative, and it might be fine for such a tiny form
+
+            let target = uri!(permission_details(system_id = system_id, perm_id = perm_id));
+            Ok(Either::Right(Redirect::to(target)))
+        }
+    }
 }
 
 #[rocket::delete("/permission-assignment/<id>")]

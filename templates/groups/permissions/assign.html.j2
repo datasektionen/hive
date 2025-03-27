@@ -1,8 +1,7 @@
 {%- import "utils.html.j2" as utils -%}
 
-<form id="assign-permission-form" method="post" action="/group/{{ group.domain }}/{{ group.id }}/permissions"
-    hx-boost="true" hx-push-url="false" hx-target="this" hx-indicator="#assign-permission-submit"
-    class="container-fluid">
+<form method="post" action="/group/{{ group.domain }}/{{ group.id }}/permissions" hx-boost="true" hx-push-url="false"
+    hx-target="this" hx-indicator="#assign-permission-submit" class="container-fluid">
     {% block inner_assign_permission_form %}
     {% if let Some(assignment) = assign_permission_success %}
     <p class="success">
@@ -13,7 +12,7 @@
     </p>
     <br />
     <template>
-        <tbody hx-swap-oob="afterbegin:#group-permissions-table tbody">
+        <tbody hx-swap-oob="beforeend:#group-permissions-table tbody">
             <tr>
                 {% let can_manage_any = true %}
                 {% include "groups/permissions/row-cells.html.j2" %}
