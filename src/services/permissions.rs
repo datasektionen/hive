@@ -116,19 +116,22 @@ pub async fn list_api_token_assignments<'x, X>(
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
-    let mut query = sqlx::QueryBuilder::new("SELECT pa.*");
+    let mut query = sqlx::QueryBuilder::new(
+        "SELECT pa.*,
+            at.system_id AS api_token_system_id",
+    );
 
     if label_lang.is_some() {
         query.push(", at.description AS label");
     }
 
-    query.push(" FROM permission_assignments pa");
+    query.push(
+        " FROM permission_assignments pa
+        JOIN api_tokens at
+            ON at.id = pa.api_token_id
+        WHERE pa.system_id = ",
+    );
 
-    if label_lang.is_some() {
-        query.push(" JOIN api_tokens at ON at.id = pa.api_token_id");
-    }
-
-    query.push(" WHERE pa.system_id = ");
     query.push_bind(system_id);
     query.push(" AND pa.perm_id = ");
     query.push_bind(perm_id);
@@ -374,10 +377,11 @@ where
     if label_lang.is_some() {
         query.push(
             ", (
-                SELECT description
+                SELECT system_id AS api_token_system_id,
+                    description AS label
                 FROM api_tokens at
                 WHERE at.id = $4
-            ) AS label",
+            )",
         );
     }
 

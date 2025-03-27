@@ -209,6 +209,8 @@ pub struct AffiliatedPermissionAssignment {
     pub group_domain: Option<String>,
     pub api_token_id: Option<Uuid>,
     #[sqlx(default)]
+    pub api_token_system_id: Option<String>,
+    #[sqlx(default)]
     pub label: Option<String>, // group name or token description
     #[sqlx(default)]
     pub can_manage: Option<bool>, // whether current user can e.g. unassign

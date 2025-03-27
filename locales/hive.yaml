@@ -542,6 +542,9 @@ permissions.api-tokens.list.col.id:
 permissions.api-tokens.list.col.scope:
   en: Scope
   sv: Gräns
+permissions.api-tokens.list.col.system:
+  en: System
+  sv: System
 permissions.api-tokens.list.empty:
   en: This permission has not yet been assigned to any API token.
   sv: Denna behörighet har ännu inte tilldelats någon API-token.
