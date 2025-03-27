@@ -1,0 +1,21 @@
+<dialog id="delete-tag">
+    <article>
+        <h2>{{ ctx.t("tags.delete.title") }}</h2>
+        <p>{{ ctx.t1("tags.delete.description", tag.key())|safe }}</p>
+        {# input must be in a form to trigger browser validation #}
+        <form id="delete-tag-confirmation-form" onsubmit="event.preventDefault()">
+            <input placeholder='{{ ctx.t("tags.delete.confirmation.placeholder") }}' required
+                pattern="{{ tag.key() }}" />
+        </form>
+        <footer>
+            <button form="delete-tag-confirmation-form" type="reset" class="secondary"
+                onclick="closeModal('delete-tag')">
+                {{ ctx.t("control.cancel") }}
+            </button>
+            <button form="delete-tag-confirmation-form" data-require-validity class="btn-danger"
+                hx-delete="/system/{{ tag.system_id }}/tag/{{ tag.tag_id }}">
+                {{ ctx.t("control.delete") }}
+            </button>
+        </footer>
+    </article>
+</dialog>

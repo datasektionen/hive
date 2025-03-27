@@ -106,3 +106,49 @@ where
 
     Ok(tag)
 }
+
+pub async fn delete<'x, X>(system_id: &str, tag_id: &str, db: X, user: &User) -> AppResult<()>
+where
+    X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
+{
+    if system_id == crate::HIVE_SYSTEM_ID {
+        // we manage our own tags via database migrations
+        warn!("Disallowing tags tampering from {}", user.username);
+        return Err(AppError::SelfPreservation);
+    }
+
+    let mut txn = db.begin().await?;
+
+    let old: Tag = sqlx::query_as(
+        "DELETE FROM tags
+        WHERE system_id = $1
+            AND tag_id = $2
+        RETURNING *",
+    )
+    .bind(system_id)
+    .bind(tag_id)
+    .fetch_optional(&mut *txn)
+    .await?
+    .ok_or_else(|| AppError::NoSuchTag(system_id.to_owned(), tag_id.to_owned()))?;
+
+    audit_logs::add_entry(
+        ActionKind::Delete,
+        TargetKind::Tag,
+        old.key(),
+        &user.username,
+        json!({
+            "old": {
+                "supports_groups": old.supports_groups,
+                "supports_users": old.supports_users,
+                "has_content": old.has_content,
+                "description": old.description,
+            }
+        }),
+        &mut *txn,
+    )
+    .await?;
+
+    txn.commit().await?;
+
+    Ok(())
+}

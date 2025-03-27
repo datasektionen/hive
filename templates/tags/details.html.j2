@@ -30,4 +30,7 @@
 {% endblock action_buttons %}
 
 {% block content %}
+{% if fully_authorized && tag.system_id != crate::HIVE_SYSTEM_ID %}
+{% include "delete.html.j2" %}
+{% endif %}
 {% endblock content %}

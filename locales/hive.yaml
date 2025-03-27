@@ -789,6 +789,24 @@ tags.create.field.supports-users.label:
 tags.create.field.supports-users.tip:
   en: Whether this tag may be assigned directly to users
   sv: Om den här taggen kan tilldelas direkt till användare
+tags.delete.confirmation.placeholder:
+  en: "e.g., #calypso:author-pseudonym"
+  sv: "t.ex. #calypso:author-pseudonym"
+tags.delete.description:
+  en: >
+    This will <strong>permanently and irrecoverably</strong> delete
+    tag <strong><samp>%{x}</samp>!</strong>
+    All associated groups and users will also be untagged.
+    <em>Please confirm your intentions by typing the tag's key below.</em>
+  sv: >
+    Detta kommer att <strong>permanent och oåterkalleligt</strong>
+    ta bort behörigheten <strong><samp>%{x}</samp>!</strong>
+    Alla associerade grupper och användare kommer också att avtaggas.
+    <em>Vänligen bekräfta dina avsikter genom att skriva in taggsnyckeln
+    nedan.</em>
+tags.delete.title:
+  en: Delete Tag
+  sv: Radera tagg
 tags.details.title:
   en: "Tag: %{x}"
   sv: "Tagg: %{x}"

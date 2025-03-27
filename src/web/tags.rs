@@ -19,7 +19,7 @@ use crate::{
 };
 
 pub fn routes() -> RouteTree {
-    rocket::routes![list_tags, create_tag, tag_details].into()
+    rocket::routes![list_tags, create_tag, tag_details, delete_tag].into()
 }
 
 #[derive(Template)]
@@ -162,4 +162,27 @@ async fn tag_details(
     };
 
     Ok(RawHtml(template.render()?))
+}
+
+#[rocket::delete("/system/<system_id>/tag/<tag_id>")]
+pub async fn delete_tag(
+    system_id: &str,
+    tag_id: &str,
+    db: &State<PgPool>,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<GracefulRedirect> {
+    let min = HivePermission::ManageTags(SystemsScope::Id(system_id.to_owned()));
+    perms.require(min).await?;
+
+    // TODO: anti-CSRF(?), DELETE isn't a normal form method
+
+    tags::delete(system_id, tag_id, db.inner(), &user).await?;
+
+    // TODO: show visual confirmation of successful delete in tags list
+    Ok(GracefulRedirect::to(
+        uri!(super::systems::system_details(system_id)),
+        partial.is_some(),
+    ))
 }
