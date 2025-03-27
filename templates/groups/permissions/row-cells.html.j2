@@ -1,18 +1,18 @@
 <td>
-    {% if let Some(true) = assignment.can_manage %}
-    <a href="/system/{{ assignment.system_id }}/permission/{{ assignment.perm_id }}" class="secondary reset-color">
-        {% endif %}
-        <samp>
+    <samp>
+        {%- if let Some(true) = assignment.can_manage -%}
+        <a href="/system/{{ assignment.system_id }}/permission/{{ assignment.perm_id }}" class="secondary reset-color">
+            {%- endif -%}
             <span style="font-size: 1.2em">$</span>
             {{- assignment.system_id }}:<strong>{{ assignment.perm_id }}</strong>
-            {%- if let Some(scope) = assignment.scope -%}
-            {%- let tooltip = ctx.t("groups.permissions.list.scope.tooltip") -%}
-            :<span class="primary" data-tooltip="{{ tooltip }}">{{ scope }}</span>
-            {%- endif -%}
-        </samp>
-        {% if let Some(true) = assignment.can_manage %}
-    </a>
-    {% endif %}
+            {%- if let Some(true) = assignment.can_manage -%}
+        </a>
+        {%- endif -%}
+        {%- if let Some(scope) = assignment.scope -%}
+        {%- let tooltip = ctx.t("groups.permissions.list.scope.tooltip") -%}
+        :<span class="primary" data-tooltip="{{ tooltip }}">{{ scope }}</span>
+        {%- endif -%}
+    </samp>
 </td>
 <td>{{ assignment.description }}</td>
 {% if can_manage_any %}
