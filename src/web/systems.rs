@@ -66,8 +66,10 @@ struct SystemDetailsView<'f, 'v> {
     system: System,
     fully_authorized: bool,
     can_manage_permissions: bool,
+    can_manage_tags: bool,
     api_token_create_form: &'f form::Context<'v>,
     permission_create_form: &'f form::Context<'v>,
+    tag_create_form: &'f form::Context<'v>,
     edit_form: &'f form::Context<'v>,
     edit_modal_open: bool,
 }
@@ -199,6 +201,9 @@ pub async fn system_details(
     let can_manage_permissions = perms
         .satisfies(HivePermission::ManagePerms(SystemsScope::Id(id.to_owned())))
         .await?;
+    let can_manage_tags = perms
+        .satisfies(HivePermission::ManageTags(SystemsScope::Id(id.to_owned())))
+        .await?;
 
     let empty_form = form::Context::default();
 
@@ -207,8 +212,10 @@ pub async fn system_details(
         system,
         fully_authorized,
         can_manage_permissions,
+        can_manage_tags,
         api_token_create_form: &empty_form,
         permission_create_form: &empty_form,
+        tag_create_form: &empty_form,
         edit_form: &empty_form,
         edit_modal_open: false,
     };
@@ -303,6 +310,9 @@ pub async fn edit_system<'v>(
             let can_manage_permissions = perms
                 .satisfies(HivePermission::ManagePerms(SystemsScope::Id(id.to_owned())))
                 .await?;
+            let can_manage_tags = perms
+                .satisfies(HivePermission::ManageTags(SystemsScope::Id(id.to_owned())))
+                .await?;
 
             let empty_form = form::Context::default();
 
@@ -311,8 +321,10 @@ pub async fn edit_system<'v>(
                 system,
                 fully_authorized: true, // checked at the beginning of this fn
                 can_manage_permissions,
+                can_manage_tags,
                 api_token_create_form: &empty_form,
                 permission_create_form: &empty_form,
+                tag_create_form: &empty_form,
                 edit_form: &form.context,
                 edit_modal_open: true,
             };

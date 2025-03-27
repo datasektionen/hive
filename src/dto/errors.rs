@@ -43,6 +43,11 @@ enum InnerAppErrorDto {
     #[serde(rename = "permission.assignment.scope.extraneous")]
     ExtraneousPermissionScope { system_id: String, perm_id: String },
 
+    #[serde(rename = "tag.unknown")]
+    NoSuchTag { system_id: String, tag_id: String },
+    #[serde(rename = "tag.id.duplicate-in-system")]
+    DuplicateTagId { id: String },
+
     #[serde(rename = "group.unknown")]
     NoSuchGroup { id: String, domain: String },
     #[serde(rename = "group.key.duplicate")]
@@ -88,6 +93,8 @@ impl From<AppError> for InnerAppErrorDto {
             AppError::ExtraneousPermissionScope(system_id, perm_id) => {
                 Self::ExtraneousPermissionScope { system_id, perm_id }
             }
+            AppError::NoSuchTag(system_id, tag_id) => Self::NoSuchTag { system_id, tag_id },
+            AppError::DuplicateTagId(id) => Self::DuplicateTagId { id },
             AppError::NoSuchGroup(id, domain) => Self::NoSuchGroup { id, domain },
             AppError::DuplicateGroupId(id, domain) => Self::DuplicateGroupId { id, domain },
             AppError::InvalidSubgroup(id, domain) => Self::InvalidSubgroup { id, domain },
@@ -147,6 +154,10 @@ impl InnerAppErrorDto {
             (Self::ExtraneousPermissionScope { .. }, Language::Swedish) => {
                 "Vederlagsfri behörighetsgräns"
             }
+            (Self::NoSuchTag { .. }, Language::English) => "Unknown Tag",
+            (Self::NoSuchTag { .. }, Language::Swedish) => "Okänt tagg",
+            (Self::DuplicateTagId { .. }, Language::English) => "Duplicate Tag ID",
+            (Self::DuplicateTagId { .. }, Language::Swedish) => "Duplicerat tagg-ID",
             (Self::NoSuchGroup { .. }, Language::English) => "Unknown Group",
             (Self::NoSuchGroup { .. }, Language::Swedish) => "Okänt grupp",
             (Self::DuplicateGroupId { .. }, Language::English) => "Duplicate Group Key",
@@ -316,6 +327,18 @@ impl InnerAppErrorDto {
                      till en konkret gräns vid tilldelning."
                 )
             }
+            (Self::NoSuchTag { system_id, tag_id }, Language::English) => {
+                format!("Could not find any tag with key \"#{system_id}:{tag_id}\".")
+            }
+            (Self::NoSuchTag { system_id, tag_id }, Language::Swedish) => {
+                format!("Kunde inte hitta någon tagg med nyckel \"${system_id}:{tag_id}\".")
+            }
+            (Self::DuplicateTagId { id }, Language::English) => format!(
+                "ID \"{id}\" is already in use by another tag associated with the same system."
+            ),
+            (Self::DuplicateTagId { id }, Language::Swedish) => format!(
+                "ID \"{id}\" används redan av ett annan tagg som är kopplad till samma system."
+            ),
             (Self::NoSuchGroup { id, domain }, Language::English) => {
                 format!("Could not find any group with key \"{id}@{domain}\".")
             }

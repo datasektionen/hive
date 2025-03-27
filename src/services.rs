@@ -3,6 +3,7 @@ pub mod audit_logs;
 pub mod groups;
 pub mod permissions;
 pub mod systems;
+pub mod tags;
 
 macro_rules! pg_args {
     ($($arg:expr),+) => {

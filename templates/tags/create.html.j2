@@ -1,0 +1,44 @@
+{%- import "utils.html.j2" as utils -%}
+
+<form id="create-tag-form" method="post" action="/system/{{ system.id }}/tags" hx-boost="true" hx-push-url="false"
+    hx-target="this" hx-indicator="#create-tag-submit" class="container-fluid">
+    {% block inner_create_tag_form %}
+    <div class="grid">
+        <label>
+            {{ ctx.t("tags.create.field.id.label") }}
+            <input {% call utils::field(tag_create_form, "id" ) %}
+                placeholder='{{ ctx.t("tags.create.field.id.placeholder") }}' required pattern="[a-z0-9]+(-[a-z0-9]+)*"
+                aria-describedby="tag-id-tip" />
+            <small id="tag-id-tip">{{ ctx.t("tags.create.field.id.tip") }}</small>
+        </label>
+        <label>
+            {{ ctx.t("tags.create.field.description.label") }}
+            <input {% call utils::field(tag_create_form, "description" ) %}
+                placeholder='{{ ctx.t("tags.create.field.description.placeholder") }}' required minlength="3"
+                aria-describedby="tag-description-tip" />
+            <small id="tag-description-tip">{{ ctx.t("tags.create.field.description.tip") }}</small>
+        </label>
+    </div>
+    <div class="flex-between">
+        <label>
+            {{ ctx.t("tags.create.field.supports-groups.label") }}
+            <span class="material-icons" data-tooltip='{{ ctx.t("tags.create.field.supports-groups.tip") }}'>info</span>
+            <input {% call utils::checkbox(tag_create_form, "supports_groups" ) %} />
+        </label>
+        <label>
+            {{ ctx.t("tags.create.field.supports-users.label") }}
+            <span class="material-icons" data-tooltip='{{ ctx.t("tags.create.field.supports-users.tip") }}'>info</span>
+            <input {% call utils::checkbox(tag_create_form, "supports_users" ) %} />
+        </label>
+        <label>
+            {{ ctx.t("tags.create.field.has-content.label") }}
+            <span class="material-icons" data-tooltip='{{ ctx.t("tags.create.field.has-content.tip") }}'>info</span>
+            <input {% call utils::checkbox(tag_create_form, "has_content" ) %} />
+        </label>
+        <button id="create-tag-submit">
+            <span class="material-icons">add</span>
+            {{ ctx.t("control.create") }}
+        </button>
+    </div>
+    {% endblock inner_create_tag_form %}
+</form>

@@ -714,6 +714,12 @@ systems.details.permissions.heading.create:
 systems.details.permissions.title:
   en: Permissions
   sv: Behörigheter
+systems.details.tags.heading.create:
+  en: Create new tag
+  sv: Skapa ny tagg
+systems.details.tags.title:
+  en: Tags
+  sv: Taggar
 systems.edit.title:
   en: Edit System Details
   sv: Redigera Systemdetaljer
@@ -744,3 +750,72 @@ systems.list.search.no-results:
 systems.list.title:
   en: Systems
   sv: System
+tags.create.field.id.label:
+  en: Tag ID
+  sv: Tagg-ID
+tags.create.field.id.placeholder:
+  en: e.g., author-pseudonym
+  sv: t.ex. create-posts
+tags.create.field.id.tip:
+  en: Use only lowercase letters, numbers, or dashes
+  sv: Använd endast små bokstäver, siffror eller bindestreck
+tags.create.field.description.label:
+  en: Description
+  sv: Beskrivning
+tags.create.field.description.placeholder:
+  en: e.g., A pseudonym on behalf of which users can post articles
+  sv: t.ex. A pseudonym on behalf of which users can post articles
+tags.create.field.description.tip:
+  en: Choose something concise and clear
+  sv: Välj något kortfattat och tydligt
+tags.create.field.has-content.label:
+  en: With content?
+  sv: Med innehåll?
+tags.create.field.has-content.tip:
+  en: >
+    If checked, a concrete content value will need to be specified when this
+    tag is assigned
+  sv: >
+    Om markerad måste ett konkret innehållsvärde anges när denna tagg tilldelas
+tags.create.field.supports-groups.label:
+  en: Supports groups?
+  sv: Stödjer grupper?
+tags.create.field.supports-groups.tip:
+  en: Whether this tag may be assigned to Hive groups
+  sv: Om den här taggen kan tilldelas Hive-grupper
+tags.create.field.supports-users.label:
+  en: Supports users?
+  sv: Stödjer användare?
+tags.create.field.supports-users.tip:
+  en: Whether this tag may be assigned directly to users
+  sv: Om den här taggen kan tilldelas direkt till användare
+tags.details.title:
+  en: "Tag: %{x}"
+  sv: "Tagg: %{x}"
+tags.details.title.pre:
+  en: "Tag:"
+  sv: "Tagg:"
+tags.key.content.indicator:
+  en: Contentful
+  sv: Innehållsfylld
+tags.key.content.tooltip:
+  en: When assigned, this tag has a concrete value
+  sv: När den tilldelas har denna tagg ett konkret värde
+tags.key.content.var:
+  en: content
+  sv: innehåll
+tags.list.col.description:
+  en: Description
+  sv: Beskrivning
+tags.list.col.key:
+  en: Key
+  sv: Nyckel
+tags.list.col.supports-groups:
+  en: Supports groups?
+  sv: Stödjer grupper?
+tags.list.col.supports-users:
+  en: Supports users?
+  sv: Stödjer användare?
+tags.list.empty:
+  en: This system does not have any associated tags.
+  sv: Det här systemet har inga associerade taggar.

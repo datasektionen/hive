@@ -60,6 +60,11 @@ pub enum AppError {
     #[error("permission with key `${0}:{1}` does not accept a scope on assignment")]
     ExtraneousPermissionScope(String, String),
 
+    #[error("could not find tag with key `#{0}:{1}`")]
+    NoSuchTag(String, String),
+    #[error("ID `{0}` is already in use by another tag for this system")]
+    DuplicateTagId(String),
+
     #[error("could not find group with key `{0}@{1}`")]
     NoSuchGroup(String, String),
     #[error("ID `{0}` is already in use by another group in domain `{1}`")]
@@ -105,6 +110,8 @@ impl AppError {
             AppError::DuplicatePermissionAssignment(..) => Status::Conflict,
             AppError::MissingPermissionScope(..) => Status::BadRequest,
             AppError::ExtraneousPermissionScope(..) => Status::BadRequest,
+            AppError::NoSuchTag(..) => Status::NotFound,
+            AppError::DuplicateTagId(..) => Status::Conflict,
             AppError::NoSuchGroup(..) => Status::NotFound,
             AppError::DuplicateGroupId(..) => Status::Conflict,
             AppError::InvalidSubgroup(..) => Status::BadRequest,

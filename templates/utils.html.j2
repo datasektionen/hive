@@ -24,7 +24,7 @@ value='{{ value.unwrap_or(default) }}'
 type="checkbox"
 name="{{ name }}"
 {%- if form.field_value(name).is_some() -%}
-checked
+checked{{ ' ' }}
 {%- endif -%}
 {%- if form.field_errors(name).next().is_some() -%}
 aria-invalid="true"
@@ -48,4 +48,13 @@ selected
 {%- else -%}
 <i>{{ ctx.t("indicator.datetime.never") }}</i>
 {%- endif -%}
-{%- endmacro %}
+{%- endmacro stamp_or_never %}
+
+
+{% macro yn_indicator(value) -%}
+{%- if value -%}
+<span class="material-icons">check</span>
+{%- else -%}
+<span class="material-icons">close</span>
+{%- endif -%}
+{%- endmacro yn_indicator %}

@@ -14,6 +14,8 @@ pub enum HivePermission {
     ManageSystem(SystemsScope),
     ManagePerms(SystemsScope),
     AssignPerms(SystemsScope),
+    ManageTags(SystemsScope),
+    AssignTags(SystemsScope),
 }
 
 impl HivePermission {
@@ -26,6 +28,8 @@ impl HivePermission {
             Self::ManageSystem(..) => "manage-system",
             Self::ManagePerms(..) => "manage-perms",
             Self::AssignPerms(..) => "assign-perms",
+            Self::ManageTags(..) => "manage-tags",
+            Self::AssignTags(..) => "assign-tags",
         }
     }
 }
@@ -37,7 +41,11 @@ impl fmt::Display for HivePermission {
         match self {
             Self::ViewLogs | Self::ManageSystems => write!(f, "$hive:{key}"),
             Self::ManageGroups(s) | Self::ManageMembers(s) => write!(f, "$hive:{key}:{s}"),
-            Self::ManageSystem(s) | Self::ManagePerms(s) | Self::AssignPerms(s) => {
+            Self::ManageSystem(s)
+            | Self::ManagePerms(s)
+            | Self::AssignPerms(s)
+            | Self::ManageTags(s)
+            | Self::AssignTags(s) => {
                 write!(f, "$hive:{key}:{s}")
             }
         }
@@ -56,6 +64,8 @@ impl PartialOrd for HivePermission {
             (Self::ManageSystem(a), Self::ManageSystem(b)) => a.partial_cmp(b),
             (Self::ManagePerms(a), Self::ManagePerms(b)) => a.partial_cmp(b),
             (Self::AssignPerms(a), Self::AssignPerms(b)) => a.partial_cmp(b),
+            (Self::ManageTags(a), Self::ManageTags(b)) => a.partial_cmp(b),
+            (Self::AssignTags(a), Self::AssignTags(b)) => a.partial_cmp(b),
             _ => None,
         }
     }
@@ -103,6 +113,16 @@ impl TryFrom<BasePermissionAssignment> for HivePermission {
                 let scope = SystemsScope::try_from(scope)?;
 
                 Ok(Self::AssignPerms(scope))
+            }
+            ("manage-tags", Some(scope)) => {
+                let scope = SystemsScope::try_from(scope)?;
+
+                Ok(Self::ManageTags(scope))
+            }
+            ("assign-tags", Some(scope)) => {
+                let scope = SystemsScope::try_from(scope)?;
+
+                Ok(Self::AssignTags(scope))
             }
             _ => Err(InvalidHivePermissionError::Id),
         }

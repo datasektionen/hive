@@ -232,6 +232,22 @@ impl AffiliatedPermissionAssignment {
     }
 }
 
+#[derive(FromRow)]
+pub struct Tag {
+    pub system_id: String,
+    pub tag_id: String,
+    pub supports_groups: bool,
+    pub supports_users: bool,
+    pub has_content: bool,
+    pub description: String,
+}
+
+impl Tag {
+    pub fn key(&self) -> String {
+        format!("#{}:{}", self.system_id, self.tag_id)
+    }
+}
+
 #[derive(sqlx::Type)]
 #[sqlx(type_name = "action_kind", rename_all = "snake_case")]
 pub enum ActionKind {

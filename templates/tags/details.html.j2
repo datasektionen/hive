@@ -1,0 +1,33 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ ctx.t1("tags.details.title", tag.key()) }}{% endblock title %}
+
+{% block heading %}
+<hgroup>
+    <h1>
+        {{ ctx.t("tags.details.title.pre") }}
+        <samp>
+            <span style="font-size: 1.2em">#</span>
+            {{- tag.system_id }}:<strong>{{ tag.tag_id }}</strong></samp>
+        {% if tag.has_content %}
+        <button class="outline chip" data-tooltip='{{ ctx.t("tags.key.content.tooltip") }}'>
+            <span class="material-icons" style="--pico-font-size: initial">adjust</span>
+            {{ ctx.t("tags.key.content.indicator") }}
+        </button>
+        {% endif %}
+    </h1>
+    <h3>{{ tag.description }}</h3>
+</hgroup>
+{% endblock heading %}
+
+{% block action_buttons %}
+{% if fully_authorized && tag.system_id != crate::HIVE_SYSTEM_ID %}
+<button class="btn-danger" onclick="openModal('delete-tag')">
+    <span class="material-icons">delete</span>
+    {{ ctx.t("control.delete") }}
+</button>
+{% endif %}
+{% endblock action_buttons %}
+
+{% block content %}
+{% endblock content %}

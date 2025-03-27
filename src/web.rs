@@ -12,6 +12,7 @@ mod catchers;
 mod groups;
 mod permissions;
 mod systems;
+mod tags;
 
 type RenderedTemplate = RawHtml<String>;
 
@@ -47,6 +48,7 @@ pub fn tree() -> RouteTree {
         groups::routes(),
         permissions::routes(),
         systems::routes(),
+        tags::routes(),
         rocket::routes![favicon].into(),
     ])
 }

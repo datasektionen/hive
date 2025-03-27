@@ -1,0 +1,16 @@
+{%- import "utils.html.j2" as utils -%}
+
+<td>
+    {% include "key.html.j2" %}
+</td>
+<td>{{ tag.description }}</td>
+<td>{% call utils::yn_indicator(tag.supports_groups) %}</td>
+<td>{% call utils::yn_indicator(tag.supports_users) %}</td>
+{% if can_manage %}
+<td>
+    <a href="/system/{{ tag.system_id }}/tag/{{ tag.tag_id }}" role="button" class="secondary material-icons"
+        data-tooltip='{{ ctx.t("control.manage") }}' data-placement="left">
+        arrow_forward
+    </a>
+</td>
+{% endif %}

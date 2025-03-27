@@ -1,0 +1,9 @@
+<samp>
+    <span style="font-size: 1.2em">#</span>
+    {{- tag.system_id }}:<strong>{{ tag.tag_id }}</strong>
+    {%- if tag.has_content -%}
+    {%- let tooltip = ctx.t("tags.key.content.tooltip") -%}
+    {%- let var = ctx.t("tags.key.content.var") -%}
+    :<span class="primary" data-tooltip="{{ tooltip }}">&lt;{{ var }}&gt;</span>
+    {%- endif -%}
+</samp>
