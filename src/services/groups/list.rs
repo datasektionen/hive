@@ -254,6 +254,7 @@ pub(super) async fn populate_from_permission(
             GroupsScope::Tag { id, content } => tags.insert((id, content)),
             GroupsScope::Wildcard => return Ok(true),
             GroupsScope::Any => unreachable!("? is not a real scope"),
+            GroupsScope::AnyDomain => unreachable!("?@ is not a real scope"),
         };
     }
 

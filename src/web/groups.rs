@@ -57,7 +57,7 @@ struct ListGroupsView<'r, 'f, 'v> {
     sort: ListGroupsSort,
     domain_filter: Option<&'r str>,
     domains: Vec<String>,
-    fully_authorized: bool,
+    can_create: bool,
     create_form: &'f form::Context<'v>,
     create_modal_open: bool,
 }
@@ -228,8 +228,8 @@ async fn list_groups(
             }
         }
 
-        let fully_authorized = perms
-            .satisfies(HivePermission::ManageGroups(GroupsScope::Wildcard))
+        let can_create = perms
+            .satisfies(HivePermission::ManageGroups(GroupsScope::AnyDomain))
             .await?;
 
         let template = ListGroupsView {
@@ -239,7 +239,7 @@ async fn list_groups(
             sort,
             domain_filter: domain,
             domains,
-            fully_authorized,
+            can_create,
             create_form: &form::Context::default(),
             create_modal_open: false,
         };
@@ -257,14 +257,15 @@ async fn create_group<'v>(
     user: User,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<Either<RenderedTemplate, GracefulRedirect>> {
-    perms
-        .require(HivePermission::ManageGroups(GroupsScope::Wildcard))
-        .await?;
+    // can only check perms later based on target domain
 
     // TODO: anti-CSRF
 
     if let Some(dto) = &form.value {
         // validation passed
+
+        let min = HivePermission::ManageGroups(GroupsScope::Domain(dto.domain.to_string()));
+        perms.require(min).await?;
 
         groups::management::create(dto, db.inner(), &user).await?;
 
@@ -299,6 +300,10 @@ async fn create_group<'v>(
             domains.sort();
             domains.dedup();
 
+            let can_create = perms
+                .satisfies(HivePermission::ManageGroups(GroupsScope::AnyDomain))
+                .await?;
+
             let template = ListGroupsView {
                 ctx,
                 summaries,
@@ -306,7 +311,7 @@ async fn create_group<'v>(
                 sort,
                 domain_filter: None,
                 domains,
-                fully_authorized: true, // we already checked
+                can_create,
                 create_form: &form.context,
                 create_modal_open: true,
             };

@@ -5,7 +5,7 @@
 {% block title %}{{ ctx.t("groups.list.title") }}{% endblock title %}
 
 {% block action_buttons %}
-{% if fully_authorized %}
+{% if can_create %}
 <button onclick="openModal('create-group')">
     <span class="material-icons">add</span>
     {{ ctx.t("groups.list.action.create") }}

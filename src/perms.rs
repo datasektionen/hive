@@ -117,7 +117,8 @@ pub enum GroupsScope {
         content: Option<TagContent>,
     },
     Domain(String),
-    Any, // pseudo-scope meaning "any of the above"
+    Any,       // pseudo-scope meaning "any of the above"
+    AnyDomain, // pseudo-scope meaning "wildcard or domain (not tag)"
 }
 
 impl TryFrom<&str> for GroupsScope {
@@ -151,6 +152,7 @@ impl fmt::Display for GroupsScope {
             },
             Self::Domain(domain) => write!(f, "@{domain}"),
             Self::Any => write!(f, "?"),
+            Self::AnyDomain => write!(f, "?@"),
         }
     }
 }
@@ -166,6 +168,8 @@ impl PartialOrd for GroupsScope {
             (_, Self::Wildcard) => Some(Ordering::Less),
             (Self::Any, _) => Some(Ordering::Less),
             (_, Self::Any) => Some(Ordering::Greater),
+            (Self::AnyDomain, Self::Domain(_)) => Some(Ordering::Less),
+            (Self::Domain(_), Self::AnyDomain) => Some(Ordering::Greater),
             (
                 Self::Tag {
                     id: id_a,

@@ -138,7 +138,8 @@ where
                 }
                 GroupsScope::Domain(_) => {}
                 GroupsScope::Tag { id, content } => tags.push((id, content)),
-                GroupsScope::Any => unreachable!(),
+                GroupsScope::Any => unreachable!("? is not a real scope"),
+                GroupsScope::AnyDomain => unreachable!("?@ is not a real scope"),
             }
         }
     }
