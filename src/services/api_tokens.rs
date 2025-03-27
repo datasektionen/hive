@@ -1,4 +1,5 @@
 use serde_json::json;
+use sha2::Digest;
 use uuid::Uuid;
 
 use super::audit_logs;
@@ -48,13 +49,16 @@ where
 {
     let secret = Uuid::new_v4();
 
+    let hash = sha2::Sha256::new_with_prefix(secret).finalize();
+    let hash = format!("{hash:x}"); // hex string
+
     let mut txn = db.begin().await?;
 
     let token: ApiToken = sqlx::query_as(
         "INSERT INTO api_tokens (secret, system_id, description, expires_at) VALUES ($1, $2, $3, \
          $4) RETURNING *",
     )
-    .bind(secret)
+    .bind(hash)
     .bind(system_id)
     .bind(dto.description)
     .bind(&dto.expiration)
