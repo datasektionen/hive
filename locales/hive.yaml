@@ -57,6 +57,9 @@ api-tokens.list.col.last-used:
 api-tokens.list.empty:
   en: This system does not have any associated API tokens.
   sv: Det här systemet har inga associerade API-tokens.
+api-tokens.list.indicator.n-perms:
+  en: This API token has %{x} permissions assigned
+  sv: Den här API-token har %{x} behörigheter tilldelade
 col.actions:
   en: Actions
   sv: Åtgärder

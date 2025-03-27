@@ -10,7 +10,7 @@
             <span style="font-size: 1.2em">$</span>
             {{- permission.system_id }}:<strong>{{ permission.perm_id }}</strong></samp>
         {% if permission.has_scope %}
-        <button class="outline" data-tooltip='{{ ctx.t("permissions.key.scope.tooltip") }}'>
+        <button class="outline chip" data-tooltip='{{ ctx.t("permissions.key.scope.tooltip") }}'>
             <span class="material-icons" style="--pico-font-size: initial">adjust</span>
             {{ ctx.t("permissions.key.scope.indicator") }}
         </button>

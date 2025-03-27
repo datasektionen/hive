@@ -1,6 +1,14 @@
 {%- import "utils.html.j2" as utils -%}
 
-<td><samp>{{ token.id }}</samp></td>
+<td>
+    <samp>{{ token.id }}</samp>
+    {% if token.n_perms > 0 %}
+    <span class="primary material-icons"
+        data-tooltip='{{ ctx.t1("api-tokens.list.indicator.n-perms", token.n_perms) }}'>
+        paid
+    </span>
+    {% endif %}
+</td>
 <td>{{ token.description }}</td>
 <td>{% call utils::stamp_or_never(token.expires_at) %}</td>
 <td>{% call utils::stamp_or_never(token.last_used_at) %}</td>

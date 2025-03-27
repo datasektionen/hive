@@ -15,7 +15,15 @@ where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
     let api_tokens = sqlx::query_as(
-        "SELECT * FROM api_tokens WHERE system_id = $1 ORDER BY expires_at, last_used_at, id",
+        "SELECT at.*,
+            (
+                SELECT COUNT(*)
+                FROM permission_assignments pa
+                WHERE pa.api_token_id = at.id
+            ) AS n_perms
+        FROM api_tokens at
+        WHERE system_id = $1
+        ORDER BY expires_at, last_used_at, id",
     )
     .bind(system_id)
     .fetch_all(db)

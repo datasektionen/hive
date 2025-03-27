@@ -143,6 +143,9 @@ pub struct ApiToken {
     pub description: String,
     pub expires_at: Option<DateTime<Local>>,
     pub last_used_at: Option<DateTime<Local>>,
+    #[sqlx(default)]
+    #[sqlx(try_from = "i64")]
+    pub n_perms: usize, // number of assigned permissions
 }
 
 #[derive(FromRow)]
