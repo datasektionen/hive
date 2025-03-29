@@ -527,13 +527,18 @@ where
     );
 
     if label_lang.is_some() {
+        // there doesn't seem an easy way to re-use the same subquery and return
+        // 2 values from there into 2 separate columns...
         query.push(
             ", (
-                SELECT system_id AS api_token_system_id,
-                    description AS label
+                SELECT system_id
                 FROM api_tokens at
                 WHERE at.id = $4
-            )",
+            ) AS api_token_system_id, (
+                SELECT description
+                FROM api_tokens at
+                WHERE at.id = $4
+            ) AS label",
         );
     }
 
