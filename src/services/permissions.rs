@@ -1,6 +1,7 @@
 use chrono::Local;
 use log::*;
 use serde_json::json;
+use sha2::Digest;
 use uuid::Uuid;
 
 use super::{audit_logs, pg_args};
@@ -113,6 +114,34 @@ where
     Ok(assignments)
 }
 
+pub async fn list_all_assignments_for_token_system<'x, X>(
+    secret: Uuid,
+    system_id: &str,
+    db: X,
+) -> AppResult<Vec<BasePermissionAssignment>>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+{
+    let hash = sha2::Sha256::new_with_prefix(secret).finalize();
+    let hash = format!("{hash:x}"); // hex string
+
+    let assignments = sqlx::query_as(
+        "SELECT pa.system_id, pa.perm_id, pa.scope
+        FROM permission_assignments pa
+        JOIN api_tokens at
+            ON at.id = pa.api_token_id
+        WHERE at.secret = $1
+            AND pa.system_id = $2
+        ORDER BY pa.perm_id, pa.scope",
+    )
+    .bind(hash)
+    .bind(system_id)
+    .fetch_all(db)
+    .await?;
+
+    Ok(assignments)
+}
+
 pub async fn user_has_permission<'x, X>(
     username: &str,
     system_id: &str,
@@ -137,6 +166,39 @@ where
     )
     .bind(username)
     .bind(today)
+    .bind(system_id)
+    .bind(perm_id)
+    .bind(scope)
+    .fetch_one(db)
+    .await?;
+
+    Ok(authorized)
+}
+
+pub async fn token_has_permission<'x, X>(
+    secret: Uuid,
+    system_id: &str,
+    perm_id: &str,
+    scope: Option<&str>,
+    db: X,
+) -> AppResult<bool>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+{
+    let hash = sha2::Sha256::new_with_prefix(secret).finalize();
+    let hash = format!("{hash:x}"); // hex string
+
+    let authorized = sqlx::query_scalar(
+        "SELECT COUNT(pa.*) > 0
+        FROM permission_assignments pa
+        JOIN api_tokens at
+            ON at.id = pa.api_token_id
+        WHERE at.secret = $1
+            AND pa.system_id = $2
+            AND pa.perm_id = $3
+            AND pa.scope IS NOT DISTINCT FROM $4",
+    )
+    .bind(hash)
     .bind(system_id)
     .bind(perm_id)
     .bind(scope)

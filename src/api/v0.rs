@@ -20,13 +20,23 @@ use crate::routing::RouteTree;
 //      Returns a boolean corresponding to whether the user is recognized to
 //      have the given permission, which is provided in the same string format
 //      as specified above.
+//
+// GET /api/v0/token/:api_token_secret/:system_id
+//      Returns a string[] with the API token's recognized permissions for the
+//      given system. String format is the same as above.
+//
+// GET /api/v0/token/:api_token_secret/:system_id/:permission
+//      Returns a boolean corresponding to whether the API token is recognized
+//      to have the given permission, which is provided in the same string
+//      format as specified above.
 
 // None of these endpoints require any form of authentication.
 
+mod token;
 mod user;
 
 pub fn tree() -> RouteTree {
-    RouteTree::Branch(vec![user::routes()])
+    RouteTree::Branch(vec![token::routes(), user::routes()])
 }
 
 struct PermKey<'r> {
