@@ -54,5 +54,6 @@ async fn rocket() -> _ {
         .mount("/", &web::tree())
         .mount("/api/v0", &api::v0::tree())
         .mount("/static", FileServer::from(relative!("./static")))
+        .register("/api", api::catchers())
         .register("/", web::catchers())
 }

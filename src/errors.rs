@@ -196,11 +196,11 @@ impl Fairing for ErrorPageGenerator {
             return;
         }
 
-        if let Some(route) = req.route() {
-            if route.uri.base().starts_with("/api") {
-                // nothing to do; error is already in JSON as intended
-                return;
-            }
+        // can't check req.route().base() because 404 responses might not have
+        // any associated route (if they didn't match any Rocket routes)
+        if req.uri().path().starts_with("/api/") {
+            // nothing to do; error is already in JSON as intended
+            return;
         }
 
         if res.content_type().map(|t| t.is_html()).unwrap_or(false) {
