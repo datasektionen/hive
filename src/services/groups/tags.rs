@@ -48,14 +48,18 @@ where
 {
     let systems_filter = get_systems_filter(perms).await?;
 
-    let mut query = sqlx::QueryBuilder::new("SELECT * FROM tags");
+    let mut query = sqlx::QueryBuilder::new(
+        "SELECT *
+        FROM tags
+        WHERE supports_groups",
+    );
 
     if let Some(system_ids) = systems_filter {
         if system_ids.is_empty() {
             return Ok(vec![]);
         }
 
-        query.push(" WHERE system_id = ANY(");
+        query.push(" AND system_id = ANY(");
         query.push_bind(system_ids);
         query.push(")");
     }
