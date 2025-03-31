@@ -125,17 +125,22 @@ where
     let hash = api_tokens::hash_secret(secret);
 
     let assignments = sqlx::query_as(
-        "SELECT pa.system_id, pa.perm_id, pa.scope
+        "WITH updated AS (
+            UPDATE api_tokens
+            SET last_used_at = $1
+            WHERE secret = $2
+                AND (expires_at IS NULL OR expires_at >= $1)
+            RETURNING id
+        )
+        SELECT pa.system_id, pa.perm_id, pa.scope
         FROM permission_assignments pa
-        JOIN api_tokens at
-            ON at.id = pa.api_token_id
-        WHERE at.secret = $1
-            AND (at.expires_at IS NULL OR at.expires_at >= $2)
-            AND pa.system_id = $3
+        JOIN updated u
+            ON pa.api_token_id = u.id
+        WHERE pa.system_id = $3
         ORDER BY pa.perm_id, pa.scope",
     )
-    .bind(hash)
     .bind(now)
+    .bind(hash)
     .bind(system_id)
     .fetch_all(db)
     .await?;
@@ -193,21 +198,26 @@ where
     let hash = api_tokens::hash_secret(secret);
 
     let authorized = sqlx::query_scalar(
-        "SELECT COUNT(pa.*) > 0
+        "WITH updated AS (
+            UPDATE api_tokens
+            SET last_used_at = $1
+            WHERE secret = $2
+                AND (expires_at IS NULL OR expires_at >= $1)
+            RETURNING id
+        )
+        SELECT COUNT(pa.*) > 0
         FROM permission_assignments pa
-        JOIN api_tokens at
-            ON at.id = pa.api_token_id
-        WHERE at.secret = $1
-            AND (at.expires_at IS NULL OR at.expires_at >= $2)
-            AND pa.system_id = $3
+        JOIN updated u
+            ON pa.api_token_id = u.id
+        WHERE pa.system_id = $3
             AND pa.perm_id = $4
             AND (
                 pa.scope IS NOT DISTINCT FROM $5
                 OR pa.scope = '*'
             )",
     )
-    .bind(hash)
     .bind(now)
+    .bind(hash)
     .bind(system_id)
     .bind(perm_id)
     .bind(scope)
