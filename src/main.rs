@@ -53,6 +53,7 @@ async fn rocket() -> _ {
         .attach(ErrorPageGenerator)
         .mount("/", &web::tree())
         .mount("/api/v0", &api::v0::tree())
+        .mount("/api/v1", &api::v1::tree())
         .mount("/static", FileServer::from(relative!("./static")))
         .register("/api", api::catchers())
         .register("/", web::catchers())

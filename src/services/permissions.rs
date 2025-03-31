@@ -148,6 +148,75 @@ where
     Ok(assignments)
 }
 
+pub async fn list_all_scopes_for_user_permission<'x, X>(
+    username: &str,
+    perm_id: &str,
+    system_id: &str,
+    db: X,
+) -> AppResult<Vec<String>>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+{
+    let today = Local::now().date_naive();
+
+    let assignments = sqlx::query_scalar(
+        "SELECT pa.scope
+        FROM permission_assignments pa
+        JOIN all_groups_of($1, $2) ag
+            ON ag.id = pa.group_id
+            AND ag.domain = pa.group_domain
+        WHERE pa.perm_id = $3
+            AND pa.system_id = $4
+        ORDER BY pa.scope",
+    )
+    .bind(username)
+    .bind(today)
+    .bind(perm_id)
+    .bind(system_id)
+    .fetch_all(db)
+    .await?;
+
+    Ok(assignments)
+}
+
+pub async fn list_all_scopes_for_token_permission<'x, X>(
+    secret: Uuid,
+    perm_id: &str,
+    system_id: &str,
+    db: X,
+) -> AppResult<Vec<String>>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+{
+    let now = Local::now();
+    let hash = api_tokens::hash_secret(secret);
+
+    let assignments = sqlx::query_scalar(
+        "WITH updated AS (
+            UPDATE api_tokens
+            SET last_used_at = $1
+            WHERE secret = $2
+                AND (expires_at IS NULL OR expires_at >= $1)
+            RETURNING id
+        )
+        SELECT pa.scope
+        FROM permission_assignments pa
+        JOIN updated u
+            ON pa.api_token_id = u.id
+        WHERE pa.perm_id = $3
+            AND pa.system_id = $4
+        ORDER BY pa.perm_id, pa.scope",
+    )
+    .bind(now)
+    .bind(hash)
+    .bind(perm_id)
+    .bind(system_id)
+    .fetch_all(db)
+    .await?;
+
+    Ok(assignments)
+}
+
 pub async fn user_has_permission<'x, X>(
     username: &str,
     system_id: &str,
