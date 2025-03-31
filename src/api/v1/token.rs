@@ -3,8 +3,8 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::{
-    errors::AppResult, guards::api::consumer::ApiConsumer, routing::RouteTree,
-    services::permissions,
+    api::HiveApiPermission, errors::AppResult, guards::api::consumer::ApiConsumer,
+    routing::RouteTree, services::permissions,
 };
 
 use super::SystemPermissionAssignment;
@@ -25,6 +25,10 @@ async fn token_permissions(
     consumer: ApiConsumer,
     db: &State<PgPool>,
 ) -> AppResult<Json<Vec<SystemPermissionAssignment>>> {
+    consumer
+        .require(HiveApiPermission::CheckPermissions, db.inner())
+        .await?;
+
     let perms =
         permissions::list_all_assignments_for_token_system(secret, &consumer.system_id, db.inner())
             .await?
@@ -42,6 +46,10 @@ async fn token_permission_scopes(
     consumer: ApiConsumer,
     db: &State<PgPool>,
 ) -> AppResult<Json<Vec<String>>> {
+    consumer
+        .require(HiveApiPermission::CheckPermissions, db.inner())
+        .await?;
+
     let scopes = permissions::list_all_scopes_for_token_permission(
         secret,
         perm_id,
@@ -60,6 +68,10 @@ async fn token_has_permission(
     consumer: ApiConsumer,
     db: &State<PgPool>,
 ) -> AppResult<Json<bool>> {
+    consumer
+        .require(HiveApiPermission::CheckPermissions, db.inner())
+        .await?;
+
     let has_permission =
         permissions::token_has_permission(secret, &consumer.system_id, perm_id, None, db.inner())
             .await?;
@@ -75,6 +87,10 @@ async fn token_has_permission_scoped(
     consumer: ApiConsumer,
     db: &State<PgPool>,
 ) -> AppResult<Json<bool>> {
+    consumer
+        .require(HiveApiPermission::CheckPermissions, db.inner())
+        .await?;
+
     let has_permission = permissions::token_has_permission(
         secret,
         &consumer.system_id,

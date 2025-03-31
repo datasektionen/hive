@@ -16,6 +16,8 @@ pub enum HivePermission {
     AssignPerms(SystemsScope),
     ManageTags(SystemsScope),
     AssignTags(SystemsScope),
+    ApiCheckPermissions,
+    ApiListTagged,
 }
 
 impl HivePermission {
@@ -30,6 +32,8 @@ impl HivePermission {
             Self::AssignPerms(..) => "assign-perms",
             Self::ManageTags(..) => "manage-tags",
             Self::AssignTags(..) => "assign-tags",
+            Self::ApiCheckPermissions => "api-check-permissions",
+            Self::ApiListTagged => "api-list-tagged",
         }
     }
 }
@@ -39,7 +43,10 @@ impl fmt::Display for HivePermission {
         let key = self.key();
 
         match self {
-            Self::ViewLogs | Self::ManageSystems => write!(f, "$hive:{key}"),
+            Self::ViewLogs
+            | Self::ManageSystems
+            | Self::ApiCheckPermissions
+            | Self::ApiListTagged => write!(f, "$hive:{key}"),
             Self::ManageGroups(s) | Self::ManageMembers(s) => write!(f, "$hive:{key}:{s}"),
             Self::ManageSystem(s)
             | Self::ManagePerms(s)
@@ -124,6 +131,8 @@ impl TryFrom<BasePermissionAssignment> for HivePermission {
 
                 Ok(Self::AssignTags(scope))
             }
+            ("api-check-permissions", None) => Ok(Self::ApiCheckPermissions),
+            ("api-list-tagged", None) => Ok(Self::ApiListTagged),
             _ => Err(InvalidHivePermissionError::Id),
         }
     }

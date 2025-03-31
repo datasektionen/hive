@@ -7,7 +7,12 @@ use rocket::{
 use sqlx::{prelude::FromRow, PgPool};
 use uuid::Uuid;
 
-use crate::services::api_tokens;
+use crate::{
+    api::HiveApiPermission,
+    errors::{AppError, AppResult},
+    perms::HivePermission,
+    services::api_tokens,
+};
 
 use super::token::BearerToken;
 
@@ -15,6 +20,40 @@ use super::token::BearerToken;
 pub struct ApiConsumer {
     pub api_token_id: Uuid,
     pub system_id: String,
+}
+
+impl ApiConsumer {
+    pub async fn satisfies<'x, X>(&self, min: HiveApiPermission, db: X) -> AppResult<bool>
+    where
+        X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+    {
+        // (ignores scope since all current permissions don't have any scope)
+        let satisfies = sqlx::query_scalar(
+            "SELECT COUNT(*) > 0
+            FROM permission_assignments
+            WHERE api_token_id = $1
+                AND perm_id = $2
+                AND system_id = $3",
+        )
+        .bind(self.api_token_id)
+        .bind(HivePermission::from(min).key())
+        .bind(crate::HIVE_SYSTEM_ID)
+        .fetch_one(db)
+        .await?;
+
+        Ok(satisfies)
+    }
+
+    pub async fn require<'x, X>(&self, min: HiveApiPermission, db: X) -> AppResult<()>
+    where
+        X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+    {
+        if self.satisfies(min.clone(), db).await? {
+            Ok(())
+        } else {
+            Err(AppError::NotAllowed(min.into()))
+        }
+    }
 }
 
 #[derive(Debug)]
