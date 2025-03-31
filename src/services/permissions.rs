@@ -122,6 +122,8 @@ pub async fn list_all_assignments_for_token_system<'x, X>(
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
+    let now = Local::now();
+
     let hash = sha2::Sha256::new_with_prefix(secret).finalize();
     let hash = format!("{hash:x}"); // hex string
 
@@ -131,10 +133,12 @@ where
         JOIN api_tokens at
             ON at.id = pa.api_token_id
         WHERE at.secret = $1
-            AND pa.system_id = $2
+            AND (at.expires_at IS NULL OR at.expires_at >= $2)
+            AND pa.system_id = $3
         ORDER BY pa.perm_id, pa.scope",
     )
     .bind(hash)
+    .bind(now)
     .bind(system_id)
     .fetch_all(db)
     .await?;
@@ -188,6 +192,8 @@ pub async fn token_has_permission<'x, X>(
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
+    let now = Local::now();
+
     let hash = sha2::Sha256::new_with_prefix(secret).finalize();
     let hash = format!("{hash:x}"); // hex string
 
@@ -197,14 +203,16 @@ where
         JOIN api_tokens at
             ON at.id = pa.api_token_id
         WHERE at.secret = $1
-            AND pa.system_id = $2
-            AND pa.perm_id = $3
+            AND (at.expires_at IS NULL OR at.expires_at >= $2)
+            AND pa.system_id = $3
+            AND pa.perm_id = $4
             AND (
-                pa.scope IS NOT DISTINCT FROM $4
+                pa.scope IS NOT DISTINCT FROM $5
                 OR pa.scope = '*'
             )",
     )
     .bind(hash)
+    .bind(now)
     .bind(system_id)
     .bind(perm_id)
     .bind(scope)
