@@ -19,7 +19,9 @@ use crate::routing::RouteTree;
 // GET /api/v0/user/:username/:system_id/:permission
 //      Returns a boolean corresponding to whether the user is recognized to
 //      have the given permission, which is provided in the same string format
-//      as specified above.
+//      as specified above. If the permission is scoped and a scope is not
+//      provided, this endpoint always returns false, unless the user is
+//      authorized for the wildcard scope (*).
 //
 // GET /api/v0/token/:api_token_secret/:system_id
 //      Returns a string[] with the API token's recognized permissions for the
@@ -28,7 +30,9 @@ use crate::routing::RouteTree;
 // GET /api/v0/token/:api_token_secret/:system_id/:permission
 //      Returns a boolean corresponding to whether the API token is recognized
 //      to have the given permission, which is provided in the same string
-//      format as specified above.
+//      format as specified above. If the permission is scoped and a scope is not
+//      provided, this endpoint always returns false, unless the user is
+//      authorized for the wildcard scope (*).
 
 // None of these endpoints require any form of authentication.
 

@@ -162,7 +162,10 @@ where
             AND ag.domain = pa.group_domain
         WHERE pa.system_id = $3
             AND pa.perm_id = $4
-            AND pa.scope IS NOT DISTINCT FROM $5",
+            AND (
+                pa.scope IS NOT DISTINCT FROM $5
+                OR pa.scope = '*'
+            )",
     )
     .bind(username)
     .bind(today)
@@ -196,7 +199,10 @@ where
         WHERE at.secret = $1
             AND pa.system_id = $2
             AND pa.perm_id = $3
-            AND pa.scope IS NOT DISTINCT FROM $4",
+            AND (
+                pa.scope IS NOT DISTINCT FROM $4
+                OR pa.scope = '*'
+            )",
     )
     .bind(hash)
     .bind(system_id)
