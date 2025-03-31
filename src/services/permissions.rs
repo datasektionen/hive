@@ -1,10 +1,9 @@
 use chrono::Local;
 use log::*;
 use serde_json::json;
-use sha2::Digest;
 use uuid::Uuid;
 
-use super::{audit_logs, pg_args};
+use super::{api_tokens, audit_logs, pg_args};
 use crate::{
     dto::permissions::{
         AssignPermissionToApiTokenDto, AssignPermissionToGroupDto, CreatePermissionDto,
@@ -123,9 +122,7 @@ where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
     let now = Local::now();
-
-    let hash = sha2::Sha256::new_with_prefix(secret).finalize();
-    let hash = format!("{hash:x}"); // hex string
+    let hash = api_tokens::hash_secret(secret);
 
     let assignments = sqlx::query_as(
         "SELECT pa.system_id, pa.perm_id, pa.scope
@@ -193,9 +190,7 @@ where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
     let now = Local::now();
-
-    let hash = sha2::Sha256::new_with_prefix(secret).finalize();
-    let hash = format!("{hash:x}"); // hex string
+    let hash = api_tokens::hash_secret(secret);
 
     let authorized = sqlx::query_scalar(
         "SELECT COUNT(pa.*) > 0

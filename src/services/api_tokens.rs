@@ -48,9 +48,7 @@ where
     X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
 {
     let secret = Uuid::new_v4();
-
-    let hash = sha2::Sha256::new_with_prefix(secret).finalize();
-    let hash = format!("{hash:x}"); // hex string
+    let hash = hash_secret(secret);
 
     let mut txn = db.begin().await?;
 
@@ -133,4 +131,10 @@ where
     txn.commit().await?;
 
     Ok(old)
+}
+
+pub fn hash_secret(secret: Uuid) -> String {
+    let hash = sha2::Sha256::new_with_prefix(secret).finalize();
+
+    format!("{hash:x}") // hex string
 }
