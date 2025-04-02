@@ -1,0 +1,565 @@
+openapi: 3.1.0
+
+# see: https://spec.openapis.org/oas/v3.1.0.html
+# schemas: https://json-schema.org/understanding-json-schema/reference/type
+
+info:
+  title: Hive API
+  summary: Centralized groups and permissions management.
+  description: |
+    Hive's API allows arbitrary services to easily defer authorization to a
+    centralized single source of truth. Systems can in this way benefit from
+    powerful group management flexibility without implementing the underlying
+    logic themselves, since the supporting complexity is transparently handled
+    by Hive when services request relevant information.
+
+    API version 1 is the first primary edition of HTTP REST endpoints exposed by
+    Hive (except for version 0, which should not be used by new code). This is
+    currently the preferred way of interfacing and integrating with Hive for
+    authorized systems and all changes within this version will always be
+    backwards compatible.
+
+    All values returned by all endpoints are always in JSON format.
+
+    ## Results Relevant to Consumer System
+    All operations are relative to the invoker, as determined by the system
+    associated with the API key passed via the HTTP `Authorization` header (see
+    below). This means that anywhere a system ID is not passed, the current
+    "relevant" one is used.
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+    description: Central server
+
+security:
+  - bearer: []
+
+tags:
+  - name: users
+    description: Endpoints related to user permissions
+  - name: tokens
+    description: Endpoints related to API token permissions
+
+# if ever adding a new endpoint, consider using badges:
+# ```yaml
+# /some-path:
+#   get:
+#     x-badges:
+#       - label: Beta
+#         color: blue
+# ```
+paths:
+  /user/{username}/permissions:
+    get:
+      operationId: user_permissions
+      summary: List a user's permissions for the relevant system
+      description: |
+        Returns an array with the user's recognized permissions for the system
+        relevant to the API consumer (per authentication).
+
+        The returned array never contains any duplicates and its entries are
+        ordered lexicographically by permission ID and then scope.
+      tags: [users]
+      parameters:
+        - name: username
+          in: path
+          description: The username associated with the target user
+          required: true
+          schema:
+            $ref: "#/components/schemas/Username"
+      security:
+        - bearer: [$hive:api-check-permissions]
+      responses:
+        "200":
+          description: |
+            The user's permissions for the specified system.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      $ref: "#/components/schemas/PermId"
+                    scope:
+                      oneOf:
+                        - description: Scope
+                          $ref: "#/components/schemas/PermScope"
+                        - description: Unscoped
+                          type: "null"
+                  required:
+                    - id
+                    - scope
+                  additionalProperties: false
+              examples:
+                some:
+                  summary: Some permissions
+                  value:
+                    - id: attest
+                      scope: "*"
+                    - id: view-logs
+                      scope: null
+                    - id: write
+                      scope: /central/flag.txt
+                none:
+                  summary: No permissions
+                  value: []
+        default:
+          $ref: "#/components/responses/UnknownError"
+  /user/{username}/permission/{perm_id}:
+    get:
+      operationId: user_has_permission
+      summary: Check whether a user has a given permission
+      description: |
+        Returns a boolean corresponding to whether the user is recognized to
+        have the given permission for the system relevant to the API consumer
+        (per authentication).
+
+        If the specified permission is scoped, this endpoint always returns
+        false, unless the user is authorized for the wildcard scope (`*`).
+      tags: [users]
+      parameters:
+        - name: username
+          in: path
+          description: The username associated with the target user
+          required: true
+          schema:
+            $ref: "#/components/schemas/Username"
+        - name: perm_id
+          in: path
+          description: The permission to check for
+          required: true
+          schema:
+            $ref: "#/components/schemas/PermId"
+      security:
+        - bearer: [$hive:api-check-permissions]
+      responses:
+        "200":
+          description: |
+            Whether the user is recognized to have the specified authorization.
+          content:
+            application/json:
+              schema:
+                type: boolean
+              examples:
+                yes:
+                  summary: Authorized
+                  value: true
+                no:
+                  summary: Not authorized
+                  value: false
+        default:
+          $ref: "#/components/responses/UnknownError"
+  /user/{username}/permission/{perm_id}/scopes:
+    get:
+      operationId: user_permission_scopes
+      summary: List a user's authorized scopes for a given permission
+      description: |
+        Returns an array with the user's recognized scopes for the given
+        permission (in the system relevant to the API consumer, per
+        authentication).
+
+        The returned array never contains any duplicates and its entries are
+        ordered lexicographically.
+
+        If the specified permission is not scoped, this endpoint always returns
+        an empty array.
+      tags: [users]
+      parameters:
+        - name: username
+          in: path
+          description: The username associated with the target user
+          required: true
+          schema:
+            $ref: "#/components/schemas/Username"
+        - name: perm_id
+          in: path
+          description: The permission to list scopes for
+          required: true
+          schema:
+            $ref: "#/components/schemas/PermId"
+      security:
+        - bearer: [$hive:api-check-permissions]
+      responses:
+        "200":
+          description: |
+            The user's recognized scopes for the specified permission.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PermScope"
+              examples:
+                some:
+                  summary: Some assigned scopes
+                  value:
+                    - "*"
+                    - /central/flag.txt
+                none:
+                  summary: Unscoped permission or no assigned scopes
+                  value: []
+        default:
+          $ref: "#/components/responses/UnknownError"
+  /user/{username}/permission/{perm_id}/scope/{scope}:
+    get:
+      operationId: user_has_permission_scoped
+      summary: Check whether a user has a given permission scope
+      description: |
+        Returns a boolean corresponding to whether the user is recognized to
+        have the given permission with the specified scope (or the wildcard
+        scope `*`) for the system relevant to the API consumer (per
+        authentication).
+
+        If the specified permission is not scoped, this endpoint always returns
+        false.
+      tags: [users]
+      parameters:
+        - name: username
+          in: path
+          description: The username associated with the target user
+          required: true
+          schema:
+            $ref: "#/components/schemas/Username"
+        - name: perm_id
+          in: path
+          description: The permission to check for
+          required: true
+          schema:
+            $ref: "#/components/schemas/PermId"
+        - name: scope
+          in: path
+          description: The permission scope to check for
+          required: true
+          schema:
+            $ref: "#/components/schemas/PermScope"
+      security:
+        - bearer: [$hive:api-check-permissions]
+      responses:
+        "200":
+          description: |
+            Whether the user is recognized to have the specified authorization.
+          content:
+            application/json:
+              schema:
+                type: boolean
+              examples:
+                yes:
+                  summary: Authorized
+                  value: true
+                no:
+                  summary: Not authorized
+                  value: false
+        default:
+          $ref: "#/components/responses/UnknownError"
+  /token/{secret}/permissions:
+    get:
+      operationId: token_permissions
+      summary: List an API token's permissions for the relevant system
+      description: |
+        Returns an array with the token's recognized permissions for the system
+        relevant to the API consumer (per authentication).
+
+        The returned array never contains any duplicates and its entries are
+        ordered lexicographically by permission ID and then scope.
+      tags: [tokens]
+      parameters:
+        - name: secret
+          in: path
+          description: The API token secret associated with the target token
+          required: true
+          schema:
+            $ref: "#/components/schemas/TokenSecret"
+      security:
+        - bearer: [$hive:api-check-permissions]
+      responses:
+        "200":
+          description: |
+            The API token's permissions for the specified system.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      $ref: "#/components/schemas/PermId"
+                    scope:
+                      oneOf:
+                        - description: Scope
+                          $ref: "#/components/schemas/PermScope"
+                        - description: Unscoped
+                          type: "null"
+                  required:
+                    - id
+                    - scope
+                  additionalProperties: false
+              examples:
+                some:
+                  summary: Some permissions
+                  value:
+                    - id: attest
+                      scope: "*"
+                    - id: view-logs
+                      scope: null
+                    - id: write
+                      scope: /central/flag.txt
+                none:
+                  summary: No permissions
+                  value: []
+        default:
+          $ref: "#/components/responses/UnknownError"
+  /token/{secret}/permission/{perm_id}:
+    get:
+      operationId: token_has_permission
+      summary: Check whether an API token has a given permission
+      description: |
+        Returns a boolean corresponding to whether the token is recognized to
+        have the given permission for the system relevant to the API consumer
+        (per authentication).
+
+        If the specified permission is scoped, this endpoint always returns
+        false, unless the token is authorized for the wildcard scope (`*`).
+      tags: [tokens]
+      parameters:
+        - name: secret
+          in: path
+          description: The API token secret associated with the target token
+          required: true
+          schema:
+            $ref: "#/components/schemas/TokenSecret"
+        - name: perm_id
+          in: path
+          description: The permission to check for
+          required: true
+          schema:
+            $ref: "#/components/schemas/PermId"
+      security:
+        - bearer: [$hive:api-check-permissions]
+      responses:
+        "200":
+          description: |
+            Whether the API token is recognized to have the specified
+            authorization.
+          content:
+            application/json:
+              schema:
+                type: boolean
+              examples:
+                yes:
+                  summary: Authorized
+                  value: true
+                no:
+                  summary: Not authorized
+                  value: false
+        default:
+          $ref: "#/components/responses/UnknownError"
+  /token/{secret}/permission/{perm_id}/scopes:
+    get:
+      operationId: token_permission_scopes
+      summary: List an API token's authorized scopes for a given permission
+      description: |
+        Returns an array with the token's recognized scopes for the given
+        permission (in the system relevant to the API consumer, per
+        authentication).
+
+        The returned array never contains any duplicates and its entries are
+        ordered lexicographically.
+
+        If the specified permission is not scoped, this endpoint always returns
+        an empty array.
+      tags: [tokens]
+      parameters:
+        - name: secret
+          in: path
+          description: The API token secret associated with the target token
+          required: true
+          schema:
+            $ref: "#/components/schemas/TokenSecret"
+        - name: perm_id
+          in: path
+          description: The permission to list scopes for
+          required: true
+          schema:
+            $ref: "#/components/schemas/PermId"
+      security:
+        - bearer: [$hive:api-check-permissions]
+      responses:
+        "200":
+          description: |
+            The API token's recognized scopes for the specified permission.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PermScope"
+              examples:
+                some:
+                  summary: Some assigned scopes
+                  value:
+                    - "*"
+                    - /central/flag.txt
+                none:
+                  summary: Unscoped permission or no assigned scopes
+                  value: []
+        default:
+          $ref: "#/components/responses/UnknownError"
+  /token/{secret}/permission/{perm_id}/scope/{scope}:
+    get:
+      operationId: token_has_permission_scoped
+      summary: Check whether an API token has a given permission scope
+      description: |
+        Returns a boolean corresponding to whether the token is recognized to
+        have the given permission with the specified scope (or the wildcard
+        scope `*`) for the system relevant to the API consumer (per
+        authentication).
+
+        If the specified permission is not scoped, this endpoint always returns
+        false.
+      tags: [tokens]
+      parameters:
+        - name: secret
+          in: path
+          description: The API token secret associated with the target token
+          required: true
+          schema:
+            $ref: "#/components/schemas/TokenSecret"
+        - name: perm_id
+          in: path
+          description: The permission to check for
+          required: true
+          schema:
+            $ref: "#/components/schemas/PermId"
+        - name: scope
+          in: path
+          description: The permission scope to check for
+          required: true
+          schema:
+            $ref: "#/components/schemas/PermScope"
+      security:
+        - bearer: [$hive:api-check-permissions]
+      responses:
+        "200":
+          description: |
+            Whether the API token is recognized to have the specified
+            authorization.
+          content:
+            application/json:
+              schema:
+                type: boolean
+              examples:
+                yes:
+                  summary: Authorized
+                  value: true
+                no:
+                  summary: Not authorized
+                  value: false
+        default:
+          $ref: "#/components/responses/UnknownError"
+
+components:
+  securitySchemes:
+    bearer:
+      description: |
+        All endpoints require the API consumer (i.e., the service making the
+        request) to authenticate themselves by specifying a valid **API token
+        secret** (in UUID format) via the HTTP Bearer scheme. The corresponding
+        API token must have one or more `$hive:api-*` permissions assigned to it
+        through Hive. Different endpoints may require different permissions.
+
+        This means that all requests must have an HTTP `Authorization` header in
+        the format `Bearer <secret>`, where `<secret>` is the secret for a
+        registered API token with appropriate `$hive:api-*` permissions. For
+        example, a valid header value is
+        `Bearer dac5d8a9-5ffc-4972-ad6c-4428e18ece49`.
+
+        The system with which the API token is associated will be used to
+        provide relevant, personalized results wherever they would be relative
+        to a given system, which means that the system ID is provided
+        implicitly by means of this authentication mechanism and so does not
+        have to be explicitly specified anywhere else.
+      type: http
+      scheme: bearer
+      bearerFormat: uuid
+  schemas:
+    Username:
+      description: Username
+      type: string
+      pattern: "^[a-z0-9]{2,}$"
+      examples:
+        - rmfseo
+        - 12g
+    TokenSecret:
+      description: API Token Secret
+      type: string
+      format: uuid
+      examples:
+        - a1225570-4076-4e36-8f84-37eb5a33d6ac
+    PermId:
+      description: Permission ID
+      type: string
+      pattern: "^[a-z0-9]+(-[a-z0-9]+)*$"
+      examples:
+        - attest
+        - create-posts
+    PermScope:
+      description: Permission Scope
+      type: string
+      minLength: 1
+      examples:
+        - "*"
+        - /central/flag.txt
+  responses:
+    UnknownError:
+      description: Generic API error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                const: true
+              info:
+                description: Error information
+                type: object
+                properties:
+                  key:
+                    description: Identifier for the kind of error in question
+                    type: string
+                    pattern: "^[a-z0-9-]+(\\.[a-z0-9-]+)*$"
+                    examples:
+                      - api-key.unknown
+                  details:
+                    description: Optional additional context
+                    type: object
+                    minProperties: 1
+                    patternProperties:
+                      "^[a-z0-9]+(_[a-z0-9]+)*$": {}
+                    additionalProperties: false
+                    examples:
+                      - id: 59afd669-388a-4489-be4c-342dddb970ee
+                required:
+                  - key
+            required:
+              - error
+              - info
+            additionalProperties: false
+          examples:
+            with-details:
+              summary: Sample error with details
+              value:
+                error: true
+                info:
+                  key: api-key.unknown
+                  details:
+                    id: 59afd669-388a-4489-be4c-342dddb970ee
+            without-details:
+              summary: Sample error without details
+              value:
+                error: true
+                info:
+                  key: forbidden

@@ -151,7 +151,7 @@ paths:
   /user/{username}/{system_id}/{perm_key}:
     get:
       operationId: user_has_permission
-      summary: Check whether a user has a given permissions for a system
+      summary: Check whether a user has a given permission for a system
       description: |
         Returns a boolean corresponding to whether the user is recognized to
         have the given permission for the specified system.
@@ -246,7 +246,7 @@ paths:
   /token/{secret}/{system_id}/{perm_key}:
     get:
       operationId: token_has_permission
-      summary: Check whether an API token has a given permissions for a system
+      summary: Check whether an API token has a given permission for a system
       description: |
         Returns a boolean corresponding to whether the token is recognized to
         have the given permission for the specified system.
