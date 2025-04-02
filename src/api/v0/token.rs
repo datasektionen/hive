@@ -2,9 +2,8 @@ use rocket::{serde::json::Json, State};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::{errors::AppResult, routing::RouteTree, services::permissions};
-
 use super::PermKey;
+use crate::{errors::AppResult, routing::RouteTree, services::permissions};
 
 pub fn routes() -> RouteTree {
     rocket::routes![token_permissions_for_system, token_has_permission].into()

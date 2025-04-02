@@ -3,9 +3,8 @@ use std::collections::HashMap;
 use rocket::{serde::json::Json, State};
 use sqlx::PgPool;
 
-use crate::{errors::AppResult, routing::RouteTree, services::permissions};
-
 use super::PermKey;
+use crate::{errors::AppResult, routing::RouteTree, services::permissions};
 
 pub fn routes() -> RouteTree {
     rocket::routes![

@@ -2,12 +2,11 @@ use rocket::{serde::json::Json, State};
 use sqlx::PgPool;
 use uuid::Uuid;
 
+use super::SystemPermissionAssignment;
 use crate::{
     api::HiveApiPermission, errors::AppResult, guards::api::consumer::ApiConsumer,
     routing::RouteTree, services::permissions,
 };
-
-use super::SystemPermissionAssignment;
 
 pub fn routes() -> RouteTree {
     rocket::routes![

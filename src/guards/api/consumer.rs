@@ -7,14 +7,13 @@ use rocket::{
 use sqlx::{prelude::FromRow, PgPool};
 use uuid::Uuid;
 
+use super::token::BearerToken;
 use crate::{
     api::HiveApiPermission,
     errors::{AppError, AppResult},
     perms::HivePermission,
     services::api_tokens,
 };
-
-use super::token::BearerToken;
 
 #[derive(FromRow)]
 pub struct ApiConsumer {

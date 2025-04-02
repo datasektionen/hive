@@ -1,5 +1,4 @@
 use rocket::request::FromParam;
-
 #[cfg(feature = "api-docs")]
 use rocket::{
     http::ContentType,
