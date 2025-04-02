@@ -1,0 +1,48 @@
+services:
+  hive:
+    build: .
+    ports:
+      - "6869:6869"
+    environment:
+      HIVE_DB_URL: postgresql://hive:hive@db:5432/hive
+      TZ: Europe/Stockholm
+    develop:
+      watch:
+        - path: ./static
+          action: sync # no need to rebuild
+          target: /hive/static
+        - path: ./src
+          action: rebuild
+        - path: ./locales
+          action: rebuild
+        - path: ./migrations
+          action: rebuild
+        - path: ./templates
+          action: rebuild
+        - path: ./Cargo.*
+          action: rebuild
+        - path: ./rinja.toml
+          action: rebuild
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    volumes:
+      - hive-db-data:/data/db
+    environment:
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hive
+      POSTGRES_DB: hive
+      PGDATA: /data/db
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "hive"]
+      interval: 2s
+      timeout: 2s
+      retries: 3
+
+volumes:
+  hive-db-data:
