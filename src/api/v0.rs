@@ -1,43 +1,17 @@
 use rocket::request::FromParam;
-#[cfg(feature = "api-docs")]
-use rocket::{
-    http::ContentType,
-    response::{content::RawHtml, Redirect},
-    routes,
-};
 
 use crate::routing::RouteTree;
+
+use super::with_api_docs;
 
 mod token;
 mod user;
 
 pub fn tree() -> RouteTree {
-    RouteTree::Branch(vec![
-        token::routes(),
-        user::routes(),
-        #[cfg(feature = "api-docs")]
-        routes![spec, docs, root].into(),
-    ])
-}
-
-#[cfg(feature = "api-docs")]
-#[rocket::get("/openapi.yaml")]
-pub async fn spec() -> (ContentType, &'static str) {
-    let r#type = ContentType::new("text", "yaml").with_params(("charset", "utf-8"));
-
-    (r#type, include_str!("v0/openapi.yaml"))
-}
-
-#[cfg(feature = "api-docs")]
-#[rocket::get("/docs")]
-pub async fn docs() -> RawHtml<&'static str> {
-    RawHtml(include_str!("docs.html"))
-}
-
-#[cfg(feature = "api-docs")]
-#[rocket::get("/")]
-pub async fn root() -> Redirect {
-    Redirect::permanent("/api/v0/docs")
+    with_api_docs!(
+        "v0",
+        RouteTree::Branch(vec![token::routes(), user::routes()])
+    )
 }
 
 struct PermKey<'r> {
