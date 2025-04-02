@@ -16,7 +16,9 @@ other systems. It is intended for these other services to interact with Hive via
 its HTTP REST API, which exposes several endpoints for different use-cases.
 
 By default, API documentation will be included in the final binary and served at
-route `/api/vX/docs`, for each supported version `X`.
+route `/api/vX/docs`, for each supported version `X`. **Visit `/api` to see a
+listing of supported API versions and find links to their respective
+documentation pages.**
 
 If a smaller binary is desired and documentation is not necessary, you can build
 Hive without it by disabling the `api-docs` Cargo feature with, e.g., the

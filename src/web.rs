@@ -1,11 +1,17 @@
 pub use catchers::catchers;
+use rinja::Template;
 use rocket::{
     http::{uri::Reference, Header},
     response::{content::RawHtml, Redirect},
     uri, Responder,
 };
 
-use crate::routing::RouteTree;
+use crate::{
+    api::{self, ApiVersionInfo},
+    errors::AppResult,
+    guards::{context::PageContext, lang::Language},
+    routing::RouteTree,
+};
 
 mod api_tokens;
 mod catchers;
@@ -49,14 +55,33 @@ pub fn tree() -> RouteTree {
         permissions::routes(),
         systems::routes(),
         tags::routes(),
-        rocket::routes![favicon].into(),
+        rocket::routes![favicon, api_versions].into(),
     ])
 }
 
 #[rocket::get("/favicon.ico")]
-async fn favicon() -> Redirect {
+fn favicon() -> Redirect {
     // browsers expect favicon at root; redirect to real path
     Redirect::permanent(uri!("/static/icons/favicon.ico"))
+}
+
+#[derive(Template)]
+#[template(path = "api-versions.html.j2")]
+struct ApiVersionsView<'v> {
+    ctx: PageContext,
+    versions: &'v [ApiVersionInfo<'v>],
+    docs: bool,
+}
+
+#[rocket::get("/api")]
+fn api_versions(ctx: PageContext) -> AppResult<RenderedTemplate> {
+    let template = ApiVersionsView {
+        ctx,
+        versions: api::API_VERSIONS,
+        docs: cfg!(feature = "api-docs"),
+    };
+
+    Ok(RawHtml(template.render()?))
 }
 
 mod filters {

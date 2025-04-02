@@ -1,0 +1,45 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ ctx.t("api.versions.list.title") }}{% endblock title %}
+
+{% block content %}
+<p>{{ ctx.t("api.versions.list.description") }}</p>
+<ul>
+    {% for version in versions %}
+    <li>
+        {% let path = format!("/api/v{}", version.n) %}
+        <strong class="blue"><samp>{{ path }}</samp>:</strong>
+        {% if version.recommended %}
+        <strong>
+            {% endif %}
+            {% if version.deprecated %}
+            <s>
+                {%- endif -%}
+                {{- ctx.t1("api.versions.list.version.label", version.n) -}}
+                {%- if version.deprecated -%}
+            </s>
+            {% endif %}
+            {% if let Some(annotation) = version.annotation %}
+            <em>
+                {% match ctx.lang %}
+                {% when Language::English %}
+                ({{ annotation.0 }})
+                {% when Language::Swedish %}
+                ({{ annotation.1 }})
+                {% endmatch %}
+            </em>
+            {% endif %}
+            {% if version.recommended %}
+        </strong>
+        {% endif %}
+        {% if docs %}
+        <span style="margin: 0 0.5em">&mdash;</span>
+        <a href="{{ path }}/docs" target="_blank">
+            {{ ctx.t("api.versions.list.version.docs") }}
+        </a>
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+<p>{{ ctx.t("api.versions.list.versioning-policy") }}</p>
+{% endblock content %}

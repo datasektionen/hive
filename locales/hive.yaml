@@ -2,6 +2,41 @@ _version: 2
 
 # see also: src/dto/errors.rs
 
+api.versions.list.description:
+  en: >
+    Hive is designed as a central single-source-of-truth that should be relied
+    on by other systems. It is intended for these other services to interact
+    with Hive via its HTTP REST API, which exposes several endpoints for
+    different use-cases. The following are the API versions currently supported
+    by Hive:
+  sv: >
+    Hive är designad som en central enskild sanningskälla som bör förlitas på av
+    andra system. Det är avsett för dessa andra tjänster att interagera med Hive
+    via dess HTTP REST API, som exponerar flera slutpunkter för olika
+    användningsfall. Följande är API-versionerna som för närvarande stöds av
+    Hive:
+api.versions.list.title:
+  en: Available Hive API Versions
+  sv: Tillgängliga Hive API-versioner
+api.versions.list.version.docs:
+  en: See documentation
+  sv: Se dokumentation
+api.versions.list.version.label:
+  en: Version %{x}
+  sv: Version %{x}
+api.versions.list.versioning-policy:
+  en: >
+    New endpoints or opt-in functionalities may be added to existing API
+    versions, but any changes will always be backwards compatible within that
+    major API version. Breaking changes may only be introduced through the
+    implementation of another separate API version, which will then be listed
+    above when sufficiently stabilized.
+  sv: >
+    Nya slutpunkter eller opt-in-funktioner kan läggas till i befintliga
+    API-versioner, men alla ändringar kommer alltid att vara bakåtkompatibla
+    inom den stora API-versionen. Brytande ändringar får endast införas genom
+    implementering av en annan separat API-version, som sedan kommer att listas
+    ovan när den är tillräckligt stabiliserad.
 api-tokens.create.field.description.label:
   en: Description
   sv: Beskrivning
