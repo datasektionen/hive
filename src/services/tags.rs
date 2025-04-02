@@ -59,7 +59,7 @@ pub async fn list_group_assignments<'x, X>(
     tag_id: &str,
     label_lang: Option<&Language>,
     db: X,
-    perms: &PermsEvaluator,
+    perms: Option<&PermsEvaluator>,
 ) -> AppResult<Vec<AffiliatedTagAssignment>>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
@@ -95,10 +95,12 @@ where
     let mut assignments: Vec<AffiliatedTagAssignment> =
         query.build_query_as().fetch_all(db).await?;
 
-    for assignment in &mut assignments {
-        let min = HivePermission::AssignTags(SystemsScope::Id(assignment.system_id.clone()));
-        // query should be OK since perms are cached by perm_id
-        assignment.can_manage = Some(perms.satisfies(min).await?);
+    if let Some(perms) = perms {
+        for assignment in &mut assignments {
+            let min = HivePermission::AssignTags(SystemsScope::Id(assignment.system_id.clone()));
+            // query should be OK since perms are cached by perm_id
+            assignment.can_manage = Some(perms.satisfies(min).await?);
+        }
     }
 
     Ok(assignments)
@@ -109,7 +111,7 @@ pub async fn list_user_assignments<'x, X>(
     tag_id: &str,
     label_lang: Option<&Language>,
     db: X,
-    perms: &PermsEvaluator,
+    perms: Option<&PermsEvaluator>,
 ) -> AppResult<Vec<AffiliatedTagAssignment>>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
@@ -132,10 +134,12 @@ where
     let mut assignments: Vec<AffiliatedTagAssignment> =
         query.build_query_as().fetch_all(db).await?;
 
-    for assignment in &mut assignments {
-        let min = HivePermission::AssignTags(SystemsScope::Id(assignment.system_id.clone()));
-        // query should be OK since perms are cached by perm_id
-        assignment.can_manage = Some(perms.satisfies(min).await?);
+    if let Some(perms) = perms {
+        for assignment in &mut assignments {
+            let min = HivePermission::AssignTags(SystemsScope::Id(assignment.system_id.clone()));
+            // query should be OK since perms are cached by perm_id
+            assignment.can_manage = Some(perms.satisfies(min).await?);
+        }
     }
 
     Ok(assignments)

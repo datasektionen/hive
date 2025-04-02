@@ -281,7 +281,7 @@ macro_rules! list_tag_assignments {
             let has_content = tags::has_content(system_id, tag_id, db.inner()).await?;
 
             let tag_assignments =
-                $lister(system_id, tag_id, Some(&ctx.lang), db.inner(), perms).await?;
+                $lister(system_id, tag_id, Some(&ctx.lang), db.inner(), Some(perms)).await?;
 
             // this could've been directly in the template, but askama doesn't seem
             // to support closures defined in the source (parsing error)

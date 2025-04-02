@@ -3,7 +3,7 @@ use std::{borrow::Cow, fmt};
 use rocket::{
     http::CookieJar,
     request::{FromRequest, Outcome},
-    Request,
+    FromFormField, Request,
 };
 
 use super::{headers::AcceptLanguage, Infallible};
@@ -11,8 +11,11 @@ use super::{headers::AcceptLanguage, Infallible};
 const DEFAULT_LANG: Language = Language::Swedish;
 const LANG_COOKIE_NAME: &str = "Hive-Lang"; // set by frontend on lang change
 
+#[derive(FromFormField)]
 pub enum Language {
+    #[field(value = "sv")]
     Swedish,
+    #[field(value = "en")]
     English,
 }
 
