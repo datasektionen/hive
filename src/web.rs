@@ -55,7 +55,7 @@ pub fn tree() -> RouteTree {
         permissions::routes(),
         systems::routes(),
         tags::routes(),
-        rocket::routes![favicon, api_versions].into(),
+        rocket::routes![favicon, home, api_versions].into(),
     ])
 }
 
@@ -63,6 +63,19 @@ pub fn tree() -> RouteTree {
 fn favicon() -> Redirect {
     // browsers expect favicon at root; redirect to real path
     Redirect::permanent(uri!("/static/icons/favicon.ico"))
+}
+
+#[derive(Template)]
+#[template(path = "home.html.j2")]
+struct HomeView {
+    ctx: PageContext,
+}
+
+#[rocket::get("/")]
+fn home(ctx: PageContext) -> AppResult<RenderedTemplate> {
+    let template = HomeView { ctx };
+
+    Ok(RawHtml(template.render()?))
 }
 
 #[derive(Template)]

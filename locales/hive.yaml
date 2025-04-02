@@ -559,6 +559,32 @@ groups.tags.list.empty:
 groups.tags.list.content.tooltip:
   en: The tag assignment is associated with this value
   sv: Tillståndsuppdraget är associerad med denna värde
+home.attribution:
+  en: >
+    Hive is an <a href="https://github.com/datasektionen/hive" target="_blank">
+    open-source</a> project developed by
+    <a href="https://rso.pt" target="_blank">Rafael Oliveira</a>
+  sv: >
+    Hive är ett <a href="https://github.com/datasektionen/hive" target="_blank">
+    open-source</a> projekt utvecklat av
+    <a href="https://rso.pt" target="_blank">Rafael Oliveira</a>
+home.description:
+  en: >
+    <strong class="primary">Hive</strong> is a centralized system for flexible
+    administration of groups, organizational structures, and permissions. It
+    allows for advanced use-cases with complex indirection and delegated
+    management. Other systems use Hive as a single source of truth, relying on
+    its information and authorization facilities.
+  sv: >
+    <strong class="primary">Hive</strong> är ett centraliserat system för
+    flexibel administration av grupper, organisationsstrukturer och
+    behörigheter. Det möjliggör avancerade användningsfall med komplex
+    indirection och delegerad hantering. Andra system använder Hive som en
+    enskild källa till sanning och förlitar sig på dess informations- och
+    auktorisationsfunktioner.
+home.heading:
+  en: Welcome!
+  sv: Välkommen!
 indicator.datetime.never:
   en: Never
   sv: Aldrig

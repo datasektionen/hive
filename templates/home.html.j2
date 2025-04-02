@@ -1,0 +1,21 @@
+{% extends "base.html.j2" %}
+
+{% block full_title %}Hive{% endblock full_title %}
+
+{% block title %}{{ ctx.t("home.heading") }}{% endblock title %}
+
+{% block content %}
+<p style="text-align: justify; hyphens: auto">
+    {{ ctx.t("home.description")|safe }}
+</p>
+
+<div style="text-align: center">
+    <img src="/static/hexagons.jpg" style="border-radius: 1em; max-height: 40vh" />
+</div>
+
+<hr />
+
+<p style="font-style: italic; text-align: center">
+    {{ ctx.t("home.attribution")|safe }}
+</p>
+{% endblock content %}
