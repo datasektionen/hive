@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use rocket::{serde::json::Json, State};
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -23,7 +25,7 @@ async fn token_permissions(
     secret: Uuid,
     consumer: ApiConsumer,
     db: &State<PgPool>,
-) -> AppResult<Json<Vec<SystemPermissionAssignment>>> {
+) -> AppResult<Json<BTreeSet<SystemPermissionAssignment>>> {
     consumer
         .require(HiveApiPermission::CheckPermissions, db.inner())
         .await?;
@@ -33,7 +35,7 @@ async fn token_permissions(
             .await?
             .into_iter()
             .map(Into::into)
-            .collect();
+            .collect(); // BTreeSet orders and removes duplicates
 
     Ok(Json(perms))
 }
@@ -44,7 +46,7 @@ async fn token_permission_scopes(
     perm_id: &str,
     consumer: ApiConsumer,
     db: &State<PgPool>,
-) -> AppResult<Json<Vec<String>>> {
+) -> AppResult<Json<BTreeSet<String>>> {
     consumer
         .require(HiveApiPermission::CheckPermissions, db.inner())
         .await?;
@@ -57,7 +59,8 @@ async fn token_permission_scopes(
     )
     .await?;
 
-    Ok(Json(scopes))
+    // BTreeSet orders and removes duplicates
+    Ok(Json(BTreeSet::from_iter(scopes)))
 }
 
 #[rocket::get("/token/<secret>/permission/<perm_id>")]
