@@ -5,3 +5,15 @@ script = """
 #!/usr/bin/env bash
 cargo fmt -- --config "$(cat rustfmt.toml | sed -e '1,/@@UNSTABLE_BELOW@@/ d' -e 's/^# //' | tr --delete ' "' | paste -s -d',')"
 """
+
+[tasks.openapi-lint]
+description = "Lint OpenAPI specs using Redocly"
+command = "redocly"
+args = [
+    "lint",
+    "src/api/v*/openapi.yaml",
+    "--skip-rule",
+    "info-license",
+    "--skip-rule",
+    "operation-4xx-response",
+]

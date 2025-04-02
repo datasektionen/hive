@@ -13,6 +13,7 @@ pkgs.mkShellNoCC {
     clippy
     cargo-make
     sqlx-cli
+    redocly
   ];
 
   shellHook = ''
