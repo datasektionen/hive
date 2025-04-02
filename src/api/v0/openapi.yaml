@@ -1,0 +1,382 @@
+openapi: 3.1.0
+
+# see: https://spec.openapis.org/oas/v3.1.0.html
+# schemas: https://json-schema.org/understanding-json-schema/reference/type
+
+info:
+  title: Hive API
+  summary: Centralized groups and permissions management.
+  description: |
+    Hive's API allows arbitrary services to easily defer authorization to a
+    centralized single source of truth. Systems can in this way benefit from
+    powerful group management flexibility without implementing the underlying
+    logic themselves, since the supporting complexity is transparently handled
+    by Hive when services request relevant information.
+
+    API version 0 is intended for usage by legacy systems, since it strives
+    to be maximally backwards-compatible with some of the primary endpoints
+    exposed by the existing [`pls`](https://github.com/datasektionen/pls) REST
+    API. In particular, only some key (query-only, not management) endpoints
+    are implemented by Hive, among others supported by `pls`.
+
+    All values returned by all endpoints are always in JSON format.
+
+    ***DEPRECATED:** This API version 0 is provided for transitory purposes only
+    and should not be used for new software. It may be discontinued at any point
+    when it is deemed that all relevant critical services have migrated to
+    another version.*
+
+    ## Authentication Requirements
+    None of the API version 0 endpoints require any form of authentication.
+  version: 0.1.0
+
+servers:
+  - url: /api/v0
+    description: Central server
+
+security:
+  - {}
+
+tags:
+  - name: users
+    description: Endpoints related to user permissions
+  - name: tokens
+    description: Endpoints related to API token permissions
+
+# if ever adding a new endpoint, consider using badges:
+# ```yaml
+# /some-path:
+#   get:
+#     x-badges:
+#       - label: Beta
+#         color: blue
+# ```
+paths:
+  /user/{username}:
+    get:
+      operationId: user_systems
+      summary: List a user's permissions for all systems
+      description: |
+        Returns an object with the user's recognized permissions for each
+        system.
+      tags: [users]
+      deprecated: true
+      parameters:
+        - name: username
+          in: path
+          description: The username associated with the target user
+          required: true
+          schema:
+            $ref: "#/components/schemas/Username"
+      responses:
+        "200":
+          description: |
+            The user's per-system permissions.
+
+            Each system is identified by its ID and permission strings are
+            in the format `perm_id:scope` for scoped permissions or just
+            `perm_id` otherwise.
+          content:
+            application/json:
+              schema:
+                type: object
+                patternProperties:
+                  "^[a-z0-9]+(-[a-z0-9]+)*$":
+                    description: System ID
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PermKey"
+                additionalProperties: false
+              examples:
+                some:
+                  summary: Some permissions
+                  value:
+                    cashflow:
+                      - attest:*
+                      - view-logs
+                    calypso:
+                      - delete-posts
+                      - "create-posts:News Category"
+                none:
+                  summary: No permissions
+                  value: {}
+        default:
+          $ref: "#/components/responses/UnknownError"
+  /user/{username}/{system_id}:
+    get:
+      operationId: user_permissions_for_system
+      summary: List a user's permissions for a given system
+      description: |
+        Returns an array with the user's recognized permissions for the given
+        system.
+      tags: [users]
+      deprecated: true
+      parameters:
+        - name: username
+          in: path
+          description: The username associated with the target user
+          required: true
+          schema:
+            $ref: "#/components/schemas/Username"
+        - name: system_id
+          in: path
+          description: The ID identifying the system to fetch permissions for
+          required: true
+          schema:
+            $ref: "#/components/schemas/SystemId"
+      responses:
+        "200":
+          description: |
+            The user's permissions for the specified system.
+
+            Permission strings are in the format `perm_id:scope` for scoped
+            permissions or just `perm_id` otherwise.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PermKey"
+              examples:
+                some:
+                  summary: Some permissions
+                  value:
+                    - attest:*
+                    - view-logs
+                none:
+                  summary: No permissions
+                  value: []
+        default:
+          $ref: "#/components/responses/UnknownError"
+  /user/{username}/{system_id}/{perm_key}:
+    get:
+      operationId: user_has_permission
+      summary: Check whether a user has a given permissions for a system
+      description: |
+        Returns a boolean corresponding to whether the user is recognized to
+        have the given permission for the specified system.
+
+        If the permission is scoped and a scope is not provided, this endpoint
+        always returns false, unless the user is authorized for the wildcard
+        scope (`*`).
+      tags: [users]
+      deprecated: true
+      parameters:
+        - name: username
+          in: path
+          description: The username associated with the target user
+          required: true
+          schema:
+            $ref: "#/components/schemas/Username"
+        - name: system_id
+          in: path
+          description: The ID identifying the system to check permissions for
+          required: true
+          schema:
+            $ref: "#/components/schemas/SystemId"
+        - name: perm_key
+          in: path
+          description: The permission to check for, with or without a scope
+          required: true
+          schema:
+            $ref: "#/components/schemas/PermKey"
+      responses:
+        "200":
+          description: |
+            Whether the user is recognized to have the specified authorization.
+          content:
+            application/json:
+              schema:
+                type: boolean
+              examples:
+                yes:
+                  summary: Authorized
+                  value: true
+                no:
+                  summary: Not authorized
+                  value: false
+        default:
+          $ref: "#/components/responses/UnknownError"
+  /token/{secret}/{system_id}:
+    get:
+      operationId: token_permissions_for_system
+      summary: List an API token's permissions for a given system
+      description: |
+        Returns an array with the token's recognized permissions for the given
+        system.
+      tags: [tokens]
+      deprecated: true
+      parameters:
+        - name: secret
+          in: path
+          description: The API token secret associated with the target token
+          required: true
+          schema:
+            $ref: "#/components/schemas/TokenSecret"
+        - name: system_id
+          in: path
+          description: The ID identifying the system to fetch permissions for
+          required: true
+          schema:
+            $ref: "#/components/schemas/SystemId"
+      responses:
+        "200":
+          description: |
+            The token's permissions for the specified system.
+
+            Permission strings are in the format `perm_id:scope` for scoped
+            permissions or just `perm_id` otherwise.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PermKey"
+              examples:
+                some:
+                  summary: Some permissions
+                  value:
+                    - attest:*
+                    - view-logs
+                none:
+                  summary: No permissions
+                  value: []
+        default:
+          $ref: "#/components/responses/UnknownError"
+  /token/{secret}/{system_id}/{perm_key}:
+    get:
+      operationId: token_has_permission
+      summary: Check whether an API token has a given permissions for a system
+      description: |
+        Returns a boolean corresponding to whether the token is recognized to
+        have the given permission for the specified system.
+
+        If the permission is scoped and a scope is not provided, this endpoint
+        always returns false, unless the user is authorized for the wildcard
+        scope (`*`).
+      tags: [tokens]
+      deprecated: true
+      parameters:
+        - name: secret
+          in: path
+          description: The API token secret associated with the target token
+          required: true
+          schema:
+            $ref: "#/components/schemas/TokenSecret"
+        - name: system_id
+          in: path
+          description: The ID identifying the system to check permissions for
+          required: true
+          schema:
+            $ref: "#/components/schemas/SystemId"
+        - name: perm_key
+          in: path
+          description: The permission to check for, with or without a scope
+          required: true
+          schema:
+            $ref: "#/components/schemas/PermKey"
+      responses:
+        "200":
+          description: |
+            Whether the token is recognized to have the specified authorization.
+          content:
+            application/json:
+              schema:
+                type: boolean
+              examples:
+                yes:
+                  summary: Authorized
+                  value: true
+                no:
+                  summary: Not authorized
+                  value: false
+        default:
+          $ref: "#/components/responses/UnknownError"
+
+components:
+  schemas:
+    Username:
+      description: Username
+      type: string
+      pattern: "^[a-z0-9]{2,}$"
+      examples:
+        - rmfseo
+        - 12g
+    SystemId:
+      description: System ID
+      type: string
+      pattern: "^[a-z0-9]+(-[a-z0-9]+)*$"
+      examples:
+        - cashflow
+        - test-system
+    PermKey:
+      description: Permission key
+      oneOf:
+        - description: Unscoped permission ID
+          type: string
+          pattern: "^[a-z0-9]+(-[a-z0-9]+)*$"
+          examples:
+            - attest
+            - create-posts
+        - description: Permission ID with assignment scope
+          type: string
+          pattern: "^[a-z0-9]+(-[a-z0-9]+)*:.+$"
+          examples:
+            - attest:*
+            - "create-posts:News Category"
+    TokenSecret:
+      description: API Token Secret
+      type: string
+      format: uuid
+      examples:
+        - a1225570-4076-4e36-8f84-37eb5a33d6ac
+  responses:
+    UnknownError:
+      description: Generic API error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                const: true
+              info:
+                description: Error information
+                type: object
+                properties:
+                  key:
+                    description: Identifier for the kind of error in question
+                    type: string
+                    pattern: "^[a-z0-9-]+(\\.[a-z0-9-]+)*$"
+                    examples:
+                      - api-key.unknown
+                  details:
+                    description: Optional additional context
+                    type: object
+                    minProperties: 1
+                    patternProperties:
+                      "^[a-z0-9]+(_[a-z0-9]+)*$": {}
+                    additionalProperties: false
+                    examples:
+                      - id: 59afd669-388a-4489-be4c-342dddb970ee
+                required:
+                  - key
+            required:
+              - error
+              - info
+            additionalProperties: false
+          examples:
+            with-details:
+              summary: Sample error with details
+              value:
+                error: true
+                info:
+                  key: api-key.unknown
+                  details:
+                    id: 59afd669-388a-4489-be4c-342dddb970ee
+            without-details:
+              summary: Sample error without details
+              value:
+                error: true
+                info:
+                  key: forbidden

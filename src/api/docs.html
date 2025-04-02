@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>API Documentation | Hive</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="/static/icons/favicon-blue.ico"
+    />
+
+    <script
+      type="module"
+      src="https://cdnjs.cloudflare.com/ajax/libs/rapidoc/9.3.8/rapidoc-min.js"
+      integrity="sha512-0ES6eX4K9J1PrIEjIizv79dTlN5HwI2GW9Ku6ymb8dijMHF5CIplkS8N0iFJ/wl3GybCSqBJu8HDhiFkZRAf0g=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+  </head>
+
+  <body>
+    <rapi-doc
+      spec-url="./openapi.yaml"
+      heading-text="Hive API Documentation"
+      primary-color="#01aaff"
+      show-method-in-nav-bar="as-colored-text"
+      use-path-in-nav-bar="true"
+      render-style="read"
+      allow-spec-url-load="false"
+      allow-spec-file-load="false"
+      allow-spec-file-download="true"
+      persist-auth="true"
+    >
+      <img slot="logo" src="/static/hive-blue.svg" height="36px" />
+      <footer slot="footer" style="padding: 2em; font-style: italic">
+        The content on this page may be outdated or incorrect. No assurances are
+        made regarding the quality of this information.
+      </footer>
+    </rapi-doc>
+    <script>
+      window.addEventListener("DOMContentLoaded", (event) => {
+        const el = document.querySelector("rapi-doc");
+        el.addEventListener("spec-loaded", async (e) => {
+          // by default, header is shown as an empty bar on mobile: this hides
+          // it too when its content is hidden
+          el.shadowRoot
+            .querySelector("header")
+            .classList.add("only-large-screen-flex");
+          // prevent breaking in path, since we can't inject /{&nbsp;var&nbsp;}
+          el.shadowRoot.styleSheets[0].insertRule(
+            ".nav-method + span { white-space: nowrap; }"
+          );
+        });
+      });
+    </script>
+  </body>
+</html>

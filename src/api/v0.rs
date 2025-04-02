@@ -1,51 +1,44 @@
 use rocket::request::FromParam;
 
+#[cfg(feature = "api-docs")]
+use rocket::{
+    http::ContentType,
+    response::{content::RawHtml, Redirect},
+    routes,
+};
+
 use crate::routing::RouteTree;
-
-// API version 0 is intended for usage by legacy systems, since it strives to be
-// maximally backwards-compatible with some of the primary endpoints exposed by
-// by the existing https://github.com/datasektionen/pls REST API. In particular,
-// the following (query-only, not management) endpoints are implemented by Hive:
-
-// GET /api/v0/user/<username>
-//      Returns an object { system_id: string[] } with the user's recognized
-//      permissions for each system. String format is `perm_id:scope` for
-//      scoped permissions and just `perm_id` otherwise.
-//
-// GET /api/v0/user/<username>/<system_id>
-//      Returns a string[] with the user's recognized permissions for the given
-//      system. String format is the same as above.
-//
-// GET /api/v0/user/<username>/<system_id>/<permission>
-//      Returns a boolean corresponding to whether the user is recognized to
-//      have the given permission, which is provided in the same string format
-//      as specified above. If the permission is scoped and a scope is not
-//      provided, this endpoint always returns false, unless the user is
-//      authorized for the wildcard scope (*).
-//
-// GET /api/v0/token/<api_token_secret>/<system_id>
-//      Returns a string[] with the API token's recognized permissions for the
-//      given system. String format is the same as above.
-//
-// GET /api/v0/token/<api_token_secret>/<system_id>/<permission>
-//      Returns a boolean corresponding to whether the API token is recognized
-//      to have the given permission, which is provided in the same string
-//      format as specified above. If the permission is scoped and a scope is not
-//      provided, this endpoint always returns false, unless the user is
-//      authorized for the wildcard scope (*).
-
-// None of these endpoints require any form of authentication.
-
-// DEPRECATED: This API version 0 is provided for transitory purposes only and
-// should not be used for new software. It may be discontinued at any point when
-// it is deemed that all relevant critical services have migrated to another
-// version.
 
 mod token;
 mod user;
 
 pub fn tree() -> RouteTree {
-    RouteTree::Branch(vec![token::routes(), user::routes()])
+    RouteTree::Branch(vec![
+        token::routes(),
+        user::routes(),
+        #[cfg(feature = "api-docs")]
+        routes![spec, docs, root].into(),
+    ])
+}
+
+#[cfg(feature = "api-docs")]
+#[rocket::get("/openapi.yaml")]
+pub async fn spec() -> (ContentType, &'static str) {
+    let r#type = ContentType::new("text", "yaml").with_params(("charset", "utf-8"));
+
+    (r#type, include_str!("v0/openapi.yaml"))
+}
+
+#[cfg(feature = "api-docs")]
+#[rocket::get("/docs")]
+pub async fn docs() -> RawHtml<&'static str> {
+    RawHtml(include_str!("docs.html"))
+}
+
+#[cfg(feature = "api-docs")]
+#[rocket::get("/")]
+pub async fn root() -> Redirect {
+    Redirect::permanent("/api/v0/docs")
 }
 
 struct PermKey<'r> {
