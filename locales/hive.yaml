@@ -17,7 +17,7 @@ api.versions.list.description:
     Hive:
 api.versions.list.title:
   en: Available Hive API versions
-  sv: Tillgängliga Hive API versioner
+  sv: Tillgängliga Hive API-versioner
 api.versions.list.version.docs:
   en: See documentation
   sv: Se dokumentation
@@ -33,9 +33,9 @@ api.versions.list.versioning-policy:
     above when sufficiently stabilized.
   sv: >
     Nya ändpunkter eller opt-in funktionaliteter kan läggas till i befintliga
-    API versioner, men alla ändringar kommer alltid att vara bakåtkompatibla
-    inom den stora API versionen. Brytande ändringar får endast införas genom
-    implementering av en annan separat API version, som sedan kommer att listas
+    API-versioner, men alla ändringar kommer alltid att vara bakåtkompatibla
+    inom den stora API-versionen. Brytande ändringar får endast införas genom
+    implementering av en annan separat API-version, som sedan kommer att listas
     ovan när den är tillräckligt stabiliserad.
 api-tokens.create.field.description.label:
   en: Description
@@ -54,7 +54,7 @@ api-tokens.create.field.expiration.tip:
   sv: Tills när kan den användas? Tom = går inte ut
 api-tokens.created.heading:
   en: New API Token
-  sv: Ny API Token
+  sv: Ny API-Token
 api-tokens.created.id.label:
   en: "Token ID:"
   sv: "Token-ID:"
@@ -66,17 +66,17 @@ api-tokens.created.secret.label:
   sv: "Tokenhemlighet:"
 api-tokens.created.success:
   en: Token created successfully!
-  sv: Token skapades framgångsrikt!
+  sv: Token skapades!
 api-tokens.list.action.delete.confirm:
   en: >
     Are you sure you want to delete API token "%{x}"? This action is permanent
     and cannot be undone.
   sv: >
-    Är du säker på att du vill ta bort API token "%{x}"? Denna åtgärd är
+    Är du säker på att du vill ta bort API-token "%{x}"? Denna åtgärd är
     permanent och kan inte ångras.
 api-tokens.list.action.delete.tooltip:
   en: Delete API Token
-  sv: Radera API Token
+  sv: Radera API-Token
 api-tokens.list.col.description:
   en: Description
   sv: Beskrivning
@@ -91,10 +91,10 @@ api-tokens.list.col.last-used:
   sv: Senast använd
 api-tokens.list.empty:
   en: This system does not have any associated API tokens.
-  sv: Det här systemet har inga associerade API tokens.
+  sv: Det här systemet har inga associerade API-tokens.
 api-tokens.list.indicator.n-perms:
   en: This API token has %{x} permissions assigned
-  sv: Den här API token har %{x} behörigheter tilldelade
+  sv: Den här API-token har %{x} behörigheter tilldelade
 col.actions:
   en: Actions
   sv: Åtgärder
@@ -272,7 +272,7 @@ groups.form.field.domain.tip:
   sv: Administrativt namnområde som gruppen tillhör
 groups.form.field.id.label:
   en: Group ID
-  sv: Grupp ID
+  sv: Grupp-ID
 groups.form.field.id.placeholder:
   en: e.g., sn
   sv: t.ex. sn
@@ -389,7 +389,7 @@ groups.members.add.member.field.username.tip:
   sv: Den här personen blir en direkt medlem i gruppen
 groups.members.add.member.success:
   en: Successfully added user "%{x}" to the group!
-  sv: Lade till användare "%{x}" till gruppen med framgång!
+  sv: Lade till användare "%{x}" till gruppen!
 groups.members.add.subgroup.field.child.label:
   en: Subgroup key
   sv: Undergruppsnyckel
@@ -407,7 +407,7 @@ groups.members.add.subgroup.field.manager.tip:
   sv: Om medlemmar i undergruppen ska kunna hantera denna grupp
 groups.members.add.subgroup.success:
   en: Successfully added "%{x}" as a subgroup!
-  sv: Lade till "%{x}" som en undergrupp med framgång!
+  sv: Lade till "%{x}" som en undergrupp!
 groups.members.list.action.delete.direct-member.confirm:
   en: >
     Are you sure you want to revoke "%{x}"'s membership in this group?
@@ -490,7 +490,7 @@ groups.permissions.assign.field.scope.tip:
   sv: Omfångsåtkomst till en specific gräns, eller använd * som joker (= allt)
 groups.permissions.assign.success:
   en: Successfully assigned permission <samp>%{x}</samp> to the group!
-  sv: Tilldelade behörigheten <samp>%{x}</samp> till gruppen med framgång!
+  sv: Tilldelade behörigheten <samp>%{x}</samp> till gruppen!
 groups.permissions.list.action.delete.confirm:
   en: >
     Are you sure you want to unassign permission "%{x}" from this group?
@@ -536,7 +536,7 @@ groups.tags.assign.field.content.tip:
   sv: Ange ett konkret värde som ska hållas i samband med denna tagg
 groups.tags.assign.success:
   en: Successfully tagged the group with <samp>%{x}</samp>!
-  sv: Taggade gruppen med <samp>%{x}</samp> med framgång!
+  sv: Taggade gruppen med <samp>%{x}</samp>!
 groups.tags.list.action.delete.confirm:
   en: >
     Are you sure you want to unassign tag "%{x}" from this group?
@@ -626,7 +626,7 @@ permissions.api-tokens.assign.field.scope.tip:
   sv: Omfångsåtkomst till en specific gräns, eller använd * som joker (= allt)
 permissions.api-tokens.assign.field.token.label:
   en: API token ID
-  sv: API token ID
+  sv: API-token-ID
 permissions.api-tokens.assign.field.token.placeholder:
   en: e.g., f81d4fae-7dec-11d0-a765-00a0c91e6bf6
   sv: t.ex. f81d4fae-7dec-11d0-a765-00a0c91e6bf6
@@ -635,7 +635,7 @@ permissions.api-tokens.assign.field.token.tip:
   sv: Ange det token som ska beviljas <samp>%{x}</samp>-behörighet
 permissions.api-tokens.assign.success:
   en: Successfully assigned this permission to API token "%{x}"!
-  sv: Tilldelade den här behörigheten till API-token "%{x}" med framgång!
+  sv: Tilldelade behörigheten till API-token "%{x}"!
 permissions.api-tokens.list.action.delete.tooltip:
   en: Revoke permission
   sv: Återkalla behörighet
@@ -651,7 +651,7 @@ permissions.api-tokens.list.col.description:
   sv: Token beskrivning
 permissions.api-tokens.list.col.id:
   en: Token ID
-  sv: Token ID
+  sv: Token-ID
 permissions.api-tokens.list.col.scope:
   en: Scope
   sv: Omfång
@@ -660,10 +660,10 @@ permissions.api-tokens.list.col.system:
   sv: System
 permissions.api-tokens.list.empty:
   en: This permission has not yet been assigned to any API token.
-  sv: Denna behörighet har ännu inte tilldelats någon API token.
+  sv: Denna behörighet har ännu inte tilldelats någon API-token.
 permissions.create.field.id.label:
   en: Permission ID
-  sv: Behörighet ID
+  sv: Behörighets-ID
 permissions.create.field.id.placeholder:
   en: e.g., create-posts
   sv: t.ex. create-posts
@@ -675,7 +675,7 @@ permissions.create.field.description.label:
   sv: Beskrivning
 permissions.create.field.description.placeholder:
   en: e.g., Publish news within a given category ID
-  sv: t.ex. Publicera nyheter inom ett givet kategori ID
+  sv: t.ex. Publicera nyheter inom ett givet kategori-ID
 permissions.create.field.description.tip:
   en: Choose something concise and clear
   sv: Välj något kortfattat och tydligt
@@ -700,7 +700,7 @@ permissions.delete.description:
   sv: >
     Detta kommer att <strong>permanent och oåterkalleligt</strong>
     ta bort behörighet <strong><samp>%{x}</samp>!</strong>
-    Alla tilldelningar till grupper och API tokens kommer också att återkallas.
+    Alla tilldelningar till grupper och API-tokens kommer också att återkallas.
     <em>Vänligen bekräfta dina avsikter genom att skriva in behörighetsnyckeln
     nedan.</em>
 permissions.delete.title:
@@ -711,7 +711,7 @@ permissions.details.api-tokens.assign:
   sv: Skapa ny tilldelning
 permissions.details.api-tokens.title:
   en: Assignments to API Tokens
-  sv: Tilldelningar till API-token:er
+  sv: Tilldelningar till API-tokens
 permissions.details.groups.assign:
   en: Create new assignment
   sv: Skapa ny tilldelning
@@ -793,7 +793,7 @@ systems.create.title:
   sv: Skapa Nytt System
 systems.delete.confirmation.placeholder:
   en: System ID
-  sv: System ID
+  sv: System-ID
 systems.delete.description:
   en: >
     This will <strong>permanently and irrecoverably</strong> delete
@@ -805,7 +805,7 @@ systems.delete.description:
   sv: >
     Detta kommer att <strong>permanent och oåterkalleligt</strong>
     ta bort system <strong><samp>%{x}</samp>!</strong>
-    Alla associerade objekt som API tokens, taggar och behörigheter
+    Alla associerade objekt som API-tokens, taggar och behörigheter
     kommer också att raderas.
     <em>Vänligen bekräfta dina avsikter genom att skriva in systemets
     ID nedan.</em>
@@ -820,7 +820,7 @@ systems.details.api-tokens.heading.create:
   sv: Skapa nytt API-token
 systems.details.api-tokens.title:
   en: API Tokens
-  sv: API Tokens
+  sv: API-Tokens
 systems.details.permissions.heading.create:
   en: Create new permission
   sv: Skapa ny behörighet
@@ -847,7 +847,7 @@ systems.form.field.description.tip:
   sv: Välj något tydligt och beskrivande
 systems.form.field.id.label:
   en: System ID
-  sv: System ID
+  sv: System-ID
 systems.form.field.id.placeholder:
   en: e.g., cashflow
   sv: t.ex. cashflow
@@ -865,7 +865,7 @@ systems.list.title:
   sv: System
 tags.create.field.id.label:
   en: Tag ID
-  sv: Tagg ID
+  sv: Tagg-ID
 tags.create.field.id.placeholder:
   en: e.g., author-pseudonym
   sv: t.ex. create-posts
@@ -958,7 +958,7 @@ tags.groups.assign.field.content.tip:
   sv: Ange ett konkret värde som ska hållas i samband med denna tagg
 tags.groups.assign.success:
   en: Successfully assigned this tag to group <samp>%{x}</samp>!
-  sv: Tilldelade den här tagg till gruppen <samp>%{x}</samp> med framgång!
+  sv: Tilldelade taggen till gruppen <samp>%{x}</samp>!
 tags.groups.list.action.delete.tooltip:
   en: Untag group
   sv: Avtagga gruppen
@@ -1025,7 +1025,7 @@ tags.users.assign.field.content.tip:
   sv: Ange ett konkret värde som ska hållas i samband med denna tagg
 tags.users.assign.success:
   en: Successfully assigned this tag to user <samp>%{x}</samp>!
-  sv: Tilldelade den här tagg till user <samp>%{x}</samp> med framgång!
+  sv: Tilldelade den här taggen till <samp>%{x}</samp>!
 tags.users.list.action.delete.tooltip:
   en: Untag user
   sv: Avtagga user
@@ -1034,8 +1034,8 @@ tags.users.list.action.delete.confirm:
     Are you sure you want to unassign this tag from user "%{x}"?
     This will have immediate repercussions for relying services.
   sv: >
-    Är du säker på att du vill avdela den här taggen från användaren "%{x}"?
-    Detta kommer att få omedelbara återverkningar för förlitande tjänster.
+    Är du säker på att du vill ta bort den här taggen från användaren "%{x}"?
+    Detta kommer att få omedelbara följder för förlitande tjänster.
 tags.users.list.col.username:
   en: Username
   sv: Användarnamn
@@ -1047,4 +1047,4 @@ tags.users.list.col.content:
   sv: Innehåll
 tags.users.list.empty:
   en: This tag has not yet been assigned to any user.
-  sv: Denna tagg har ännu inte tilldelats någon användare.
+  sv: Denna tagg har ännu inte tilldelats till någon användare.
