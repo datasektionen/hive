@@ -1,6 +1,6 @@
 use errors::ErrorPageGenerator;
 use log::*;
-use rocket::fs::{relative, FileServer};
+use rocket::fs::FileServer;
 use sqlx::PgPool;
 
 mod api;
@@ -54,7 +54,7 @@ async fn rocket() -> _ {
         .mount("/", &web::tree())
         .mount("/api/v0", &api::v0::tree())
         .mount("/api/v1", &api::v1::tree())
-        .mount("/static", FileServer::from(relative!("./static")))
+        .mount("/static", FileServer::from("./static"))
         .register("/api", api::catchers())
         .register("/", web::catchers())
 }
