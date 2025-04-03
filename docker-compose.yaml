@@ -11,6 +11,9 @@ services:
         - path: ./static
           action: sync # no need to rebuild
           target: /hive/static
+        - path: ./hive.toml
+          action: sync+restart # apply new config
+          target: /hive/hive.toml
         - path: ./src
           action: rebuild
         - path: ./locales

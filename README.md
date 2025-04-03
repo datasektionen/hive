@@ -49,6 +49,10 @@ can instead use:
 docker compose up --watch
 ```
 
+If you need to quickly change the configuration (e.g., the verbosity), this is a
+good way to achieve that without rebuilding: create a `hive.toml` file and
+Compose Watch will automatically sync it + restart the server.
+
 ## License
 
 Copyright (c) 2025 Konglig Datasektionen
