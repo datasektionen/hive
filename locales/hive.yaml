@@ -772,7 +772,7 @@ permissions.key.scope.indicator:
   sv: Avgränsat
 permissions.key.scope.tooltip:
   en: When assigned, this permission is bound to a concrete scope
-  sv: När tilldelad, blir denna behörighet bundet till en konkret gräns
+  sv: När tilldelad blir denna behörighet bunden till en konkret gräns
 permissions.key.scope.var:
   en: scope
   sv: omfång
