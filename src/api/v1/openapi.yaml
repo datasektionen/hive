@@ -519,7 +519,7 @@ paths:
                     group_domain:
                       description: Group domain
                       type: string
-                      pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
+                      pattern: ^[-a-z0-9]+\.[a-z]+$
                     tag_content:
                       description: Assigned tag content
                       oneOf:
