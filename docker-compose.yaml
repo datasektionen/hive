@@ -3,6 +3,7 @@ services:
     build: .
     ports:
       - "6869:6869"
+    env_file: secrets.env
     environment:
       HIVE_DB_URL: postgresql://hive:hive@db:5432/hive
       TZ: Europe/Stockholm

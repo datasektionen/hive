@@ -59,9 +59,12 @@ Compose setup is provided to streamline having a working PostgreSQL instance.
 docker compose up -d --build
 ```
 
-and then `docker compose down` when you're done. **If you would like live-reload
-when you change something** (despite the unfortunate compilation speeds), you
-can instead use:
+and then `docker compose down` when you're done. _Note that the default Docker
+Compose setup requires a `secrets.env` file, so you should
+`cp secrets.env{.example,}` beforehand and fill in appropriate values._
+
+**If you would like live-reload when you change something** (despite the
+unfortunate compilation speeds), you can instead use:
 
 ```sh
 docker compose up --watch
