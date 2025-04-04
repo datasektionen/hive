@@ -35,7 +35,11 @@ job "hive" {
 HIVE_PORT={{ env "NOMAD_PORT_http" }}
 {{ with nomadVar "nomad/jobs/hive" }}
 HIVE_DB_URL=postgres://hive:{{ .db_password }}@postgres.dsekt.internal:5432/hive
+HIVE_SECRET_KEY={{ .secret_key }}
+HIVE_OIDC_CLIENT_ID={{ .oidc_client_id }}
+HIVE_OIDC_CLIENT_SECRET={{ .oidc_client_secret }}
 {{ end }}
+HIVE_OIDC_ISSUER_URL=https://sso.datasektionen.se/op
 TZ=Europe/Stockholm
 ENV
         destination = "local/.env"
