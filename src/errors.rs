@@ -13,6 +13,7 @@ use rocket::{
 use uuid::Uuid;
 
 use crate::{
+    auth::oidc::OidcAuthenticationError,
     dto::errors::AppErrorDto,
     guards::{context::PageContext, headers::HxRequest},
     perms::HivePermission,
@@ -29,6 +30,12 @@ pub enum AppError {
     QueryBuildError(#[source] sqlx::error::BoxDynError),
     #[error("template render error: {0}")]
     RenderError(#[from] rinja::Error),
+    #[error("internal OIDC  authentication error: {0}")] // not for login failures! just 500
+    OidcAuthenticationError(#[from] OidcAuthenticationError),
+    #[error("failed to serialize internal state for storage: {0}")]
+    StateSerializationError(#[source] serde_json::Error),
+    #[error("failed to deserialize internal state from secure storage: {0}")]
+    StateDeserializationError(#[source] serde_json::Error), // not from client-controlled
     #[error("failed to decode error while generating error page from JSON")]
     ErrorDecodeFailure,
 
@@ -36,6 +43,8 @@ pub enum AppError {
     NotAllowed(HivePermission),
     #[error("user lacks necessary authority in group (minimum needed: {0:?}")]
     InsufficientAuthorityInGroup(AuthorityInGroup),
+    #[error("authentication flow expired and can no longer be completed")]
+    AuthenticationFlowExpired,
     #[error("action disallowed because it compromises system integrity")]
     SelfPreservation,
 
@@ -103,9 +112,13 @@ impl AppError {
             AppError::DbError(..) => Status::InternalServerError,
             AppError::QueryBuildError(..) => Status::InternalServerError,
             AppError::RenderError(..) => Status::InternalServerError,
+            AppError::OidcAuthenticationError(..) => Status::InternalServerError,
+            AppError::StateSerializationError(..) => Status::InternalServerError,
+            AppError::StateDeserializationError(..) => Status::InternalServerError,
             AppError::ErrorDecodeFailure => Status::InternalServerError,
             AppError::NotAllowed(..) => Status::Forbidden,
             AppError::InsufficientAuthorityInGroup(..) => Status::Forbidden,
+            AppError::AuthenticationFlowExpired => Status::Gone,
             AppError::SelfPreservation => Status::UnavailableForLegalReasons,
             AppError::NoSuchSystem(..) => Status::NotFound,
             AppError::DuplicateSystemId(..) => Status::Conflict,

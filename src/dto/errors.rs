@@ -17,6 +17,8 @@ enum InnerAppErrorDto {
     NotAllowed,
     #[serde(rename = "group.forbidden")]
     InsufficientAuthorityInGroup { min: AuthorityInGroup },
+    #[serde(rename = "auth.login.flow.expired")]
+    AuthenticationFlowExpired,
 
     #[serde(rename = "system.unknown")]
     NoSuchSystem { id: String },
@@ -76,11 +78,15 @@ impl From<AppError> for InnerAppErrorDto {
             AppError::DbError(..) => Self::DbError,
             AppError::QueryBuildError(..) => Self::PipelineError,
             AppError::RenderError(..) => Self::PipelineError,
+            AppError::OidcAuthenticationError(..) => Self::PipelineError,
+            AppError::StateSerializationError(..) => Self::PipelineError,
+            AppError::StateDeserializationError(..) => Self::PipelineError,
             AppError::ErrorDecodeFailure => Self::PipelineError,
             AppError::NotAllowed(..) => Self::NotAllowed,
             AppError::InsufficientAuthorityInGroup(min) => {
                 Self::InsufficientAuthorityInGroup { min }
             }
+            AppError::AuthenticationFlowExpired => Self::AuthenticationFlowExpired,
             AppError::SelfPreservation => Self::SelfPreservation,
             AppError::NoSuchSystem(id) => Self::NoSuchSystem { id },
             AppError::DuplicateSystemId(id) => Self::DuplicateSystemId { id },
@@ -148,6 +154,10 @@ impl InnerAppErrorDto {
             }
             (Self::InsufficientAuthorityInGroup { .. }, Language::Swedish) => {
                 "Otillräcklig auktoritet i gruppen"
+            }
+            (Self::AuthenticationFlowExpired, Language::English) => "Authentication Flow Expired",
+            (Self::AuthenticationFlowExpired, Language::Swedish) => {
+                "Autentiseringsflöde har löpt ut"
             }
             (Self::NoSuchSystem { .. }, Language::English) => "Unknown System",
             (Self::NoSuchSystem { .. }, Language::Swedish) => "Okänt system",
@@ -258,6 +268,16 @@ impl InnerAppErrorDto {
                     AuthorityInGroup::None => "Ingenting", // in theory, shouldn't happen
                 }
             ),
+            (Self::AuthenticationFlowExpired, Language::English) => {
+                "Too much time has passed since you started this login attempt and it can no \
+                 longer be completed. Please try again."
+                    .to_owned()
+            }
+            (Self::AuthenticationFlowExpired, Language::Swedish) => {
+                "Det har gått för lång tid sedan du startade detta inloggningsförsök och det kan \
+                 inte längre slutföras. Försök igen."
+                    .to_owned()
+            }
             (Self::NoSuchSystem { id }, Language::English) => {
                 format!("Could not find any system with ID \"{id}\".")
             }

@@ -10,9 +10,10 @@ use sqlx::PgPool;
 
 use super::{filters, Either, GracefulRedirect, RenderedTemplate};
 use crate::{
+    auth::User,
     dto::systems::{CreateSystemDto, EditSystemDto},
     errors::{AppError, AppResult},
-    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
+    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator},
     models::System,
     perms::{HivePermission, SystemsScope},
     routing::RouteTree,

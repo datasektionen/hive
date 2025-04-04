@@ -10,9 +10,10 @@ use uuid::Uuid;
 
 use super::{filters, Either, RenderedTemplate};
 use crate::{
+    auth::User,
     dto::api_tokens::CreateApiTokenDto,
     errors::AppResult,
-    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
+    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator},
     models::ApiToken,
     perms::{HivePermission, SystemsScope},
     routing::RouteTree,

@@ -1,30 +1,26 @@
 use rocket::{
+    http::Status,
     request::{FromRequest, Outcome},
     Request,
 };
 
-pub struct User {
-    pub username: String,
-    pub display_name: String,
-}
-
-#[derive(Debug)]
-pub enum UserIdentificationError {
-    Something,
-}
+use super::Infallible;
+use crate::auth;
 
 #[rocket::async_trait]
-impl<'r> FromRequest<'r> for User {
-    type Error = UserIdentificationError;
+impl<'r> FromRequest<'r> for auth::User {
+    type Error = Infallible;
 
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        // TODO: properly, plus:
+        // TODO:
         // use https://rocket.rs/guide/v0.5/state/#request-local-state to cache
         // (ensure user is only computed once per request)
         // (maybe use Arc?)
-        Outcome::Success(Self {
-            username: "dummy".to_owned(),
-            display_name: "John Doe".to_owned(),
-        })
+
+        if let Some(user) = auth::get_current_user(req.cookies()) {
+            Outcome::Success(user)
+        } else {
+            Outcome::Forward(Status::Unauthorized)
+        }
     }
 }

@@ -1,9 +1,10 @@
 use serde_json::json;
 
 use crate::{
+    auth::User,
     dto::tags::AssignTagDto,
     errors::{AppError, AppResult},
-    guards::{perms::PermsEvaluator, user::User},
+    guards::perms::PermsEvaluator,
     models::{ActionKind, Tag, TagAssignment, TargetKind},
     perms::{HivePermission, SystemsScope},
     services::{audit_logs, tags},

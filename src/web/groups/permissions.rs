@@ -8,9 +8,10 @@ use rocket::{
 use sqlx::PgPool;
 
 use crate::{
+    auth::User,
     dto::permissions::AssignPermissionDto,
     errors::AppResult,
-    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
+    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator},
     models::{Permission, PermissionAssignment, SimpleGroup},
     perms::{HivePermission, SystemsScope},
     routing::RouteTree,

@@ -4,8 +4,9 @@ use sqlx::Row;
 
 use super::{GroupRelevance, RoleInGroup};
 use crate::{
+    auth::User,
     errors::{AppError, AppResult},
-    guards::{perms::PermsEvaluator, user::User},
+    guards::perms::PermsEvaluator,
     models::{GroupModel, GroupRef},
     perms::{GroupsScope, HivePermission, TagContent},
     services::{groups::AuthorityInGroup, pg_args},

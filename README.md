@@ -3,7 +3,19 @@
 Datasektionen's management system for groups and permissions.
 
 Possible configuration settings are listed via `--help`, with corresponding
-environment variables and `hive.toml` settings.
+`HIVE_` environment variables and `hive.toml` settings. In particular:
+
+| **Setting**        | **Required** | **Format**                               |
+| ------------------ | ------------ | ---------------------------------------- |
+| Database URL       | **Yes**      | `postgresql://USER:PWD@HOST:PORT/DB`     |
+| Secret Key         | **Yes**      | Generate with `openssl rand -hex 64`     |
+| OIDC Issuer URL    | **Yes**      | e.g., `https://sso.datasektionen.se/op`  |
+| OIDC Client ID     | **Yes**      | Ask authentication server provider       |
+| OIDC Client Secret | **Yes**      | Ask authentication server provider       |
+| Port               | No           | Default: `6869`                          |
+| Listen Address     | No           | Default: `0.0.0.0` (listen everywhere)   |
+| Verbosity          | No           | Default: `normal` (show warnings/errors) |
+| Log File           | No           | Default: `/tmp/hive.log` (≠ in Docker)   |
 
 **Additionally, it is imperative that the `TZ` environment variable is set
 correctly!** The local timezone is used to calculate group membership and thus
@@ -12,6 +24,12 @@ permissions. A recommended value is `TZ=Europe/Stockholm`.
 When compiled, the final binary includes all necessary information for runtime
 execution **except** the `static/` directory, which must be provided at the
 runtime working directory.
+
+_**SECURITY NOTE:** Hive trusts the `Host` HTTP header of incoming requests to
+be accurate, despite being client-controlled, so this can be used by an attacker
+to man-in-the-middle OIDC logins unless you protect yourself against this:
+outside development, **always make sure that Hive is served behind a reverse
+proxy** (without wildcard host routing)!_
 
 ## API
 

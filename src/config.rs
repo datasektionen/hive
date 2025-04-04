@@ -7,7 +7,7 @@ use figment::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::logging::Verbosity;
+use crate::{auth::oidc::OidcConfig, logging::Verbosity};
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
@@ -17,14 +17,18 @@ pub struct Config {
     #[serde(default = "defaults::port")]
     pub port: u16,
 
-    // no default! must be specified in some way
-    pub db_url: String,
-
     #[serde(default = "defaults::verbosity")]
     pub verbosity: Verbosity,
 
     #[serde(default = "defaults::log_file")]
     pub log_file: PathBuf,
+
+    // no default! must be specified in some way
+    pub db_url: String,
+    pub secret_key: String,
+    pub oidc_issuer_url: String,
+    pub oidc_client_id: String,
+    pub oidc_client_secret: String,
 }
 
 impl Config {
@@ -50,13 +54,32 @@ impl Config {
     }
 
     pub fn get_rocket_config(&self) -> rocket::Config {
+        let secret_key =
+            hex::decode(&self.secret_key).expect("Fatal error: secret key is invalid hex sequence");
+
+        if secret_key.len() != 64 {
+            panic!(
+                "Fatal error: secret key has incorrect length. Use, e.g., `openssl rand -hex 64` \
+                 to generate"
+            )
+        }
+
         let ident = rocket::config::Ident::try_new("hive").unwrap();
 
         rocket::Config {
             address: self.listen_addr,
             port: self.port,
+            secret_key: rocket::config::SecretKey::from(&secret_key),
             ident, // HTTP `Server` header
             ..Default::default()
+        }
+    }
+
+    pub fn get_oidc_config(&self) -> OidcConfig {
+        OidcConfig {
+            issuer_url: self.oidc_issuer_url.clone(),
+            client_id: self.oidc_client_id.clone(),
+            client_secret: self.oidc_client_secret.clone(),
         }
     }
 }
@@ -85,6 +108,26 @@ pub struct CliArgs {
     #[arg(short, long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub db_url: Option<String>,
+
+    /// Random 64-byte hex string (length 128) to use as secret key [no default]
+    #[arg(short = 'k', long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub secret_key: Option<String>,
+
+    /// OIDC server's issuer URL to use for authentication [no default]
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub oidc_issuer_url: Option<String>,
+
+    /// OIDC client ID to use for authentication [no default]
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub oidc_client_id: Option<String>,
+
+    /// OIDC client secret to use for authentication [no default]
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub oidc_client_secret: Option<String>,
 
     /// How much information to show and log [default: normal]
     #[arg(short, long)]

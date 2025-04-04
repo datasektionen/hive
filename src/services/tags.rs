@@ -4,9 +4,10 @@ use uuid::Uuid;
 
 use super::{audit_logs, pg_args};
 use crate::{
+    auth::User,
     dto::tags::{AssignTagToGroupDto, AssignTagToUserDto, CreateTagDto},
     errors::{AppError, AppResult},
-    guards::{lang::Language, perms::PermsEvaluator, user::User},
+    guards::{lang::Language, perms::PermsEvaluator},
     models::{ActionKind, AffiliatedTagAssignment, Tag, TargetKind},
     perms::{HivePermission, SystemsScope},
 };

@@ -8,9 +8,10 @@ use rocket::{
 use sqlx::PgPool;
 
 use crate::{
+    auth::User,
     dto::tags::AssignTagDto,
     errors::AppResult,
-    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
+    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator},
     models::{SimpleGroup, Tag, TagAssignment},
     perms::{HivePermission, SystemsScope},
     routing::RouteTree,

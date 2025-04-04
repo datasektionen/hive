@@ -1,8 +1,8 @@
 use rocket::{
     catchers,
     http::{Header, Status},
-    response::content::RawHtml,
-    Request, Responder,
+    response::{content::RawHtml, Redirect},
+    uri, Request, Responder,
 };
 
 use super::RenderedTemplate;
@@ -12,7 +12,7 @@ use crate::{
 };
 
 pub fn catchers() -> Vec<rocket::Catcher> {
-    catchers![not_found, unknown]
+    catchers![not_found, unauthenticated, unknown]
 }
 
 #[derive(Responder)]
@@ -59,3 +59,8 @@ macro_rules! show_error_page {
 
 show_error_page!(not_found, 404, Status::NotFound, "not-found");
 show_error_page!(unknown, default, Status::InternalServerError, "unknown");
+
+#[rocket::catch(401)]
+fn unauthenticated() -> Redirect {
+    Redirect::to(uri!(super::auth::login))
+}

@@ -5,9 +5,9 @@ use sqlx::Row;
 use uuid::Uuid;
 
 use crate::{
+    auth::User,
     dto::groups::{AddMemberDto, AddSubgroupDto},
     errors::{AppError, AppResult},
-    guards::user::User,
     models::{ActionKind, GroupMember, Subgroup, TargetKind},
     services::audit_logs,
 };

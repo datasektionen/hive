@@ -9,8 +9,9 @@ use rocket::{
 };
 use sqlx::PgPool;
 
-use super::user::User;
+use super::Infallible;
 use crate::{
+    auth::User,
     errors::{AppError, AppResult},
     perms::{self, HivePermission},
     HIVE_SYSTEM_ID,
@@ -161,12 +162,9 @@ impl PermsEvaluator {
     }
 }
 
-#[derive(Debug)]
-pub struct UserNotAuthenticatedError;
-
 #[rocket::async_trait]
 impl<'r> FromRequest<'r> for &'r PermsEvaluator {
-    type Error = UserNotAuthenticatedError;
+    type Error = Infallible;
 
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         let result = req
@@ -184,7 +182,7 @@ impl<'r> FromRequest<'r> for &'r PermsEvaluator {
         if let Some(perms) = result {
             Outcome::Success(perms)
         } else {
-            Outcome::Error((Status::Unauthorized, UserNotAuthenticatedError))
+            Outcome::Forward(Status::Unauthorized)
         }
     }
 }

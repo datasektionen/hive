@@ -10,9 +10,10 @@ use uuid::Uuid;
 
 use super::{Either, GracefulRedirect, RenderedTemplate};
 use crate::{
+    auth::User,
     dto::tags::{AssignTagToGroupDto, AssignTagToUserDto, CreateTagDto},
     errors::AppResult,
-    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
+    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator},
     models::{AffiliatedTagAssignment, Tag},
     perms::{HivePermission, SystemsScope},
     routing::RouteTree,

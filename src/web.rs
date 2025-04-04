@@ -14,6 +14,7 @@ use crate::{
 };
 
 mod api_tokens;
+mod auth;
 mod catchers;
 mod groups;
 mod permissions;
@@ -51,6 +52,7 @@ enum Either<T, U> {
 pub fn tree() -> RouteTree {
     RouteTree::Branch(vec![
         api_tokens::routes(),
+        auth::routes(),
         groups::routes(),
         permissions::routes(),
         systems::routes(),

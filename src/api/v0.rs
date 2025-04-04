@@ -1,8 +1,7 @@
 use rocket::request::FromParam;
 
-use crate::routing::RouteTree;
-
 use super::with_api_docs;
+use crate::routing::RouteTree;
 
 mod token;
 mod user;

@@ -4,9 +4,10 @@ use serde_json::json;
 
 use super::audit_logs;
 use crate::{
+    auth::User,
     dto::systems::{CreateSystemDto, EditSystemDto},
     errors::{AppError, AppResult},
-    guards::{perms::PermsEvaluator, user::User},
+    guards::perms::PermsEvaluator,
     models::{ActionKind, System, TargetKind},
     perms::{HivePermission, SystemsScope},
     sanitizers::SearchTerm,

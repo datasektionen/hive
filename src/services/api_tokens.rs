@@ -4,9 +4,10 @@ use uuid::Uuid;
 
 use super::audit_logs;
 use crate::{
+    auth::User,
     dto::api_tokens::CreateApiTokenDto,
     errors::{AppError, AppResult},
-    guards::{perms::PermsEvaluator, user::User},
+    guards::perms::PermsEvaluator,
     models::{ActionKind, ApiToken, TargetKind},
     perms::{HivePermission, SystemsScope},
 };

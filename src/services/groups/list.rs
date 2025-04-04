@@ -9,8 +9,9 @@ use sqlx::{FromRow, Row};
 
 use super::{GroupMembershipKind, RoleInGroup};
 use crate::{
+    auth::User,
     errors::AppResult,
-    guards::{lang::Language, perms::PermsEvaluator, user::User},
+    guards::{lang::Language, perms::PermsEvaluator},
     models::{Group, GroupRef, SimpleGroup},
     perms::{GroupsScope, HivePermission, TagContent},
     sanitizers::SearchTerm,

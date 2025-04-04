@@ -1,8 +1,7 @@
 use serde::Serialize;
 
-use crate::{models::BasePermissionAssignment, routing::RouteTree};
-
 use super::with_api_docs;
+use crate::{models::BasePermissionAssignment, routing::RouteTree};
 
 mod tagged;
 mod token;

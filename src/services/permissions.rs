@@ -5,11 +5,12 @@ use uuid::Uuid;
 
 use super::{api_tokens, audit_logs, pg_args};
 use crate::{
+    auth::User,
     dto::permissions::{
         AssignPermissionToApiTokenDto, AssignPermissionToGroupDto, CreatePermissionDto,
     },
     errors::{AppError, AppResult},
-    guards::{lang::Language, perms::PermsEvaluator, user::User},
+    guards::{lang::Language, perms::PermsEvaluator},
     models::{
         ActionKind, AffiliatedPermissionAssignment, BasePermissionAssignment, Permission,
         TargetKind,

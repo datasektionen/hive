@@ -1,9 +1,11 @@
+use auth::oidc::OidcClient;
 use errors::ErrorPageGenerator;
 use log::*;
 use rocket::fs::FileServer;
 use sqlx::PgPool;
 
 mod api;
+mod auth;
 mod config;
 mod dto;
 mod errors;
@@ -48,8 +50,13 @@ async fn rocket() -> _ {
         rust_i18n::available_locales!()
     );
 
+    let oidc_client = OidcClient::new(config.get_oidc_config())
+        .await
+        .expect("Failed to initialize OIDC");
+
     rocket::custom(config.get_rocket_config())
         .manage(db)
+        .manage(oidc_client)
         .attach(ErrorPageGenerator)
         .mount("/", &web::tree())
         .mount("/api/v0", &api::v0::tree())
