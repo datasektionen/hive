@@ -10,8 +10,8 @@ Possible configuration settings are listed via `--help`, with corresponding
 | Database URL       | **Yes**      | `postgresql://USER:PWD@HOST:PORT/DB`     |
 | Secret Key         | **Yes**      | Generate with `openssl rand -hex 64`     |
 | OIDC Issuer URL    | **Yes**      | e.g., `https://sso.datasektionen.se/op`  |
-| OIDC Client ID     | **Yes**      | Ask authentication server provider       |
-| OIDC Client Secret | **Yes**      | Ask authentication server provider       |
+| OIDC Client ID     | **Yes**      | Ask authentication server provider (\*)  |
+| OIDC Client Secret | **Yes**      | Ask authentication server provider (\*)  |
 | Port               | No           | Default: `6869`                          |
 | Listen Address     | No           | Default: `0.0.0.0` (listen everywhere)   |
 | Verbosity          | No           | Default: `normal` (show warnings/errors) |
@@ -30,6 +30,9 @@ be accurate, despite being client-controlled, so this can be used by an attacker
 to man-in-the-middle OIDC logins unless you protect yourself against this:
 outside development, **always make sure that Hive is served behind a reverse
 proxy** (without wildcard host routing)!_
+
+> (\*) The redirect URL `/auth/oidc-callback` (with appropriate scheme and host)
+> must be registered with the OIDC provider and associated with the Client ID.
 
 ## API
 
