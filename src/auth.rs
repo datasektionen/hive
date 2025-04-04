@@ -87,3 +87,7 @@ pub fn get_current_user(jar: &CookieJar<'_>) -> Option<User> {
 
     None
 }
+
+pub fn logout(jar: &CookieJar<'_>) {
+    jar.remove_private(AUTH_COOKIE);
+}

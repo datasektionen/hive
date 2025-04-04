@@ -12,7 +12,7 @@ use crate::{
 };
 
 pub fn routes() -> RouteTree {
-    rocket::routes![login, oidc_callback].into()
+    rocket::routes![login, oidc_callback, logout].into()
 }
 
 #[rocket::get("/auth/login")]
@@ -46,4 +46,11 @@ async fn oidc_callback(
     auth::finish_authentication(code, state, oidc_client, jar).await?;
 
     Ok(Redirect::to("/groups"))
+}
+
+#[rocket::get("/auth/logout")]
+async fn logout(jar: &CookieJar<'_>) -> AppResult<Redirect> {
+    auth::logout(jar);
+
+    Ok(Redirect::to("/"))
 }
