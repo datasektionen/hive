@@ -9,10 +9,9 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::{
-    auth::User,
     dto::groups::{AddMemberDto, AddSubgroupDto},
     errors::{AppError, AppResult},
-    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator},
+    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
     models::{GroupMember, GroupRef, SimpleGroup, Subgroup},
     routing::RouteTree,
     services::groups::{self, AuthorityInGroup},

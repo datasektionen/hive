@@ -5,12 +5,11 @@ use uuid::Uuid;
 
 use super::{api_tokens, audit_logs, pg_args};
 use crate::{
-    auth::User,
     dto::permissions::{
         AssignPermissionToApiTokenDto, AssignPermissionToGroupDto, CreatePermissionDto,
     },
     errors::{AppError, AppResult},
-    guards::{lang::Language, perms::PermsEvaluator},
+    guards::{lang::Language, perms::PermsEvaluator, user::User},
     models::{
         ActionKind, AffiliatedPermissionAssignment, BasePermissionAssignment, Permission,
         TargetKind,
@@ -401,7 +400,7 @@ where
 {
     if system_id == crate::HIVE_SYSTEM_ID {
         // we manage our own permissions via database migrations
-        warn!("Disallowing permissions tampering from {}", user.username);
+        warn!("Disallowing permissions tampering from {}", user.username());
         return Err(AppError::SelfPreservation);
     }
 
@@ -424,7 +423,7 @@ where
         ActionKind::Create,
         TargetKind::Permission,
         permission.key(),
-        &user.username,
+        user.username(),
         json!({
             "new": {
                 "has_scope": dto.scoped,
@@ -446,7 +445,7 @@ where
 {
     if system_id == crate::HIVE_SYSTEM_ID {
         // we manage our own permissions via database migrations
-        warn!("Disallowing permissions tampering from {}", user.username);
+        warn!("Disallowing permissions tampering from {}", user.username());
         return Err(AppError::SelfPreservation);
     }
 
@@ -468,7 +467,7 @@ where
         ActionKind::Delete,
         TargetKind::Permission,
         old.key(),
-        &user.username,
+        user.username(),
         json!({
             "old": {
                 "has_scope": old.has_scope,
@@ -562,7 +561,7 @@ where
         ActionKind::Create,
         TargetKind::PermissionAssignment,
         assignment.key(),
-        &user.username,
+        user.username(),
         json!({
             "new": {
                 "entity_type": "group",
@@ -655,7 +654,7 @@ where
         ActionKind::Create,
         TargetKind::PermissionAssignment,
         assignment.key(),
-        &user.username,
+        user.username(),
         json!({
             "new": {
                 "entity_type": "api_token",
@@ -719,7 +718,7 @@ where
             // we manage our own root permission assignments via database migrations
             warn!(
                 "Disallowing root permission assignments tampering from {}",
-                user.username
+                user.username()
             );
             return Err(AppError::SelfPreservation);
         }
@@ -740,7 +739,7 @@ where
         TargetKind::PermissionAssignment,
         // FIXME: consider using assignment_id as target_id
         old.key(),
-        &user.username,
+        user.username(),
         details,
         &mut *txn,
     )

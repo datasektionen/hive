@@ -8,7 +8,7 @@ use openidconnect::{
 };
 use serde::{Deserialize, Serialize};
 
-use super::User;
+use super::Session;
 
 pub struct OidcConfig {
     pub issuer_url: String,
@@ -125,7 +125,7 @@ impl OidcClient {
         context: OidcAuthenticationContext,
         code: &str,
         state: &str,
-    ) -> Result<User, OidcAuthenticationError> {
+    ) -> Result<Session, OidcAuthenticationError> {
         if CsrfToken::new(state.to_owned()) != context.csrf_state {
             return Err(OidcAuthenticationError::BadCsrfToken(state.to_owned()));
         }
@@ -154,12 +154,12 @@ impl OidcClient {
             .map(|value| value.1)
             .ok_or(OidcAuthenticationError::NoNameClaim)?;
 
-        let user = User {
+        let session = Session {
             username: claims.subject().to_string(),
             display_name: end_user_name.to_string(),
-            session_expires: claims.expiration().into(),
+            expiration: claims.expiration().into(),
         };
 
-        Ok(user)
+        Ok(session)
     }
 }

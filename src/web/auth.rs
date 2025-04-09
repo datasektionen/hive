@@ -24,7 +24,7 @@ async fn login(
     host: &Host<'_>,
     jar: &CookieJar<'_>,
 ) -> AppResult<Redirect> {
-    let url = if auth::get_current_user(jar).is_some() {
+    let url = if auth::get_current_session(jar).is_some() {
         "/".to_owned()
     } else {
         auth::begin_authentication(

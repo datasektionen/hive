@@ -4,10 +4,9 @@ use uuid::Uuid;
 
 use super::{audit_logs, pg_args};
 use crate::{
-    auth::User,
     dto::tags::{AssignTagToGroupDto, AssignTagToUserDto, CreateTagDto},
     errors::{AppError, AppResult},
-    guards::{lang::Language, perms::PermsEvaluator},
+    guards::{lang::Language, perms::PermsEvaluator, user::User},
     models::{ActionKind, AffiliatedTagAssignment, Tag, TargetKind},
     perms::{HivePermission, SystemsScope},
 };
@@ -157,7 +156,7 @@ where
 {
     if system_id == crate::HIVE_SYSTEM_ID {
         // we manage our own tags via database migrations
-        warn!("Disallowing tags tampering from {}", user.username);
+        warn!("Disallowing tags tampering from {}", user.username());
         return Err(AppError::SelfPreservation);
     }
 
@@ -183,7 +182,7 @@ where
         ActionKind::Create,
         TargetKind::Tag,
         tag.key(),
-        &user.username,
+        user.username(),
         json!({
             "new": {
                 "supports_groups": dto.supports_groups,
@@ -207,7 +206,7 @@ where
 {
     if system_id == crate::HIVE_SYSTEM_ID {
         // we manage our own tags via database migrations
-        warn!("Disallowing tags tampering from {}", user.username);
+        warn!("Disallowing tags tampering from {}", user.username());
         return Err(AppError::SelfPreservation);
     }
 
@@ -229,7 +228,7 @@ where
         ActionKind::Delete,
         TargetKind::Tag,
         old.key(),
-        &user.username,
+        user.username(),
         json!({
             "old": {
                 "supports_groups": old.supports_groups,
@@ -325,7 +324,7 @@ where
         ActionKind::Create,
         TargetKind::TagAssignment,
         assignment.key(),
-        &user.username,
+        user.username(),
         json!({
             "new": {
                 "entity_type": "group",
@@ -401,7 +400,7 @@ where
         ActionKind::Create,
         TargetKind::TagAssignment,
         assignment.key(),
-        &user.username,
+        user.username(),
         json!({
             "new": {
                 "entity_type": "user",
@@ -474,7 +473,7 @@ where
         TargetKind::TagAssignment,
         // FIXME: consider using assignment_id as target_id
         old.key(),
-        &user.username,
+        user.username(),
         details,
         &mut *txn,
     )

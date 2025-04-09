@@ -4,9 +4,9 @@ use log::*;
 use serde_json::json;
 
 use crate::{
-    auth::User,
     dto::groups::{CreateGroupDto, EditGroupDto},
     errors::{AppError, AppResult},
+    guards::user::User,
     models::{ActionKind, Group, TargetKind},
     services::{audit_log_details_for_update, audit_logs, update_if_changed},
     HIVE_INTERNAL_DOMAIN,
@@ -20,7 +20,7 @@ where
         // shouldn't allow masquerading system-critical internal groups
         warn!(
             "Disallowing fake internal group creation from {}",
-            user.username
+            user.username()
         );
         return Err(AppError::SelfPreservation);
     }
@@ -48,7 +48,7 @@ where
         ActionKind::Create,
         TargetKind::Group,
         format!("{}@{}", *dto.id, *dto.domain),
-        &user.username,
+        user.username(),
         json!({
             "new": {
                 "name_sv": dto.name_sv,
@@ -72,7 +72,10 @@ where
 {
     if domain == HIVE_INTERNAL_DOMAIN {
         // shouldn't delete our own system-critical internal groups
-        warn!("Disallowing internal group deletion from {}", user.username);
+        warn!(
+            "Disallowing internal group deletion from {}",
+            user.username()
+        );
         return Err(AppError::SelfPreservation);
     }
 
@@ -89,7 +92,7 @@ where
         ActionKind::Delete,
         TargetKind::Group,
         old.key(),
-        &user.username,
+        user.username(),
         json!({
             "old": {
                 "name_sv": old.name_sv,
@@ -144,7 +147,7 @@ where
             ActionKind::Update,
             TargetKind::Group,
             key,
-            &user.username,
+            user.username(),
             audit_log_details_for_update!(changed),
             &mut *txn,
         )

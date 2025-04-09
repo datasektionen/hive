@@ -10,12 +10,11 @@ use uuid::Uuid;
 
 use super::{Either, GracefulRedirect, RenderedTemplate};
 use crate::{
-    auth::User,
     dto::permissions::{
         AssignPermissionToApiTokenDto, AssignPermissionToGroupDto, CreatePermissionDto,
     },
     errors::AppResult,
-    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator},
+    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
     models::{AffiliatedPermissionAssignment, Permission},
     perms::{HivePermission, SystemsScope},
     routing::RouteTree,

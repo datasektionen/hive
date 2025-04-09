@@ -4,9 +4,8 @@ use sqlx::Row;
 
 use super::{GroupRelevance, RoleInGroup};
 use crate::{
-    auth::User,
     errors::{AppError, AppResult},
-    guards::perms::PermsEvaluator,
+    guards::{perms::PermsEvaluator, user::User},
     models::{GroupModel, GroupRef},
     perms::{GroupsScope, HivePermission, TagContent},
     services::{groups::AuthorityInGroup, pg_args},
@@ -45,7 +44,7 @@ pub async fn get_relevance<'x, X>(
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres> + Copy,
 {
-    let (role, path) = get_role_in_group_with_paths(&user.username, id, domain, db).await?;
+    let (role, path) = get_role_in_group_with_paths(user.username(), id, domain, db).await?;
 
     let authority = get_authority_from_permissions(id, domain, db, perms).await? + &role;
 
@@ -63,7 +62,7 @@ pub async fn require_authority<'x, X>(
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres> + Copy,
 {
-    let role = get_role_in_group(&user.username, id, domain, db).await?;
+    let role = get_role_in_group(user.username(), id, domain, db).await?;
     let authority = get_authority_from_permissions(id, domain, db, perms).await? + &role;
 
     authority.require(min).map(|_| authority)

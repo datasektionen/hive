@@ -4,10 +4,9 @@ use serde_json::json;
 
 use super::audit_logs;
 use crate::{
-    auth::User,
     dto::systems::{CreateSystemDto, EditSystemDto},
     errors::{AppError, AppResult},
-    guards::perms::PermsEvaluator,
+    guards::{perms::PermsEvaluator, user::User},
     models::{ActionKind, System, TargetKind},
     perms::{HivePermission, SystemsScope},
     sanitizers::SearchTerm,
@@ -98,7 +97,7 @@ where
         ActionKind::Create,
         TargetKind::System,
         dto.id,
-        &user.username,
+        user.username(),
         json!({"new": {"description": dto.description}}),
         &mut *txn,
     )
@@ -115,7 +114,7 @@ where
 {
     if id == crate::HIVE_SYSTEM_ID {
         // shouldn't delete ourselves
-        warn!("Disallowing self-deletion from {}", user.username);
+        warn!("Disallowing self-deletion from {}", user.username());
         return Err(AppError::SelfPreservation);
     }
 
@@ -131,7 +130,7 @@ where
         ActionKind::Delete,
         TargetKind::System,
         id,
-        &user.username,
+        user.username(),
         json!({"old": {"description": old.description}}),
         &mut *txn,
     )
@@ -169,7 +168,7 @@ where
             ActionKind::Update,
             TargetKind::System,
             id,
-            &user.username,
+            user.username(),
             json!({
                 "old": {"description": old_description},
                 "new": {"description": dto.description},

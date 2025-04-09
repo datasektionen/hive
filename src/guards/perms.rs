@@ -9,9 +9,8 @@ use rocket::{
 };
 use sqlx::PgPool;
 
-use super::Infallible;
+use super::{user::User, Infallible};
 use crate::{
-    auth::User,
     errors::{AppError, AppResult},
     perms::{self, HivePermission},
     HIVE_SYSTEM_ID,
@@ -82,8 +81,7 @@ impl PermsEvaluator {
         cache: &mut MutexGuard<'_, HivePermissionsCache>,
         key: &'static str,
     ) -> AppResult<Vec<HivePermission>> {
-        let username = &self.user.username;
-        let perms = perms::get_assignments(username, HIVE_SYSTEM_ID, key, &self.db)
+        let perms = perms::get_assignments(self.user.username(), HIVE_SYSTEM_ID, key, &self.db)
             .await?
             .into_iter()
             .map(HivePermission::try_from)

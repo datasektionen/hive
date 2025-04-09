@@ -15,10 +15,11 @@ use sqlx::PgPool;
 
 use super::{filters, Either, GracefulRedirect, RenderedTemplate};
 use crate::{
-    auth::User,
     dto::groups::{CreateGroupDto, EditGroupDto},
     errors::{AppError, AppResult},
-    guards::{context::PageContext, headers::HxRequest, lang::Language, perms::PermsEvaluator},
+    guards::{
+        context::PageContext, headers::HxRequest, lang::Language, perms::PermsEvaluator, user::User,
+    },
     models::{
         Group, GroupMember, Permission, PermissionAssignment, SimpleGroup, Subgroup, Tag,
         TagAssignment,

@@ -5,9 +5,9 @@ use sqlx::Row;
 use uuid::Uuid;
 
 use crate::{
-    auth::User,
     dto::groups::{AddMemberDto, AddSubgroupDto},
     errors::{AppError, AppResult},
+    guards::user::User,
     models::{ActionKind, GroupMember, Subgroup, TargetKind},
     services::audit_logs,
 };
@@ -167,7 +167,7 @@ where
         ActionKind::Create,
         TargetKind::Membership,
         format!("{}@{}", parent_id, parent_domain),
-        &user.username,
+        user.username(),
         json!({
             "new": {
                 "member_type": "subgroup",
@@ -225,7 +225,7 @@ where
         ActionKind::Delete,
         TargetKind::Membership,
         format!("{}@{}", parent_id, parent_domain),
-        &user.username,
+        user.username(),
         json!({
             "old": {
                 "member_type": "subgroup",
@@ -298,7 +298,7 @@ where
         TargetKind::Membership,
         // FIXME: consider using added.id as target_id
         format!("{}@{}", id, domain),
-        &user.username,
+        user.username(),
         json!({
             "new": {
                 "member_type": "member",
@@ -373,7 +373,7 @@ where
         // expires and we end up with no administrators anyway)
         warn!(
             "Disallowing last administrator removal from {}",
-            user.username
+            user.username()
         );
         return Err(AppError::SelfPreservation);
     };
@@ -383,7 +383,7 @@ where
         TargetKind::Membership,
         // FIXME: consider using membership_id as target_id
         format!("{}@{}", group_id, group_domain),
-        &user.username,
+        user.username(),
         json!({
             "old": {
                 "member_type": "member",

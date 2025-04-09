@@ -4,10 +4,9 @@ use uuid::Uuid;
 
 use super::audit_logs;
 use crate::{
-    auth::User,
     dto::api_tokens::CreateApiTokenDto,
     errors::{AppError, AppResult},
-    guards::perms::PermsEvaluator,
+    guards::{perms::PermsEvaluator, user::User},
     models::{ActionKind, ApiToken, TargetKind},
     perms::{HivePermission, SystemsScope},
 };
@@ -69,7 +68,7 @@ where
         ActionKind::Create,
         TargetKind::ApiToken,
         token.id,
-        &user.username,
+        user.username(),
         json!({
             "new": {
                 "system_id": system_id,
@@ -116,7 +115,7 @@ where
         ActionKind::Delete,
         TargetKind::ApiToken,
         id,
-        &user.username,
+        user.username(),
         json!({
             "old": {
                 "system_id": old.system_id,

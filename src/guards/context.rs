@@ -5,8 +5,7 @@ use rocket::{
     Request,
 };
 
-use super::{lang::Language, nav::Nav, Infallible};
-use crate::auth::User;
+use super::{lang::Language, nav::Nav, user::User, Infallible};
 
 pub struct PageContext {
     pub lang: Language,

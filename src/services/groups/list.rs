@@ -9,9 +9,8 @@ use sqlx::{FromRow, Row};
 
 use super::{GroupMembershipKind, RoleInGroup};
 use crate::{
-    auth::User,
     errors::AppResult,
-    guards::{lang::Language, perms::PermsEvaluator},
+    guards::{lang::Language, perms::PermsEvaluator, user::User},
     models::{Group, GroupRef, SimpleGroup},
     perms::{GroupsScope, HivePermission, TagContent},
     sanitizers::SearchTerm,
@@ -98,7 +97,7 @@ where
         JOIN groups gs
             ON ag.id = gs.id
             AND ag.domain = gs.domain",
-        pg_args!(&user.username, today),
+        pg_args!(user.username(), today),
     );
 
     add_search_clauses(&mut query, q, Some("gs"), domain_filter.is_some());
@@ -145,7 +144,7 @@ where
                     AND $4 BETWEEN \"from\" AND until
                 ORDER BY until DESC",
             )
-            .bind(&user.username)
+            .bind(user.username())
             .bind(&group.id)
             .bind(&group.domain)
             .bind(today)
@@ -439,7 +438,7 @@ where
                 ON gs.id = ag.id
                 AND gs.domain = ag.domain",
         )
-        .bind(&user.username)
+        .bind(user.username())
         .bind(today)
         .fetch_all(db)
         .await?,

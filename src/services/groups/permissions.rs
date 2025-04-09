@@ -1,10 +1,9 @@
 use serde_json::json;
 
 use crate::{
-    auth::User,
     dto::permissions::AssignPermissionDto,
     errors::{AppError, AppResult},
-    guards::perms::PermsEvaluator,
+    guards::{perms::PermsEvaluator, user::User},
     models::{ActionKind, Permission, PermissionAssignment, TargetKind},
     perms::{HivePermission, SystemsScope},
     services::{audit_logs, permissions},
@@ -144,7 +143,7 @@ where
         ActionKind::Create,
         TargetKind::PermissionAssignment,
         assignment.key(),
-        &user.username,
+        user.username(),
         json!({
             "new": {
                 "entity_type": "group",
