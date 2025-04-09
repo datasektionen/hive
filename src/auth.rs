@@ -44,7 +44,7 @@ pub async fn finish_authentication(
     state: &str,
     oidc_client: &OidcClient,
     jar: &CookieJar<'_>,
-) -> AppResult<()> {
+) -> AppResult<User> {
     let cookie = jar
         .get_private(LOGIN_FLOW_CONTEXT_COOKIE)
         .ok_or(AppError::AuthenticationFlowExpired)?;
@@ -73,7 +73,7 @@ pub async fn finish_authentication(
     jar.add_private(cookie);
     jar.remove_private(LOGIN_FLOW_CONTEXT_COOKIE);
 
-    Ok(())
+    Ok(user)
 }
 
 pub fn get_current_user(jar: &CookieJar<'_>) -> Option<User> {

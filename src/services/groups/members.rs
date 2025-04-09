@@ -402,3 +402,77 @@ where
 
     Ok(())
 }
+
+pub async fn conditional_bootstrap<'x, X>(username: &str, db: X) -> AppResult<bool>
+where
+    X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
+{
+    // add user to root group iff it currently has no members
+
+    let today = Local::now().date_naive();
+
+    let mut txn = db.begin().await?;
+
+    // not using `all_members_of` because we're fine with empty subgroups, so as
+    // to support the case where someone (non-root) has permissions to manage
+    // one of root's subgroups, in which case a bootstrap should not be
+    // triggered
+    let has_members = sqlx::query_scalar(
+        "SELECT
+            EXISTS (
+                SELECT 1
+                FROM direct_memberships
+                WHERE
+                    group_id = $1
+                    AND group_domain = $2
+                    AND $3 BETWEEN \"from\" AND until
+            )
+            OR
+            EXISTS (
+                SELECT 1
+                FROM subgroups
+                WHERE
+                    parent_id = $1
+                    AND parent_domain = $2
+            )
+        AS has_members",
+    )
+    .bind(crate::HIVE_ROOT_GROUP_ID)
+    .bind(crate::HIVE_INTERNAL_DOMAIN)
+    .bind(today)
+    .fetch_one(&mut *txn)
+    .await?;
+
+    if has_members {
+        // nothing to do
+        return Ok(false);
+    }
+
+    let expiration = today
+        .checked_add_months(chrono::Months::new(12 * 1000))
+        .expect(
+            r#"Bootstrapping is not supported after Friday, December 31st, 261143.
+
+            However, Hive has already been in use for 259118 years at this point,
+            so you might want to consider migrating to a newer system..."#,
+        );
+
+    sqlx::query(
+        "INSERT INTO direct_memberships
+        (username, group_id, group_domain, \"from\", until, manager)
+        VALUES ($1, $2, $3, $4, $5, true)",
+    )
+    .bind(username)
+    .bind(crate::HIVE_ROOT_GROUP_ID)
+    .bind(crate::HIVE_INTERNAL_DOMAIN)
+    .bind(today)
+    .bind(expiration)
+    .execute(&mut *txn)
+    .await?;
+
+    warn!("Bootstrapped user {username} as Hive root until {expiration}");
+
+    txn.commit().await?;
+
+    Ok(true)
+}

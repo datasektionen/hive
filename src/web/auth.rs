@@ -3,12 +3,14 @@ use rocket::{
     response::Redirect,
     State,
 };
+use sqlx::PgPool;
 
 use crate::{
     auth::{self, oidc::OidcClient},
     errors::AppResult,
     guards::scheme::RequestScheme,
     routing::RouteTree,
+    services::groups,
 };
 
 pub fn routes() -> RouteTree {
@@ -41,9 +43,12 @@ async fn oidc_callback(
     code: &str,
     state: &str,
     oidc_client: &State<OidcClient>,
+    db: &State<PgPool>,
     jar: &CookieJar<'_>,
 ) -> AppResult<Redirect> {
-    auth::finish_authentication(code, state, oidc_client, jar).await?;
+    let user = auth::finish_authentication(code, state, oidc_client, jar).await?;
+
+    groups::members::conditional_bootstrap(&user.username, db.inner()).await?;
 
     Ok(Redirect::to("/groups"))
 }
