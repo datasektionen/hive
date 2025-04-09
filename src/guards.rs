@@ -1,5 +1,6 @@
 pub mod api;
 pub mod context;
+pub mod cors;
 pub mod headers;
 pub mod lang;
 pub mod nav;

@@ -2,6 +2,7 @@ use auth::oidc::OidcClient;
 use errors::ErrorPageGenerator;
 use log::*;
 use rocket::fs::FileServer;
+use routing::cors::Cors;
 use sqlx::PgPool;
 
 mod api;
@@ -58,6 +59,7 @@ async fn rocket() -> _ {
         .manage(db)
         .manage(oidc_client)
         .attach(ErrorPageGenerator)
+        .attach(Cors)
         .mount("/", &web::tree())
         .mount("/api/v0", &api::v0::tree())
         .mount("/api/v1", &api::v1::tree())

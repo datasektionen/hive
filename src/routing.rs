@@ -1,5 +1,7 @@
 use rocket::Route;
 
+pub mod cors;
+
 // convenient for a modular distribution of routes across files,
 // without having to centralize a single list of all routes here
 pub enum RouteTree {
