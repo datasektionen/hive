@@ -40,6 +40,8 @@ tags:
     description: Endpoints related to user permissions
   - name: tokens
     description: Endpoints related to API token permissions
+  - name: tagged
+    description: Endpoints related to tagged entities
 
 # if ever adding a new endpoint, consider using badges:
 # ```yaml
@@ -625,6 +627,57 @@ paths:
                   value: []
         default:
           $ref: "#/components/responses/UnknownError"
+  /group/{group_domain}/{group_id}/members:
+    get:
+      operationId: tagged_group_members
+      summary: List all members in a given group
+      description: |
+        Returns an array with the usernames of all the users recognized to be
+        (direct or indirect) members of a given group.
+
+        The group must be tagged (directly or indirectly) with at least one tag
+        associated with the system relevant to the API consumer (per
+        authentication), otherwise an error will be returned.
+
+        The returned array never contains any duplicates and its entries are
+        ordered lexicographically.
+      tags: [tagged]
+      parameters:
+        - name: group_id
+          in: path
+          description: The ID of the group to list members for
+          required: true
+          schema:
+            $ref: "#/components/schemas/GroupId"
+        - name: group_domain
+          in: path
+          description: The domain of the group to list members for
+          required: true
+          schema:
+            $ref: "#/components/schemas/GroupDomain"
+      security:
+        - bearer: [$hive:api-list-tagged]
+      responses:
+        "200":
+          description: |
+            The users who are members of the specified group.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Username"
+              examples:
+                some:
+                  summary: Group with members
+                  value:
+                    - rmfseo
+                    - bwidman
+                none:
+                  summary: Group without members
+                  value: []
+        default:
+          $ref: "#/components/responses/UnknownError"
 
 components:
   securitySchemes:
@@ -685,6 +738,20 @@ components:
       examples:
         - author-pseudonym
         - discord-role
+    GroupId:
+      description: Group ID
+      type: string
+      pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
+      examples:
+        - d-sys
+        - sn
+    GroupDomain:
+      description: Group Domain
+      type: string
+      pattern: ^[-a-z0-9]+\.[a-z]+$
+      examples:
+        - example.com
+        - hive.internal
   responses:
     TaggedGroups:
       description: The groups tagged with the specified tag.
@@ -700,13 +767,10 @@ components:
                   type: string
                   minLength: 1
                 group_id:
-                  description: Group ID
-                  type: string
-                  pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
+                  $ref: "#/components/schemas/GroupId"
                 group_domain:
+                  $ref: "#/components/schemas/GroupDomain"
                   description: Group domain
-                  type: string
-                  pattern: ^[-a-z0-9]+\.[a-z]+$
                 tag_content:
                   description: Assigned tag content
                   oneOf:

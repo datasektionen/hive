@@ -6,15 +6,22 @@ use sqlx::PgPool;
 
 use crate::{
     api::HiveApiPermission,
-    errors::AppResult,
+    errors::{AppError, AppResult},
     guards::{api::consumer::ApiConsumer, lang::Language},
     models::AffiliatedTagAssignment,
+    perms::HivePermission,
     routing::RouteTree,
-    services::tags,
+    services::{groups, tags},
 };
 
 pub fn routes() -> RouteTree {
-    rocket::routes![tagged_groups, tagged_users, tagged_user_memberships].into()
+    rocket::routes![
+        tagged_groups,
+        tagged_users,
+        tagged_user_memberships,
+        tagged_group_members
+    ]
+    .into()
 }
 
 #[derive(Serialize, PartialEq, Eq, PartialOrd, Ord)]
@@ -128,4 +135,31 @@ async fn tagged_user_memberships(
     .collect(); // BTreeSet orders and removes duplicates
 
     Ok(Json(assignments))
+}
+
+#[rocket::get("/group/<group_domain>/<group_id>/members")]
+async fn tagged_group_members(
+    group_id: &str,
+    group_domain: &str,
+    consumer: ApiConsumer,
+    db: &State<PgPool>,
+) -> AppResult<Json<BTreeSet<String>>> {
+    consumer
+        .require(HiveApiPermission::ListTagged, db.inner())
+        .await?;
+
+    let tagged_for_system =
+        groups::tags::is_tagged_for_system(group_id, group_domain, &consumer.system_id, db.inner())
+            .await?;
+    if !tagged_for_system {
+        return Err(AppError::NotAllowed(HivePermission::ApiListTagged));
+    }
+
+    let members = groups::members::get_all_members(group_id, group_domain, db.inner())
+        .await?
+        .into_iter()
+        .map(|member| member.username)
+        .collect(); // BTreeSet orders and removes duplicates
+
+    Ok(Json(members))
 }

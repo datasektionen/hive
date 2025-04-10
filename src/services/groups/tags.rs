@@ -165,3 +165,28 @@ where
 
     Ok(assignment)
 }
+
+pub async fn is_tagged_for_system<'x, X>(
+    id: &str,
+    domain: &str,
+    system_id: &str,
+    db: X,
+) -> AppResult<bool>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+{
+    let result = sqlx::query_scalar(
+        "SELECT COUNT(*) > 0
+        FROM tag_assignments
+        WHERE group_id = $1
+            AND group_domain = $2
+            AND system_id = $3",
+    )
+    .bind(id)
+    .bind(domain)
+    .bind(system_id)
+    .fetch_one(db)
+    .await?;
+
+    Ok(result)
+}
