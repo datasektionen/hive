@@ -252,7 +252,7 @@ pub async fn delete_tag(
 }
 
 macro_rules! list_tag_assignments {
-    ($path:expr, $fname:ident, $lister:path, $template:ident) => {
+    ($path:expr, $fname:ident, $template:ident, $lister:path, $($extra:expr),*) => {
         #[rocket::get($path)]
         async fn $fname(
             system_id: &str,
@@ -281,7 +281,7 @@ macro_rules! list_tag_assignments {
             let has_content = tags::has_content(system_id, tag_id, db.inner()).await?;
 
             let tag_assignments =
-                $lister(system_id, tag_id, Some(&ctx.lang), db.inner(), Some(perms)).await?;
+                $lister(system_id, tag_id, Some(&ctx.lang), $($extra,)* db.inner(), Some(perms)).await?;
 
             // this could've been directly in the template, but askama doesn't seem
             // to support closures defined in the source (parsing error)
@@ -304,15 +304,16 @@ macro_rules! list_tag_assignments {
 list_tag_assignments!(
     "/system/<system_id>/tag/<tag_id>/groups",
     list_tag_groups,
+    PartialListTagGroupsView,
     tags::list_group_assignments,
-    PartialListTagGroupsView
+    None
 );
 
 list_tag_assignments!(
     "/system/<system_id>/tag/<tag_id>/users",
     list_tag_users,
+    PartialListTagUsersView,
     tags::list_user_assignments,
-    PartialListTagUsersView
 );
 
 #[rocket::post("/system/<system_id>/tag/<tag_id>/groups", data = "<form>")]

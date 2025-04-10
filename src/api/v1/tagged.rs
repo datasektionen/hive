@@ -14,7 +14,7 @@ use crate::{
 };
 
 pub fn routes() -> RouteTree {
-    rocket::routes![tagged_groups, tagged_users].into()
+    rocket::routes![tagged_groups, tagged_users, tagged_user_memberships].into()
 }
 
 #[derive(Serialize, PartialEq, Eq, PartialOrd, Ord)]
@@ -64,12 +64,18 @@ async fn tagged_groups(
 
     let lang = lang.unwrap_or(Language::Swedish);
 
-    let assignments =
-        tags::list_group_assignments(&consumer.system_id, tag_id, Some(&lang), db.inner(), None)
-            .await?
-            .into_iter()
-            .map(Into::into)
-            .collect(); // BTreeSet orders and removes duplicates
+    let assignments = tags::list_group_assignments(
+        &consumer.system_id,
+        tag_id,
+        Some(&lang),
+        None,
+        db.inner(),
+        None,
+    )
+    .await?
+    .into_iter()
+    .map(Into::into)
+    .collect(); // BTreeSet orders and removes duplicates
 
     Ok(Json(assignments))
 }
@@ -90,6 +96,36 @@ async fn tagged_users(
             .into_iter()
             .map(Into::into)
             .collect(); // BTreeSet orders and removes duplicates
+
+    Ok(Json(assignments))
+}
+
+#[rocket::get("/tagged/<tag_id>/memberships/<username>?<lang>")]
+async fn tagged_user_memberships(
+    tag_id: &str,
+    username: &str,
+    lang: Option<Language>,
+    consumer: ApiConsumer,
+    db: &State<PgPool>,
+) -> AppResult<Json<BTreeSet<TaggedGroup>>> {
+    consumer
+        .require(HiveApiPermission::ListTagged, db.inner())
+        .await?;
+
+    let lang = lang.unwrap_or(Language::Swedish);
+
+    let assignments = tags::list_group_assignments(
+        &consumer.system_id,
+        tag_id,
+        Some(&lang),
+        Some(username),
+        db.inner(),
+        None,
+    )
+    .await?
+    .into_iter()
+    .map(Into::into)
+    .collect(); // BTreeSet orders and removes duplicates
 
     Ok(Json(assignments))
 }

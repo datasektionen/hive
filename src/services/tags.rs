@@ -1,3 +1,4 @@
+use chrono::Local;
 use log::*;
 use serde_json::json;
 use uuid::Uuid;
@@ -58,12 +59,14 @@ pub async fn list_group_assignments<'x, X>(
     system_id: &str,
     tag_id: &str,
     label_lang: Option<&Language>,
+    username: Option<&str>,
     db: X,
     perms: Option<&PermsEvaluator>,
 ) -> AppResult<Vec<AffiliatedTagAssignment>>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
+    let today = Local::now().date_naive();
     let mut query = sqlx::QueryBuilder::new("SELECT ta.*");
 
     match label_lang {
@@ -83,6 +86,19 @@ where
             " JOIN groups gs
                 ON gs.id = ta.group_id
                 AND gs.domain = ta.group_domain",
+        );
+    }
+
+    if let Some(username) = username {
+        // filter for specific user
+        query.push(" JOIN all_groups_of(");
+        query.push_bind(username);
+        query.push(", ");
+        query.push_bind(today);
+        query.push(
+            ") ag
+                ON ag.id = ta.group_id
+                AND ag.domain = ta.group_domain",
         );
     }
 

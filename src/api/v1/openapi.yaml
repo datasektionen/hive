@@ -499,66 +499,61 @@ paths:
         - bearer: [$hive:api-list-tagged]
       responses:
         "200":
+          $ref: "#/components/responses/TaggedGroups"
+        default:
+          $ref: "#/components/responses/UnknownError"
+  /tagged/{tag_id}/memberships/{username}:
+    get:
+      operationId: tagged_user_memberships
+      summary: List all of a user's groups with a given tag
+      description: |
+        Returns an array with all of a user's Hive groups recognized to have
+        been tagged (directly or indirectly) with the specified tag in the
+        system relevant to the API consumer (per authentication).
+
+        Only groups of which the specified user is a member (direct or indirect)
+        are included in the resulting list. This does *not* include tags
+        assigned directly to the user, even if supported by the tag.
+
+        The returned array never contains any duplicates and its entries are
+        ordered lexicographically by group name, then group domain, then group
+        ID, and finally by tag content. The group name included for each entry
+        is provided localized for the language specified via the query parameter
+        `lang`, or otherwise in Swedish if no preference is given.
+
+        If the specified tag does not support being assigned to groups, this
+        endpoint always returns an empty array. If the tag supports content,
+        the respective value is included for each entry; otherwise, it is `null`
+        for every entry.
+      tags: [tagged]
+      parameters:
+        - name: tag_id
+          in: path
+          description: The tag to list groups for
+          required: true
+          schema:
+            $ref: "#/components/schemas/TagId"
+        - name: username
+          in: path
+          description: The username associated with the target user
+          required: true
+          schema:
+            $ref: "#/components/schemas/Username"
+        - name: lang
+          in: query
+          description: Language to display group name in
+          required: false
+          schema:
+            type: string
+            enum: [en, sv]
+            default: sv
+      security:
+        - bearer: [$hive:api-list-tagged]
+      responses:
+        "200":
+          $ref: "#/components/responses/TaggedGroups"
           description: |
-            The groups tagged with the specified tag.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    group_name:
-                      description: Group name in specified language
-                      type: string
-                      minLength: 1
-                    group_id:
-                      description: Group ID
-                      type: string
-                      pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
-                    group_domain:
-                      description: Group domain
-                      type: string
-                      pattern: ^[-a-z0-9]+\.[a-z]+$
-                    tag_content:
-                      description: Assigned tag content
-                      oneOf:
-                        - description: Tag with content
-                          type: string
-                          minLength: 1
-                        - description: Tag without content
-                          type: "null"
-                  required:
-                    - group_name
-                    - group_id
-                    - group_domain
-                    - tag_content
-              examples:
-                some-with-content:
-                  summary: Tag with content
-                  value:
-                    - group_name: Systemansvarig
-                      group_id: d-sys
-                      group_domain: example.com
-                      tag_content: D-Sys
-                    - group_name: Internationella Nämnden
-                      group_id: in
-                      group_domain: example.com
-                      tag_content: Int. Nämnden
-                some-no-content:
-                  summary: Tag with no content
-                  value:
-                    - group_name: Kassör
-                      group_id: kassor
-                      group_domain: example.com
-                      tag_content: null
-                    - group_name: International Committee Leadership
-                      group_id: int
-                      group_domain: example.com
-                      tag_content: null
-                none:
-                  summary: No groups with tag
-                  value: []
+            The user's groups tagged with the specified tag.
         default:
           $ref: "#/components/responses/UnknownError"
   /tagged/{tag_id}/users:
@@ -691,6 +686,66 @@ components:
         - author-pseudonym
         - discord-role
   responses:
+    TaggedGroups:
+      description: The groups tagged with the specified tag.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                group_name:
+                  description: Group name in specified language
+                  type: string
+                  minLength: 1
+                group_id:
+                  description: Group ID
+                  type: string
+                  pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
+                group_domain:
+                  description: Group domain
+                  type: string
+                  pattern: ^[-a-z0-9]+\.[a-z]+$
+                tag_content:
+                  description: Assigned tag content
+                  oneOf:
+                    - description: Tag with content
+                      type: string
+                      minLength: 1
+                    - description: Tag without content
+                      type: "null"
+              required:
+                - group_name
+                - group_id
+                - group_domain
+                - tag_content
+          examples:
+            some-with-content:
+              summary: Tag with content
+              value:
+                - group_name: Systemansvarig
+                  group_id: d-sys
+                  group_domain: example.com
+                  tag_content: D-Sys
+                - group_name: Internationella Nämnden
+                  group_id: in
+                  group_domain: example.com
+                  tag_content: Int. Nämnden
+            some-no-content:
+              summary: Tag with no content
+              value:
+                - group_name: Kassör
+                  group_id: kassor
+                  group_domain: example.com
+                  tag_content: null
+                - group_name: International Committee Leadership
+                  group_id: int
+                  group_domain: example.com
+                  tag_content: null
+            none:
+              summary: No groups with tag
+              value: []
     UnknownError:
       description: Generic API error
       content:
