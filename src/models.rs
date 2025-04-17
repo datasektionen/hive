@@ -280,7 +280,7 @@ impl TagAssignment {
 
 #[derive(FromRow)]
 pub struct AffiliatedTagAssignment {
-    pub id: Uuid,
+    pub id: Option<Uuid>, // None if not a direct assignment
     pub system_id: String,
     pub tag_id: String,
     pub content: Option<String>,

@@ -1,3 +1,16 @@
+<td style="text-align: center">
+    {% if assignment.id.is_some() %}
+    <span class="material-icons primary" data-tooltip='{{ ctx.t("tags.groups.list.indicator.direct.tooltip") }}'
+        data-placement="right">
+        sell
+    </span>
+    {% else %}
+    <span class="material-icons" data-tooltip='{{ ctx.t("tags.groups.list.indicator.indirect.tooltip") }}'
+        data-placement="right">
+        airline_stops
+    </span>
+    {% endif %}
+</td>
 <td>
     <samp>
         <strong>
@@ -13,11 +26,13 @@
 {% if can_manage_any %}
 <td>
     {% if let Some(true) = assignment.can_manage %}
+    {% if let Some(assignment_id) = assignment.id %}
     <button class="btn-danger" data-tooltip='{{ ctx.t("tags.groups.list.action.delete.tooltip") }}'
-        data-placement="left" hx-delete="/tag-assignment/{{ assignment.id }}" hx-swap="delete" hx-target="closest tr"
+        data-placement="left" hx-delete="/tag-assignment/{{ assignment_id }}" hx-swap="delete" hx-target="closest tr"
         hx-confirm='{{ ctx.t1("tags.groups.list.action.delete.confirm", label) }}'>
         <span class="material-icons">delete</span>
     </button>
+    {% endif %}
     {% endif %}
 </td>
 {% endif %}

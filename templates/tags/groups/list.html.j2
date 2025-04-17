@@ -1,6 +1,9 @@
 <table id="tag-groups-table" class="striped">
     <thead>
         <tr>
+            <th scope="col" style="text-align: center">
+                {{ ctx.t("tags.groups.list.col.type") }}
+            </th>
             <th scope="col">{{ ctx.t("tags.groups.list.col.key") }}</th>
             <th scope="col">{{ ctx.t("tags.groups.list.col.name") }}</th>
             {% if has_content %}
@@ -14,7 +17,7 @@
     </thead>
     <tbody>
         <tr class="if-table-empty">
-            <td colspan="4">
+            <td colspan="5">
                 <span class="material-icons">block</span>
                 {{ ctx.t("tags.groups.list.empty") }}
             </td>

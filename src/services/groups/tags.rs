@@ -18,6 +18,7 @@ pub async fn get_all_assignments<'x, X>(
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
+    // note that this only shows direct tag assignments
     let mut assignments: Vec<TagAssignment> = sqlx::query_as(
         "SELECT ta.*, ts.description
         FROM tag_assignments ta
@@ -177,7 +178,7 @@ where
 {
     let result = sqlx::query_scalar(
         "SELECT COUNT(*) > 0
-        FROM tag_assignments
+        FROM all_tag_assignments
         WHERE group_id = $1
             AND group_domain = $2
             AND system_id = $3",

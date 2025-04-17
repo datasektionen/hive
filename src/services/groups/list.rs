@@ -210,7 +210,7 @@ where
         let mut query = sqlx::QueryBuilder::new(
             "SELECT gs.*
             FROM groups gs
-            JOIN tag_assignments ta
+            JOIN all_tag_assignments ta
                 ON gs.id = ta.group_id
                 AND gs.domain = ta.group_domain",
         );
@@ -480,7 +480,7 @@ where
         let mut query = sqlx::QueryBuilder::new(
             "SELECT gs.*
             FROM groups gs
-            JOIN tag_assignments ta
+            JOIN all_tag_assignments ta
                 ON gs.id = ta.group_id
                 AND gs.domain = ta.group_domain
             WHERE",

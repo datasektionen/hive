@@ -79,7 +79,7 @@ where
         None => {}
     }
 
-    query.push(" FROM tag_assignments ta");
+    query.push(" FROM all_tag_assignments ta");
 
     if label_lang.is_some() {
         query.push(
@@ -107,6 +107,12 @@ where
     query.push(" AND ta.tag_id = ");
     query.push_bind(tag_id);
     query.push(" AND ta.group_id IS NOT NULL AND ta.group_domain IS NOT NULL");
+
+    query.push(" ORDER BY (ta.id IS NULL)");
+    if label_lang.is_some() {
+        query.push(", label");
+    }
+    query.push(", ta.group_domain, ta.group_id");
 
     let mut assignments: Vec<AffiliatedTagAssignment> =
         query.build_query_as().fetch_all(db).await?;
@@ -139,13 +145,19 @@ where
     }
 
     query.push(
-        " FROM tag_assignments
+        " FROM all_tag_assignments
         WHERE system_id = ",
     );
     query.push_bind(system_id);
     query.push(" AND tag_id = ");
     query.push_bind(tag_id);
     query.push(" AND username IS NOT NULL");
+
+    query.push(" ORDER BY (id IS NULL)");
+    if label_lang.is_some() {
+        query.push(", label");
+    }
+    query.push(", username");
 
     let mut assignments: Vec<AffiliatedTagAssignment> =
         query.build_query_as().fetch_all(db).await?;

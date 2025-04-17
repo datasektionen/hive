@@ -978,9 +978,18 @@ tags.groups.list.col.name:
 tags.groups.list.col.content:
   en: Content
   sv: Innehåll
+tags.groups.list.col.type:
+  en: Type
+  sv: Typ
 tags.groups.list.empty:
   en: This tag has not yet been assigned to any group.
   sv: Denna tagg har ännu inte tilldelats någon grupp.
+tags.groups.list.indicator.direct.tooltip:
+  en: This tag is directly assigned to the group.
+  sv: Denna tagg är direkt tilldelad till gruppen.
+tags.groups.list.indicator.indirect.tooltip:
+  en: This tag is indirectly assigned to the group (via subtags)
+  sv: Denna tagg är indirekt tilldelad till gruppen (via subtaggar)
 tags.key.content.indicator:
   en: Contentful
   sv: Innehållsfylld
@@ -1045,6 +1054,15 @@ tags.users.list.col.name:
 tags.users.list.col.content:
   en: Content
   sv: Innehåll
+tags.users.list.col.type:
+  en: Type
+  sv: Typ
 tags.users.list.empty:
   en: This tag has not yet been assigned to any user.
   sv: Denna tagg har ännu inte tilldelats till någon användare.
+tags.users.list.indicator.direct.tooltip:
+  en: This tag is directly assigned to the user
+  sv: Denna tagg är direkt tilldelad till användaren
+tags.users.list.indicator.indirect.tooltip:
+  en: This tag is indirectly assigned to the user (via subtags)
+  sv: Denna tagg är indirekt tilldelad till användaren (via subtaggar)

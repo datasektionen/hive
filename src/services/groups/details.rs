@@ -166,7 +166,7 @@ where
 
     let mut query = sqlx::QueryBuilder::with_arguments(
         "SELECT COUNT(*)
-        FROM tag_assignments
+        FROM all_tag_assignments
         WHERE (group_id = $1 AND group_domain = $2)
             AND system_id = $3
             AND (",
