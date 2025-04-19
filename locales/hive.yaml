@@ -926,6 +926,25 @@ tags.details.groups.assign:
 tags.details.groups.title:
   en: Assignments to Groups
   sv: Tilldelningar till Grupper
+tags.details.subtags.add:
+  en: Add new subtag
+  sv: Lägg till ny subtagg
+tags.details.subtags.description:
+  en: >
+    Any entities to which the tags below are assigned are also automatically
+    considered to have this tag.
+  sv: >
+    Enheter som taggarna nedan är tilldelade har också automatiskt denna tagg.
+tags.details.subtags.title:
+  en: Subtags
+  sv: Subtaggar
+tags.details.subtags.content-not-supported:
+  en: >
+    This tag does not support subtags because it supports content. Only simple
+    tags allow subtags.
+  sv: >
+    Denna tagg har inte stöd för subtaggar eftersom den har stöd för innehåll.
+    Endast enkla taggar tillåter subtaggar.
 tags.details.users.assign:
   en: Create new assignment
   sv: Skapa ny tilldelning
@@ -1014,6 +1033,19 @@ tags.list.col.supports-users:
 tags.list.empty:
   en: This system does not have any associated tags.
   sv: Det här systemet har inga associerade taggar.
+tags.subtags.list.action.delete.confirm:
+  en: >
+    Are you sure you want to unbind subtag "%{x}" from this tag?
+    This will have immediate repercussions for relying services.
+  sv: >
+    Är du säker på att du vill lossa subtagg "%{x}" från den här taggen?
+    Detta kommer att få omedelbara följder för förlitande tjänster.
+tags.subtags.list.action.delete.tooltip:
+  en: Dissociate subtag
+  sv: Dissociera subtagg
+tags.subtags.list.empty:
+  en: This tag does not have any associated subtags.
+  sv: Det här tagg har inga associerade subtaggar.
 tags.users.assign.field.user.label:
   en: Username
   sv: Användarnamn

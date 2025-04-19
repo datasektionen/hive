@@ -1,0 +1,26 @@
+<table id="tag-subtags-table" class="striped">
+    <thead>
+        <tr>
+            <th scope="col">{{ ctx.t("tags.list.col.key") }}</th>
+            <th scope="col">{{ ctx.t("tags.list.col.description") }}</th>
+            <th scope="col">{{ ctx.t("tags.list.col.supports-groups") }}</th>
+            <th scope="col">{{ ctx.t("tags.list.col.supports-users") }}</th>
+            {% if can_unassign %}
+            <th scope="col">{{ ctx.t("col.actions") }}</th>
+            {% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="if-table-empty">
+            <td colspan="5">
+                <span class="material-icons">block</span>
+                {{ ctx.t("tags.subtags.list.empty") }}
+            </td>
+        </tr>
+        {% for subtag in subtags %}
+        <tr>
+            {% include "row-cells.html.j2" %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

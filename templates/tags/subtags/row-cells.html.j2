@@ -1,0 +1,33 @@
+{%- import "utils.html.j2" as utils -%}
+
+<td>
+    <samp>
+        {%- if let Some(true) = subtag.can_view -%}
+        <a href="/system/{{ subtag.system_id }}/tag/{{ subtag.tag_id }}" class="secondary reset-color">
+            {%- endif -%}
+            <span style="font-size: 1.2em">#</span>
+            {{- subtag.system_id }}:<strong>{{ subtag.tag_id }}</strong>
+            {%- if let Some(true) = subtag.can_view -%}
+        </a>
+        {%- endif -%}
+        {%- if subtag.has_content -%}
+        {%- let tooltip = ctx.t("tags.key.content.tooltip") -%}
+        {%- let var = ctx.t("tags.key.content.var") -%}
+        :<span class="primary" data-tooltip="{{ tooltip }}">&lt;{{ var }}&gt;</span>
+        {%- endif -%}
+    </samp>
+</td>
+<td>{{ subtag.description }}</td>
+<td>{% call utils::yn_indicator(subtag.supports_groups) %}</td>
+<td>{% call utils::yn_indicator(subtag.supports_users) %}</td>
+{% if can_unassign %}
+<td>
+    <button class="btn-danger" data-tooltip='{{ ctx.t("tags.subtags.list.action.delete.tooltip") }}'
+        data-placement="left"
+        hx-delete="/system/{{ system_id }}/tag/{{ tag_id }}/subtag/{{ subtag.system_id }}/{{ subtag.tag_id }}"
+        hx-swap="delete" hx-target="closest tr"
+        hx-confirm='{{ ctx.t1("tags.subtags.list.action.delete.confirm", subtag.key()) }}'>
+        <span class="material-icons">delete</span>
+    </button>
+</td>
+{% endif %}

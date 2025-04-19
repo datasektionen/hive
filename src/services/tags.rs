@@ -512,6 +512,45 @@ where
     Ok(old)
 }
 
+pub async fn list_subtags<'v, 'x, X>(
+    system_id: &str,
+    tag_id: &str,
+    perms: &PermsEvaluator,
+    db: X,
+) -> AppResult<Vec<Tag>>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+{
+    let mut subtags: Vec<Tag> = sqlx::query_as(
+        "SELECT ts.*
+        FROM subtags st
+        JOIN tags ts
+            ON ts.tag_id = st.child_id
+            AND ts.system_id = st.child_system_id
+        WHERE parent_id = $1
+            AND parent_system_id = $2",
+    )
+    .bind(tag_id)
+    .bind(system_id)
+    .fetch_all(db)
+    .await?;
+
+    for subtag in &mut subtags {
+        // query should be OK since perms are cached by perm_id
+        let can_view = perms
+            .satisfies_any_of(&[
+                HivePermission::AssignTags(SystemsScope::Id(subtag.system_id.clone())),
+                HivePermission::ManageTags(SystemsScope::Id(subtag.system_id.clone())),
+            ])
+            .await?;
+
+        // whether can open tag details page
+        subtag.can_view = Some(can_view);
+    }
+
+    Ok(subtags)
+}
+
 pub async fn has_content<'x, X>(system_id: &str, tag_id: &str, db: X) -> AppResult<bool>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,

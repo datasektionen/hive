@@ -240,6 +240,8 @@ pub struct Tag {
     pub supports_users: bool,
     pub has_content: bool,
     pub description: String,
+    #[sqlx(default)]
+    pub can_view: Option<bool>, // whether current user can open tag details
 }
 
 impl Tag {

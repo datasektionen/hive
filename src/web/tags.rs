@@ -29,7 +29,8 @@ pub fn routes() -> RouteTree {
         list_tag_users,
         assign_tag_to_group,
         assign_tag_to_user,
-        unassign_tag
+        unassign_tag,
+        list_subtags
     ]
     .into()
 }
@@ -77,6 +78,16 @@ struct PartialListTagUsersView {
     has_content: bool,
     can_manage_any: bool,
     tag_assignments: Vec<AffiliatedTagAssignment>,
+}
+
+#[derive(Template)]
+#[template(path = "tags/subtags/list.html.j2")]
+struct PartialListSubtagsView<'a> {
+    ctx: PageContext,
+    subtags: Vec<Tag>,
+    can_unassign: bool,
+    system_id: &'a str,
+    tag_id: &'a str,
 }
 
 #[derive(Template)]
@@ -466,4 +477,43 @@ async fn unassign_tag(
         let target = uri!(tag_details(system_id = old.system_id, tag_id = old.tag_id));
         Ok(Either::Right(Redirect::to(target)))
     }
+}
+
+#[rocket::get("/system/<system_id>/tag/<tag_id>/subtags")]
+async fn list_subtags(
+    system_id: &str,
+    tag_id: &str,
+    db: &State<PgPool>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<Either<RenderedTemplate, Redirect>> {
+    if partial.is_none() {
+        // we only know how to render a table, not a full page;
+        // redirect to tag details
+
+        let target = uri!(tag_details(system_id = system_id, tag_id = tag_id));
+        return Ok(Either::Right(Redirect::to(target)));
+    }
+
+    let scope = SystemsScope::Id(system_id.to_owned());
+    let can_unassign = perms
+        .satisfies(HivePermission::AssignTags(scope.clone()))
+        .await?;
+
+    if !can_unassign {
+        perms.require(HivePermission::ManageTags(scope)).await?;
+    }
+
+    let subtags = tags::list_subtags(system_id, tag_id, perms, db.inner()).await?;
+
+    let template = PartialListSubtagsView {
+        ctx,
+        subtags,
+        can_unassign,
+        system_id,
+        tag_id,
+    };
+
+    Ok(Either::Left(RawHtml(template.render()?)))
 }
