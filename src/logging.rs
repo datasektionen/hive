@@ -5,7 +5,7 @@ use log::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(ValueEnum, Serialize, Deserialize, Debug, Clone, Copy)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
 pub enum Verbosity {
     #[serde(alias = "off")]
     Quiet,
