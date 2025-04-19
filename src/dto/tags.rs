@@ -40,6 +40,11 @@ pub struct AssignTagToUserDto<'v> {
     pub content: Option<TrimmedStr<'v>>,
 }
 
+#[derive(FromForm)]
+pub struct CreateSubtagDto<'v> {
+    pub subtag: TagKey<'v>,
+}
+
 pub struct TagKey<'v> {
     pub system_id: &'v str,
     pub tag_id: &'v str,

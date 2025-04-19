@@ -1,0 +1,44 @@
+{%- import "utils.html.j2" as utils -%}
+
+<form method="post" action="/system/{{ tag.system_id }}/tag/{{ tag.tag_id }}/subtags" hx-boost="true"
+    hx-push-url="false" hx-target="this" hx-indicator="#add-subtag-submit" class="container-fluid">
+    {% block inner_add_subtag_form %}
+    {% if let Some(subtag) = add_subtag_success %}
+    <p class="success">
+        <span class="material-icons">task_alt</span>
+        <strong>
+            {{ ctx.t1("tags.subtags.add.success", subtag.key())|safe }}
+        </strong>
+    </p>
+    <br />
+    <template>
+        <tbody hx-swap-oob="beforeend:#tag-subtags-table tbody">
+            <tr>
+                {% let can_unassign = true %}
+                {% include "tags/subtags/row-cells.html.j2" %}
+            </tr>
+        </tbody>
+    </template>
+    {% endif %}
+
+    <div class="grid">
+        <label>
+            {# not a combobox to reduce enumeration of all tags #}
+            {# (but brute-force-submitting and looking for errors is still possible) #}
+            {{ ctx.t("tags.subtags.add.field.subtag.label") }}
+            <input {% call utils::field(add_subtag_form, "subtag" ) %}
+                placeholder='{{ ctx.t("tags.subtags.add.field.subtag.placeholder") }}' required
+                pattern="#[a-z0-9]+(-[a-z0-9]+)*:[a-z0-9]+(-[a-z0-9]+)*" aria-describedby="subtag-tip" />
+            <small id="subtag-tip">
+                {{ ctx.t1("tags.subtags.add.field.subtag.tip", tag.key())|safe }}
+            </small>
+        </label>
+    </div>
+    <div class="flex-end">
+        <button id="add-subtag-submit">
+            <span class="material-icons">add</span>
+            {{ ctx.t("control.add") }}
+        </button>
+    </div>
+    {% endblock inner_add_subtag_form %}
+</form>

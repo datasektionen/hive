@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use super::{Either, GracefulRedirect, RenderedTemplate};
 use crate::{
-    dto::tags::{AssignTagToGroupDto, AssignTagToUserDto, CreateTagDto},
+    dto::tags::{AssignTagToGroupDto, AssignTagToUserDto, CreateSubtagDto, CreateTagDto},
     errors::AppResult,
     guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
     models::{AffiliatedTagAssignment, Tag},
@@ -30,7 +30,8 @@ pub fn routes() -> RouteTree {
         assign_tag_to_group,
         assign_tag_to_user,
         unassign_tag,
-        list_subtags
+        list_subtags,
+        create_subtag
     ]
     .into()
 }
@@ -60,6 +61,8 @@ struct TagDetailsView<'f, 'v> {
     assign_to_group_success: Option<AffiliatedTagAssignment>,
     assign_to_user_form: &'f form::Context<'v>,
     assign_to_user_success: Option<AffiliatedTagAssignment>,
+    add_subtag_form: &'f form::Context<'v>,
+    add_subtag_success: Option<Tag>,
 }
 
 #[derive(Template)]
@@ -82,12 +85,11 @@ struct PartialListTagUsersView {
 
 #[derive(Template)]
 #[template(path = "tags/subtags/list.html.j2")]
-struct PartialListSubtagsView<'a> {
+struct PartialListSubtagsView {
     ctx: PageContext,
+    tag: Tag,
     subtags: Vec<Tag>,
     can_unassign: bool,
-    system_id: &'a str,
-    tag_id: &'a str,
 }
 
 #[derive(Template)]
@@ -112,6 +114,15 @@ struct AssignTagToUserView<'f, 'v> {
     tag: Tag,
     assign_to_user_form: &'f form::Context<'v>,
     assign_to_user_success: Option<AffiliatedTagAssignment>,
+}
+
+#[derive(Template)]
+#[template(path = "tags/subtags/add.html.j2", block = "inner_add_subtag_form")]
+struct AddSubtagView<'f, 'v> {
+    ctx: PageContext,
+    tag: Tag,
+    add_subtag_form: &'f form::Context<'v>,
+    add_subtag_success: Option<Tag>,
 }
 
 #[rocket::get("/system/<system_id>/tags")]
@@ -234,6 +245,8 @@ async fn tag_details(
         assign_to_group_success: None,
         assign_to_user_form: &empty_form,
         assign_to_user_success: None,
+        add_subtag_form: &empty_form,
+        add_subtag_success: None,
     };
 
     Ok(RawHtml(template.render()?))
@@ -505,15 +518,85 @@ async fn list_subtags(
         perms.require(HivePermission::ManageTags(scope)).await?;
     }
 
-    let subtags = tags::list_subtags(system_id, tag_id, perms, db.inner()).await?;
+    let tag = tags::require_one(system_id, tag_id, db.inner()).await?;
+
+    let mut subtags = tags::list_subtags(system_id, tag_id, db.inner()).await?;
+
+    for subtag in &mut subtags {
+        // performance should be OK since perms are cached by perm_id
+        subtag.set_can_view(perms).await?;
+    }
 
     let template = PartialListSubtagsView {
         ctx,
+        tag,
         subtags,
         can_unassign,
-        system_id,
-        tag_id,
     };
 
     Ok(Either::Left(RawHtml(template.render()?)))
+}
+
+#[rocket::post("/system/<system_id>/tag/<tag_id>/subtags", data = "<form>")]
+#[allow(clippy::too_many_arguments)]
+async fn create_subtag<'v>(
+    system_id: &str,
+    tag_id: &str,
+    form: Form<Contextual<'v, CreateSubtagDto<'v>>>,
+    db: &State<PgPool>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<Either<RenderedTemplate, Redirect>> {
+    let min = HivePermission::AssignTags(SystemsScope::Id(system_id.to_string()));
+    perms.require(min).await?;
+
+    let tag = tags::require_one(system_id, tag_id, db.inner()).await?;
+
+    // TODO: anti-CSRF
+
+    if let Some(dto) = &form.value {
+        // validation passed
+
+        let mut subtag = tags::create_subtag(system_id, tag_id, dto, db.inner(), &user).await?;
+        subtag.set_can_view(perms).await?;
+
+        if partial.is_some() {
+            let template = AddSubtagView {
+                ctx,
+                tag,
+                add_subtag_form: &form::Context::default(),
+                add_subtag_success: Some(subtag),
+            };
+
+            Ok(Either::Left(RawHtml(template.render()?)))
+        } else {
+            // FIXME: maybe allow passing ?added_subtag=id@domain
+
+            let target = uri!(tag_details(system_id = system_id, tag_id = tag_id));
+            Ok(Either::Right(Redirect::to(target)))
+        }
+    } else {
+        // some errors are present; show the form again
+        debug!("Add subtag form errors: {:?}", &form.context);
+
+        if partial.is_some() {
+            let template = AddSubtagView {
+                ctx,
+                tag,
+                add_subtag_form: &form.context,
+                add_subtag_success: None,
+            };
+
+            Ok(Either::Left(RawHtml(template.render()?)))
+        } else {
+            // FIXME: this just resets the form without actually showing
+            // any validation error indicators... but there isn't a great
+            // alternative, and it might be fine for such a tiny form
+
+            let target = uri!(tag_details(system_id = system_id, tag_id = tag_id));
+            Ok(Either::Right(Redirect::to(target)))
+        }
+    }
 }

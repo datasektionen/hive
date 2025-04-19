@@ -520,8 +520,8 @@ groups.tags.assign.field.tag.label:
   en: Tag
   sv: Tagg
 groups.tags.assign.field.tag.placeholder:
-  en: e.g., $calypso:author-pseudonym
-  sv: t.ex. $calypso:author-pseudonym
+  en: "e.g., #calypso:author-pseudonym"
+  sv: "t.ex. #calypso:author-pseudonym"
 groups.tags.assign.field.tag.tip:
   en: Specify what tag should be assigned to group <samp>%{x}</samp>
   sv: Ange vilken tagg som ska ges till grupp <samp>%{x}</samp>
@@ -1033,6 +1033,18 @@ tags.list.col.supports-users:
 tags.list.empty:
   en: This system does not have any associated tags.
   sv: Det här systemet har inga associerade taggar.
+tags.subtags.add.field.subtag.label:
+  en: Tag key
+  sv: Tagg-nyckel
+tags.subtags.add.field.subtag.placeholder:
+  en: "e.g., #org:committee"
+  sv: "t.ex. #org:committee"
+tags.subtags.add.field.subtag.tip:
+  en: Specify the tag whose entities will automatically have <samp>%{x}</samp>
+  sv: Ange taggen vars enheter automatiskt kommer att ha <samp>%{x}</samp>
+tags.subtags.add.success:
+  en: Successfully added tag <samp>%{x}</samp> as a subtag!
+  sv: Taggen <samp>%{x}</samp> har lagts till som en subtagg!
 tags.subtags.list.action.delete.confirm:
   en: >
     Are you sure you want to unbind subtag "%{x}" from this tag?

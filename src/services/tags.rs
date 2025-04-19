@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use super::{audit_logs, pg_args};
 use crate::{
-    dto::tags::{AssignTagToGroupDto, AssignTagToUserDto, CreateTagDto},
+    dto::tags::{AssignTagToGroupDto, AssignTagToUserDto, CreateSubtagDto, CreateTagDto},
     errors::{AppError, AppResult},
     guards::{lang::Language, perms::PermsEvaluator, user::User},
     models::{ActionKind, AffiliatedTagAssignment, Tag, TargetKind},
@@ -512,16 +512,11 @@ where
     Ok(old)
 }
 
-pub async fn list_subtags<'v, 'x, X>(
-    system_id: &str,
-    tag_id: &str,
-    perms: &PermsEvaluator,
-    db: X,
-) -> AppResult<Vec<Tag>>
+pub async fn list_subtags<'v, 'x, X>(system_id: &str, tag_id: &str, db: X) -> AppResult<Vec<Tag>>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
-    let mut subtags: Vec<Tag> = sqlx::query_as(
+    let subtags: Vec<Tag> = sqlx::query_as(
         "SELECT ts.*
         FROM subtags st
         JOIN tags ts
@@ -535,20 +530,102 @@ where
     .fetch_all(db)
     .await?;
 
-    for subtag in &mut subtags {
-        // query should be OK since perms are cached by perm_id
-        let can_view = perms
-            .satisfies_any_of(&[
-                HivePermission::AssignTags(SystemsScope::Id(subtag.system_id.clone())),
-                HivePermission::ManageTags(SystemsScope::Id(subtag.system_id.clone())),
-            ])
-            .await?;
+    Ok(subtags)
+}
 
-        // whether can open tag details page
-        subtag.can_view = Some(can_view);
+pub async fn create_subtag<'v, 'x, X>(
+    system_id: &str,
+    tag_id: &str,
+    dto: &CreateSubtagDto<'v>,
+    db: X,
+    user: &User,
+) -> AppResult<Tag>
+where
+    X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
+{
+    // note: this doesn't check whether the subtag has minimally compatible
+    // supports_users/groups with the parent, but it's not really that big
+    // of a problem anyway and shouldn't lead to logic errors
+
+    let mut txn = db.begin().await?;
+
+    let loop_detected = sqlx::query_scalar(
+        "SELECT COUNT(*) > 0
+        FROM tag_ancestry
+        WHERE descendant_id = $1
+            AND descendant_system_id = $2
+            AND ancestor_id = $3
+            AND ancestor_system_id = $4",
+    )
+    .bind(tag_id)
+    .bind(system_id)
+    .bind(dto.subtag.tag_id)
+    .bind(dto.subtag.system_id)
+    .fetch_one(&mut *txn)
+    .await?;
+
+    if loop_detected {
+        // since tag_ancestry includes (x, x) nodes, this will automatically
+        // catch trying to add a tag as a subtag of itself
+        return Err(AppError::InvalidSubtag(
+            dto.subtag.system_id.to_owned(),
+            dto.subtag.tag_id.to_owned(),
+        ));
     }
 
-    Ok(subtags)
+    sqlx::query(
+        "INSERT INTO subtags
+            (parent_id, parent_system_id, child_id, child_system_id)
+        VALUES ($1, $2, $3, $4)",
+    )
+    .bind(tag_id)
+    .bind(system_id)
+    .bind(dto.subtag.tag_id)
+    .bind(dto.subtag.system_id)
+    .execute(&mut *txn)
+    .await
+    .map_err(|e| match e {
+        sqlx::Error::Database(err) if err.is_unique_violation() => AppError::DuplicateSubtag(
+            dto.subtag.system_id.to_owned(),
+            dto.subtag.tag_id.to_owned(),
+        ),
+        sqlx::Error::Database(err) if err.is_foreign_key_violation() => AppError::NoSuchTag(
+            dto.subtag.system_id.to_owned(),
+            dto.subtag.tag_id.to_owned(),
+        ),
+        _ => e.into(),
+    })?;
+
+    let subtag: Tag = sqlx::query_as(
+        "SELECT *
+        FROM tags
+        WHERE tag_id = $1
+            AND system_id = $2",
+    )
+    .bind(dto.subtag.tag_id)
+    .bind(dto.subtag.system_id)
+    .fetch_one(&mut *txn)
+    .await?;
+
+    audit_logs::add_entry(
+        ActionKind::Create,
+        TargetKind::TagAssignment, // FIXME: consider independent Subtag target
+        format!("#{system_id}:{tag_id}"),
+        user.username(),
+        json!({
+            "new": {
+                "entity_type": "subtag",
+                "subtag_system_id": subtag.system_id,
+                "subtag_tag_id": subtag.tag_id,
+            }
+        }),
+        &mut *txn,
+    )
+    .await?;
+
+    txn.commit().await?;
+
+    Ok(subtag)
 }
 
 pub async fn has_content<'x, X>(system_id: &str, tag_id: &str, db: X) -> AppResult<bool>

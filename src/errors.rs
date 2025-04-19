@@ -73,20 +73,24 @@ pub enum AppError {
     NoSuchTag(String, String),
     #[error("ID `{0}` is already in use by another tag for this system")]
     DuplicateTagId(String),
-    #[error("tag `${0}:{1}:{content}` is already assigned to this entity", content = .2.as_deref().unwrap_or("/"))]
+    #[error("tag `#{0}:{1}:{content}` is already assigned to this entity", content = .2.as_deref().unwrap_or("/"))]
     DuplicateTagAssignment(String, String, Option<String>),
-    #[error("tag with key `${0}:{1}` requires a content value to be specified on assignment")]
+    #[error("tag with key `#{0}:{1}` requires a content value to be specified on assignment")]
     MissingTagContent(String, String),
-    #[error("tag with key `${0}:{1}` does not accept a content value on assignment")]
+    #[error("tag with key `#{0}:{1}` does not accept a content value on assignment")]
     ExtraneousTagContent(String, String),
+    #[error("tag with key `#{0}:{1}` cannot be a subtag of this tag (loop detected)")]
+    InvalidSubtag(String, String),
+    #[error("tag with key `#{0}:{1}` is already a subtag of this group")]
+    DuplicateSubtag(String, String),
 
     #[error("could not find group with key `{0}@{1}`")]
     NoSuchGroup(String, String),
     #[error("ID `{0}` is already in use by another group in domain `{1}`")]
     DuplicateGroupId(String, String),
-    #[error("group `{0}@{1}` cannot be a subgroup of this system (loop detected)")]
+    #[error("group with key `{0}@{1}` cannot be a subgroup of this group (loop detected)")]
     InvalidSubgroup(String, String),
-    #[error("group with key `{0}@{1}` is already a subgroup of this system")]
+    #[error("group with key `{0}@{1}` is already a subgroup of this group")]
     DuplicateSubgroup(String, String),
     #[error("user `{0}` is already a member of this group within the specified period")]
     RedundantMembership(String),
@@ -134,6 +138,8 @@ impl AppError {
             AppError::DuplicateTagAssignment(..) => Status::Conflict,
             AppError::MissingTagContent(..) => Status::BadRequest,
             AppError::ExtraneousTagContent(..) => Status::BadRequest,
+            AppError::InvalidSubtag(..) => Status::BadRequest,
+            AppError::DuplicateSubtag(..) => Status::Conflict,
             AppError::NoSuchGroup(..) => Status::NotFound,
             AppError::DuplicateGroupId(..) => Status::Conflict,
             AppError::InvalidSubgroup(..) => Status::BadRequest,

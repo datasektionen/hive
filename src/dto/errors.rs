@@ -59,15 +59,31 @@ enum InnerAppErrorDto {
     MissingTagContent { system_id: String, tag_id: String },
     #[serde(rename = "tag.assignment.content.extraneous")]
     ExtraneousTagContent { system_id: String, tag_id: String },
+    #[serde(rename = "tag.add.subtag.invalid")]
+    InvalidSubtag {
+        child_system_id: String,
+        child_tag_id: String,
+    },
+    #[serde(rename = "tag.add.subtag.duplicate")]
+    DuplicateSubtag {
+        child_system_id: String,
+        child_tag_id: String,
+    },
 
     #[serde(rename = "group.unknown")]
     NoSuchGroup { id: String, domain: String },
     #[serde(rename = "group.key.duplicate")]
     DuplicateGroupId { id: String, domain: String },
     #[serde(rename = "group.add.subgroup.invalid")]
-    InvalidSubgroup { id: String, domain: String },
+    InvalidSubgroup {
+        child_id: String,
+        child_domain: String,
+    },
     #[serde(rename = "group.add.subgroup.duplicate")]
-    DuplicateSubgroup { id: String, domain: String },
+    DuplicateSubgroup {
+        child_id: String,
+        child_domain: String,
+    },
     #[serde(rename = "group.add.membership.redundant")]
     RedundantMembership { username: String },
 }
@@ -124,10 +140,24 @@ impl From<AppError> for InnerAppErrorDto {
             AppError::ExtraneousTagContent(system_id, tag_id) => {
                 Self::ExtraneousTagContent { system_id, tag_id }
             }
+            AppError::InvalidSubtag(child_system_id, child_tag_id) => Self::InvalidSubtag {
+                child_system_id,
+                child_tag_id,
+            },
+            AppError::DuplicateSubtag(child_system_id, child_tag_id) => Self::DuplicateSubtag {
+                child_system_id,
+                child_tag_id,
+            },
             AppError::NoSuchGroup(id, domain) => Self::NoSuchGroup { id, domain },
             AppError::DuplicateGroupId(id, domain) => Self::DuplicateGroupId { id, domain },
-            AppError::InvalidSubgroup(id, domain) => Self::InvalidSubgroup { id, domain },
-            AppError::DuplicateSubgroup(id, domain) => Self::DuplicateSubgroup { id, domain },
+            AppError::InvalidSubgroup(id, domain) => Self::InvalidSubgroup {
+                child_id: id,
+                child_domain: domain,
+            },
+            AppError::DuplicateSubgroup(id, domain) => Self::DuplicateSubgroup {
+                child_id: id,
+                child_domain: domain,
+            },
             AppError::RedundantMembership(username) => Self::RedundantMembership { username },
         }
     }
@@ -199,6 +229,10 @@ impl InnerAppErrorDto {
             (Self::MissingTagContent { .. }, Language::Swedish) => "Taggsinnehåll saknas",
             (Self::ExtraneousTagContent { .. }, Language::English) => "Extraneous Tag Content",
             (Self::ExtraneousTagContent { .. }, Language::Swedish) => "Vederlagsfri taggsinnehåll",
+            (Self::InvalidSubtag { .. }, Language::English) => "Invalid Subtag",
+            (Self::InvalidSubtag { .. }, Language::Swedish) => "Ogiltig subtagg",
+            (Self::DuplicateSubtag { .. }, Language::English) => "Duplicate Subtag",
+            (Self::DuplicateSubtag { .. }, Language::Swedish) => "Duplicerat subtagg",
             (Self::NoSuchGroup { .. }, Language::English) => "Unknown Group",
             (Self::NoSuchGroup { .. }, Language::Swedish) => "Okänt grupp",
             (Self::DuplicateGroupId { .. }, Language::English) => "Duplicate Group Key",
@@ -442,6 +476,59 @@ impl InnerAppErrorDto {
             (Self::ExtraneousTagContent { system_id, tag_id }, Language::Swedish) => {
                 format!("Tagg med nyckel \"#{system_id}:{tag_id}\" stöder inte en innehållsvärde.")
             }
+            (
+                Self::InvalidSubtag {
+                    child_system_id,
+                    child_tag_id,
+                },
+                Language::English,
+            ) => {
+                format!(
+                    "The tag with key \"#{child_system_id}:{child_tag_id}\" cannot be added as a \
+                     subtag to this tag because it would lead to an infinite assignment loop, \
+                     since this tag is already a (potentially indirect) subtag of the specified \
+                     \"#{child_system_id}:{child_tag_id}\" tag."
+                )
+            }
+            (
+                Self::InvalidSubtag {
+                    child_system_id,
+                    child_tag_id,
+                },
+                Language::Swedish,
+            ) => {
+                format!(
+                    "Taggen med nyckeln \"#{child_system_id}:{child_tag_id}\" kan inte läggas \
+                     till som en subtagg till den här taggen på grund av att den skulle leda till \
+                     en oändlig tilldelningsloop, eftersom denna tagg redan är en (potentiellt \
+                     indirekt) subtagg till den avgivna \"#{child_system_id}:{child_tag_id}\" \
+                     taggen."
+                )
+            }
+            (
+                Self::DuplicateSubtag {
+                    child_system_id,
+                    child_tag_id,
+                },
+                Language::English,
+            ) => {
+                format!(
+                    "The tag with key \"#{child_system_id}:{child_tag_id}\" is already a subtag \
+                     of this tag."
+                )
+            }
+            (
+                Self::DuplicateSubtag {
+                    child_system_id,
+                    child_tag_id,
+                },
+                Language::Swedish,
+            ) => {
+                format!(
+                    "Taggen med nyckeln \"#{child_system_id}:{child_tag_id}\" är redan en subtagg \
+                     till denna tagg."
+                )
+            }
             (Self::NoSuchGroup { id, domain }, Language::English) => {
                 format!("Could not find any group with key \"{id}@{domain}\".")
             }
@@ -454,25 +541,50 @@ impl InnerAppErrorDto {
             (Self::DuplicateGroupId { id, domain }, Language::Swedish) => {
                 format!("ID \"{id}\" används redan av en annan grupp i domänen \"{domain}\".")
             }
-            (Self::InvalidSubgroup { id, domain }, Language::English) => {
+            (
+                Self::InvalidSubgroup {
+                    child_id,
+                    child_domain,
+                },
+                Language::English,
+            ) => {
                 format!(
-                    "The group with key \"{id}@{domain}\" cannot be added as a subgroup to this \
-                     group because it would lead to an infinite membership loop, since this group \
-                     is already a (potentially indirect) subgroup of \"{id}@{domain}\"."
+                    "The group with key \"{child_id}@{child_domain}\" cannot be added as a \
+                     subgroup to this group because it would lead to an infinite membership loop, \
+                     since this group is already a (potentially indirect) subgroup of \
+                     \"{child_id}@{child_domain}\"."
                 )
             }
-            (Self::InvalidSubgroup { id, domain }, Language::Swedish) => {
+            (
+                Self::InvalidSubgroup {
+                    child_id,
+                    child_domain,
+                },
+                Language::Swedish,
+            ) => {
                 format!(
-                    "Gruppen med nyckel \"{id}@{domain}\" kan inte läggas till som en undergrupp \
-                     till den här gruppen på grund av att den skulle leda till en oändlig \
-                     medlemsloop, eftersom denna grupp redan är en (potentiellt indirekt) \
-                     undergrupp av \"{id}@{domain}\"."
+                    "Gruppen med nyckel \"{child_id}@{child_domain}\" kan inte läggas till som en \
+                     undergrupp till den här gruppen på grund av att den skulle leda till en \
+                     oändlig medlemsloop, eftersom denna grupp redan är en (potentiellt indirekt) \
+                     undergrupp av \"{child_id}@{child_domain}\"."
                 )
             }
-            (Self::DuplicateSubgroup { id, domain }, Language::English) => {
+            (
+                Self::DuplicateSubgroup {
+                    child_id: id,
+                    child_domain: domain,
+                },
+                Language::English,
+            ) => {
                 format!("The group with key \"{id}@{domain}\" is already a subgroup of this group.")
             }
-            (Self::DuplicateSubgroup { id, domain }, Language::Swedish) => {
+            (
+                Self::DuplicateSubgroup {
+                    child_id: id,
+                    child_domain: domain,
+                },
+                Language::Swedish,
+            ) => {
                 format!(
                     "Gruppen med nyckel \"{id}@{domain}\" är redan en undergrupp till denna grupp."
                 )

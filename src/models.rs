@@ -4,7 +4,11 @@ use chrono::{DateTime, Local, NaiveDate};
 use sqlx::FromRow;
 use uuid::Uuid;
 
-use crate::guards::lang::Language;
+use crate::{
+    errors::AppResult,
+    guards::{lang::Language, perms::PermsEvaluator},
+    perms::{HivePermission, SystemsScope},
+};
 
 // these are only needed in other sqlx::Type composite type records
 #[derive(sqlx::Type, PartialEq, Clone)]
@@ -247,6 +251,19 @@ pub struct Tag {
 impl Tag {
     pub fn key(&self) -> String {
         format!("#{}:{}", self.system_id, self.tag_id)
+    }
+
+    pub async fn set_can_view(&mut self, perms: &PermsEvaluator) -> AppResult<()> {
+        let can_view = perms
+            .satisfies_any_of(&[
+                HivePermission::AssignTags(SystemsScope::Id(self.system_id.clone())),
+                HivePermission::ManageTags(SystemsScope::Id(self.system_id.clone())),
+            ])
+            .await?;
+
+        self.can_view = Some(can_view);
+
+        Ok(())
     }
 }
 
