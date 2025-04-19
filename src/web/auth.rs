@@ -1,12 +1,18 @@
 use rocket::{
-    http::{uri::Host, CookieJar},
+    http::{
+        uri::{Host, Origin},
+        CookieJar,
+    },
     response::Redirect,
     State,
 };
 use sqlx::PgPool;
 
 use crate::{
-    auth::{self, oidc::OidcClient},
+    auth::{
+        self,
+        oidc::{OidcAuthenticationResult, OidcClient},
+    },
     errors::AppResult,
     guards::scheme::RequestScheme,
     routing::RouteTree,
@@ -17,18 +23,24 @@ pub fn routes() -> RouteTree {
     rocket::routes![login, oidc_callback, logout].into()
 }
 
-#[rocket::get("/auth/login")]
+#[rocket::get("/auth/login?<next>")]
 async fn login(
+    next: Option<&str>,
     oidc_client: &State<OidcClient>,
     scheme: RequestScheme,
     host: &Host<'_>,
     jar: &CookieJar<'_>,
 ) -> AppResult<Redirect> {
+    let next = next.and_then(|path| Origin::parse(path).ok());
+
     let url = if auth::get_current_session(jar).is_some() {
-        "/".to_owned()
+        next.as_ref()
+            .map(Origin::to_string)
+            .unwrap_or_else(|| "/groups".to_owned())
     } else {
         auth::begin_authentication(
             format!("{scheme}://{host}/auth/oidc-callback"),
+            next,
             oidc_client,
             jar,
         )
@@ -46,11 +58,14 @@ async fn oidc_callback(
     db: &State<PgPool>,
     jar: &CookieJar<'_>,
 ) -> AppResult<Redirect> {
-    let user = auth::finish_authentication(code, state, oidc_client, jar).await?;
+    let OidcAuthenticationResult { session, next } =
+        auth::finish_authentication(code, state, oidc_client, jar).await?;
 
-    groups::members::conditional_bootstrap(&user.username, db.inner()).await?;
+    groups::members::conditional_bootstrap(&session.username, db.inner()).await?;
 
-    Ok(Redirect::to("/groups"))
+    let target = next.unwrap_or_else(|| Origin::parse("/groups").unwrap());
+
+    Ok(Redirect::to(target))
 }
 
 #[rocket::get("/auth/logout")]

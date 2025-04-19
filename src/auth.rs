@@ -1,7 +1,7 @@
 use chrono::{DateTime, Local};
 use log::*;
-use oidc::OidcClient;
-use rocket::http::{Cookie, CookieJar, SameSite};
+use oidc::{OidcAuthenticationResult, OidcClient};
+use rocket::http::{uri::Origin, Cookie, CookieJar, SameSite};
 use serde::{Deserialize, Serialize};
 
 use crate::errors::{AppError, AppResult};
@@ -21,10 +21,11 @@ pub struct Session {
 
 pub async fn begin_authentication(
     redirect_url: String,
+    next: Option<Origin<'_>>,
     oidc_client: &OidcClient,
     jar: &CookieJar<'_>,
 ) -> AppResult<String> {
-    let (url, context) = oidc_client.begin_authentication(redirect_url).await?;
+    let (url, context) = oidc_client.begin_authentication(redirect_url, next).await?;
 
     let value = serde_json::to_string(&context).map_err(AppError::StateSerializationError)?;
 
@@ -44,7 +45,7 @@ pub async fn finish_authentication(
     state: &str,
     oidc_client: &OidcClient,
     jar: &CookieJar<'_>,
-) -> AppResult<Session> {
+) -> AppResult<OidcAuthenticationResult<'static>> {
     let cookie = jar
         .get_private(LOGIN_FLOW_CONTEXT_COOKIE)
         .ok_or(AppError::AuthenticationFlowExpired)?;
@@ -52,9 +53,11 @@ pub async fn finish_authentication(
     let context = serde_json::from_str(cookie.value_trimmed())
         .map_err(AppError::StateDeserializationError)?;
 
-    let session = oidc_client
+    let result = oidc_client
         .finish_authentication(context, code, state)
         .await?;
+
+    let session = &result.session;
 
     debug!("User {} logged in successfully", session.username);
 
@@ -73,7 +76,7 @@ pub async fn finish_authentication(
     jar.add_private(cookie);
     jar.remove_private(LOGIN_FLOW_CONTEXT_COOKIE);
 
-    Ok(session)
+    Ok(result)
 }
 
 pub fn get_current_session(jar: &CookieJar<'_>) -> Option<Session> {

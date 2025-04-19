@@ -1,6 +1,6 @@
 use rocket::{
     catchers,
-    http::{Header, Status},
+    http::{Header, Method, Status},
     response::{content::RawHtml, Redirect},
     uri, Request, Responder,
 };
@@ -61,6 +61,13 @@ show_error_page!(not_found, 404, Status::NotFound, "not-found");
 show_error_page!(unknown, default, Status::InternalServerError, "unknown");
 
 #[rocket::catch(401)]
-fn unauthenticated() -> Redirect {
-    Redirect::to(uri!(super::auth::login))
+fn unauthenticated(req: &Request<'_>) -> Redirect {
+    let next = if req.method() == Method::Get {
+        // ensure user is redirected to this page after logging in
+        Some(req.uri().to_string())
+    } else {
+        None
+    };
+
+    Redirect::to(uri!(super::auth::login(next)))
 }

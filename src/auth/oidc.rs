@@ -6,6 +6,7 @@ use openidconnect::{
     AsyncHttpClient, AuthenticationFlow, AuthorizationCode, ClientId, ClientSecret, CsrfToken,
     EndpointMaybeSet, EndpointNotSet, EndpointSet, IssuerUrl, Nonce, RedirectUrl, Scope,
 };
+use rocket::http::uri::Origin;
 use serde::{Deserialize, Serialize};
 
 use super::Session;
@@ -42,15 +43,21 @@ pub enum OidcAuthenticationError {
     NoNameClaim,
 }
 
+type ReqwestError<'c> = <openidconnect::reqwest::Client as AsyncHttpClient<'c>>::Error;
+
 // must be persisted between start of login flow and OIDC callback (end of flow)
 #[derive(Serialize, Deserialize)]
-pub struct OidcAuthenticationContext {
+pub struct OidcAuthenticationContext<'n> {
     redirect_url: RedirectUrl,
+    next: Option<Origin<'n>>,
     csrf_state: CsrfToken,
     nonce: Nonce,
 }
 
-type ReqwestError<'c> = <openidconnect::reqwest::Client as AsyncHttpClient<'c>>::Error;
+pub struct OidcAuthenticationResult<'n> {
+    pub session: Session,
+    pub next: Option<Origin<'n>>,
+}
 
 // wrapper for simplicity and impl'ing
 pub struct OidcClient {
@@ -89,10 +96,11 @@ impl OidcClient {
         })
     }
 
-    pub(super) async fn begin_authentication(
+    pub(super) async fn begin_authentication<'n>(
         &self,
         redirect_url: String,
-    ) -> Result<(String, OidcAuthenticationContext), OidcAuthenticationError> {
+        next: Option<Origin<'n>>,
+    ) -> Result<(String, OidcAuthenticationContext<'n>), OidcAuthenticationError> {
         // SECURITY: as documented in README, Hive trusts the `Host` header even
         // though it's client-controlled, since it assumes that it's always
         // served behind a reverse proxy and we only received the request in the
@@ -113,6 +121,7 @@ impl OidcClient {
 
         let context = OidcAuthenticationContext {
             redirect_url,
+            next,
             csrf_state,
             nonce,
         };
@@ -120,12 +129,12 @@ impl OidcClient {
         Ok((authorize_url.to_string(), context))
     }
 
-    pub(super) async fn finish_authentication(
+    pub(super) async fn finish_authentication<'n>(
         &self,
-        context: OidcAuthenticationContext,
+        context: OidcAuthenticationContext<'n>,
         code: &str,
         state: &str,
-    ) -> Result<Session, OidcAuthenticationError> {
+    ) -> Result<OidcAuthenticationResult<'n>, OidcAuthenticationError> {
         if CsrfToken::new(state.to_owned()) != context.csrf_state {
             return Err(OidcAuthenticationError::BadCsrfToken(state.to_owned()));
         }
@@ -160,6 +169,9 @@ impl OidcClient {
             expiration: claims.expiration().into(),
         };
 
-        Ok(session)
+        Ok(OidcAuthenticationResult {
+            session,
+            next: context.next,
+        })
     }
 }
