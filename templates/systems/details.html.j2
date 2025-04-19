@@ -25,6 +25,13 @@
 {% endblock action_buttons %}
 
 {% block content %}
+{% if system.id == crate::HIVE_SYSTEM_ID %}
+<p class="striped-alert">
+    <span class="material-icons">announcement</span>
+    {{ ctx.t("systems.details.alert.self") }}
+</p>
+{% endif %}
+
 <article class="overflow-auto">
     <h2>{{ ctx.t("systems.details.api-tokens.title") }}</h2>
     <div hx-get="/system/{{ system.id }}/api-tokens" hx-trigger="load delay:100ms" hx-swap="outerHTML">

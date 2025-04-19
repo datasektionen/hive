@@ -812,9 +812,9 @@ systems.delete.description:
 systems.delete.title:
   en: Delete System
   sv: Radera system
-systems.details.title:
-  en: "System: %{x}"
-  sv: "System: %{x}"
+systems.details.alert.self:
+  en: This system controls Hive itself and is therefore partially self-managed
+  sv: Detta system kontrollerar Hive själv och är därför delvis självstyrt
 systems.details.api-tokens.heading.create:
   en: Create new API token
   sv: Skapa nytt API-token
@@ -833,6 +833,9 @@ systems.details.tags.heading.create:
 systems.details.tags.title:
   en: Tags
   sv: Taggar
+systems.details.title:
+  en: "System: %{x}"
+  sv: "System: %{x}"
 systems.edit.title:
   en: Edit System Details
   sv: Redigera Systemdetaljer

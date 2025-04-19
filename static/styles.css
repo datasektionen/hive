@@ -36,6 +36,21 @@
   --pico-color: inherit;
 }
 
+.striped-alert {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--pico-primary),
+    var(--pico-primary) 20px,
+    var(--pico-primary-hover) 20px,
+    var(--pico-primary-hover) 40px
+  );
+  --pico-color: var(--pico-contrast-inverse);
+  font-weight: bold;
+  text-align: center;
+  padding: 0.5em;
+  border-radius: 10px;
+}
+
 .btn-danger {
   --pico-background-color: var(--pico-form-element-invalid-focus-color);
   --pico-border-color: var(--pico-form-element-invalid-border-color);
