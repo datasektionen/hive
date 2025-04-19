@@ -1053,8 +1053,8 @@ tags.subtags.list.action.delete.confirm:
     Är du säker på att du vill lossa subtagg "%{x}" från den här taggen?
     Detta kommer att få omedelbara följder för förlitande tjänster.
 tags.subtags.list.action.delete.tooltip:
-  en: Dissociate subtag
-  sv: Dissociera subtagg
+  en: Unlink subtag
+  sv: Lösgöra subtagg
 tags.subtags.list.empty:
   en: This tag does not have any associated subtags.
   sv: Det här tagg har inga associerade subtaggar.

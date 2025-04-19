@@ -628,6 +628,54 @@ where
     Ok(subtag)
 }
 
+pub async fn unlink_subtag<'x, X>(
+    system_id: &str,
+    tag_id: &str,
+    subtag_system_id: &str,
+    subtag_tag_id: &str,
+    db: X,
+    user: &User,
+) -> AppResult<()>
+where
+    X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
+{
+    let mut txn = db.begin().await?;
+
+    sqlx::query(
+        "DELETE FROM subtags
+        WHERE parent_id = $1
+            AND parent_system_id = $2
+            AND child_id = $3
+            AND child_system_id = $4",
+    )
+    .bind(tag_id)
+    .bind(system_id)
+    .bind(subtag_tag_id)
+    .bind(subtag_system_id)
+    .execute(&mut *txn)
+    .await?;
+
+    audit_logs::add_entry(
+        ActionKind::Delete,
+        TargetKind::TagAssignment, // FIXME: consider independent Subtag target
+        format!("#{system_id}:{tag_id}"),
+        user.username(),
+        json!({
+            "old": {
+                "entity_type": "subtag",
+                "subtag_system_id": subtag_system_id,
+                "subtag_tag_id": subtag_tag_id,
+            }
+        }),
+        &mut *txn,
+    )
+    .await?;
+
+    txn.commit().await?;
+
+    Ok(())
+}
+
 pub async fn has_content<'x, X>(system_id: &str, tag_id: &str, db: X) -> AppResult<bool>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,

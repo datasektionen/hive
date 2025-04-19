@@ -31,7 +31,8 @@ pub fn routes() -> RouteTree {
         assign_tag_to_user,
         unassign_tag,
         list_subtags,
-        create_subtag
+        create_subtag,
+        unlink_subtag
     ]
     .into()
 }
@@ -598,5 +599,40 @@ async fn create_subtag<'v>(
             let target = uri!(tag_details(system_id = system_id, tag_id = tag_id));
             Ok(Either::Right(Redirect::to(target)))
         }
+    }
+}
+
+#[rocket::delete("/system/<system_id>/tag/<tag_id>/subtag/<subtag_system_id>/<subtag_tag_id>")]
+#[allow(clippy::too_many_arguments)]
+async fn unlink_subtag<'v>(
+    system_id: &str,
+    tag_id: &str,
+    subtag_system_id: &str,
+    subtag_tag_id: &str,
+    db: &State<PgPool>,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<Either<(), Redirect>> {
+    let min = HivePermission::AssignTags(SystemsScope::Id(system_id.to_string()));
+    perms.require(min).await?;
+
+    // TODO: anti-CSRF(?), DELETE isn't a normal form method
+
+    tags::unlink_subtag(
+        system_id,
+        tag_id,
+        subtag_system_id,
+        subtag_tag_id,
+        db.inner(),
+        &user,
+    )
+    .await?;
+
+    if partial.is_some() {
+        Ok(Either::Left(()))
+    } else {
+        let target = uri!(tag_details(system_id = system_id, tag_id = tag_id));
+        Ok(Either::Right(Redirect::to(target)))
     }
 }
