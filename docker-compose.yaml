@@ -5,8 +5,6 @@ services:
       - source: nyckeln.yaml
         target: /config.yaml
     ports:
-      - 7001:7001
-      - 7002:7002
       - 7003:7003
 
   hive:
