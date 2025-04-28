@@ -13,7 +13,15 @@
     {% endif %}
 </td>
 <td>
+    {% if is_future_member %}
+    <s>{{ member.username }}</s>
+    <span class="material-icons" data-tooltip='{{ ctx.t("groups.members.list.icon.future") }}'>
+        schedule
+    </span>
+    {% else %}
     <strong>{{ member.username }}</strong>
+    {% endif %}
+
     {% if member.manager %}
     <span class="primary material-icons" data-tooltip='{{ ctx.t("groups.members.list.icon.manager") }}'>
         local_police
@@ -26,7 +34,11 @@
     {% endif %}
 </td>
 <td style="font-weight: bold">Johnny Louis Armstrong</td>
+{% if is_future_member %}
+<td class="blue">{{ member.from }}</td>
+{% else %}
 <td>{{ member.from }}</td>
+{% endif %}
 <td>{{ member.until }}</td>
 {% if can_manage && !show_indirect %}
 <td>

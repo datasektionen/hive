@@ -455,6 +455,9 @@ groups.members.list.empty:
 groups.members.list.icon.expand:
   en: Expand
   sv: Expandera
+groups.members.list.icon.future:
+  en: Future Member
+  sv: Framtida Medlem
 groups.members.list.icon.group:
   en: Subgroup
   sv: Undergrupp

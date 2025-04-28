@@ -23,8 +23,8 @@ where
         FROM direct_memberships
         WHERE group_id = $1
         AND group_domain = $2
-        AND $3 BETWEEN \"from\" AND \"until\"
-        ORDER BY manager DESC, username, id", // DESC makes true come first
+        AND until >= $3
+        ORDER BY (\"from\" <= $3) DESC, manager DESC, username, id", // DESC makes true come first
     )
     .bind(id)
     .bind(domain)

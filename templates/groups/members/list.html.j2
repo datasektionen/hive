@@ -40,7 +40,13 @@
         </tr>
         {% endfor %}
         {% for member in members %}
+        {% let is_future_member = member.from > chrono::Local::now().date_naive() %}
+        {% if is_future_member %}
+        <tr class="secondary">
+            {% else %}
         <tr>
+            {% endif %}
+
             {% include "member-cells.html.j2" %}
         </tr>
         {% endfor %}
