@@ -24,10 +24,11 @@
                             hx-trigger="mouseenter once" hx-indicator="head">
                             {# hx-indicator cannot be disabled... see htmx#2515. head prevents loading spinner #}
                             <samp><strong>{{ node.group_id }}</strong>@{{ node.group_domain }}</samp></a>
-                            {% if !loop.last %}
-                            &gt;
-                            {% endif %}
-                            {% endfor %}
+                        </span>
+                        {% if !loop.last %}
+                        &gt;
+                        {% endif %}
+                        {% endfor %}
                     </li>
                     {% endfor %}
                 </ul>
