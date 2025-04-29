@@ -158,9 +158,14 @@ where
     .bind(dto.manager)
     .execute(&mut *txn)
     .await
-    .map_err(|e| {
-        AppError::DuplicateSubgroup(dto.child.id.to_string(), dto.child.domain.to_string())
-            .if_unique_violation(e)
+    .map_err(|e| match e {
+        sqlx::Error::Database(err) if err.is_unique_violation() => {
+            AppError::DuplicateSubgroup(dto.child.id.to_string(), dto.child.domain.to_string())
+        }
+        sqlx::Error::Database(err) if err.is_foreign_key_violation() => {
+            AppError::NoSuchGroup(dto.child.id.to_string(), dto.child.domain.to_string())
+        }
+        _ => e.into(),
     })?;
 
     audit_logs::add_entry(
