@@ -1,0 +1,49 @@
+{% for summary in summaries %}
+<article>
+    <header class="flex-between">
+        <hgroup>
+            <h3>
+                {{ summary.group.localized_name(ctx.lang)|e|highlight(q.unwrap_or("")) }}
+
+                {% include "groups/list-layouts/summary-icons.html.j2" %}
+            </h3>
+            {% let other_lang = ctx.lang.other() %}
+            <h4 lang="{{ other_lang }}">
+                ({{ summary.group.localized_name(other_lang)|e|highlight(q.unwrap_or("")) }})
+            </h4>
+        </hgroup>
+        <a href="/group/{{ summary.group.domain }}/{{ summary.group.id }}" role="button" class="secondary">
+            {{ ctx.t("control.view") }}
+            <span class="material-icons">arrow_forward</span>
+        </a>
+    </header>
+    {{ summary.group.localized_description(ctx.lang)|e|highlight(q.unwrap_or("")) }}
+    <footer class="flex-between">
+        <div>
+            <button class="outline secondary chip"
+                data-tooltip='{{ ctx.t1("groups.list.stats.icon.n-direct-members", summary.n_direct_members) }}'>
+                <span class="material-icons">verified_user</span>
+                {{ summary.n_direct_members }}
+                </span>
+            </button>
+            <button class="outline secondary chip"
+                data-tooltip='{{ ctx.t1("groups.list.stats.icon.n-total-members", summary.n_total_members) }}'>
+                <span class="material-icons">account_circle</span>
+                {{ summary.n_total_members }}
+            </button>
+            <button class="outline secondary chip"
+                data-tooltip='{{ ctx.t1("groups.list.stats.icon.n-permissions", summary.n_permissions) }}'>
+                <span class="material-icons">key</span>
+                {{ summary.n_permissions }}
+            </button>
+        </div>
+        <samp data-tooltip='{{ ctx.t("groups.list.key.tooltip") }}'>
+            <strong>
+                {{- summary.group.id|e|highlight(q.unwrap_or("")) -}}
+            </strong><span class="primary">@
+                {{- summary.group.domain|e|highlight(q.unwrap_or("")) -}}
+            </span>
+        </samp>
+    </footer>
+</article>
+{% endfor %}

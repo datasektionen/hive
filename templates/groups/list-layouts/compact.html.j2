@@ -1,0 +1,52 @@
+{% if summaries.len() > 0 %}
+<table class="striped">
+    {% let other_lang = ctx.lang.other() %}
+    <thead>
+        <tr>
+            <th scope="col">{{ ctx.t("groups.list.compact.col.key") }}</th>
+            <th scope="col">{{ ctx.t("groups.list.compact.col.name") }}</th>
+            <th scope="col">{{ other_lang.t("groups.list.compact.col.name") }}</th>
+            <th scope="col" style="text-align: center">
+                <span data-tooltip='{{ ctx.t("groups.list.compact.col.members.tooltip") }}'>
+                    {{ ctx.t("groups.list.compact.col.members") }}
+                </span>
+            </th>
+            <th scope="col" style="text-align: center">{{ ctx.t("col.actions") }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for summary in summaries %}
+        <tr>
+            <td>
+                <samp>
+                    <strong>
+                        {{- summary.group.id|e|highlight(q.unwrap_or("")) -}}
+                    </strong><span class="primary">@
+                        {{- summary.group.domain|e|highlight(q.unwrap_or("")) -}}
+                    </span>
+                </samp>
+            </td>
+            <td>
+                <strong>{{ summary.group.localized_name(ctx.lang)|e|highlight(q.unwrap_or("")) }}</strong>
+
+                {% include "groups/list-layouts/summary-icons.html.j2" %}
+            </td>
+            <td class="secondary">
+                {{ summary.group.localized_name(other_lang)|e|highlight(q.unwrap_or("")) }}
+            </td>
+            <td style="text-align: center">
+                {{ summary.n_direct_members }}
+                <span class="secondary">/</span>
+                <span class="primary">{{ summary.n_total_members }}</span>
+            </td>
+            <td style="text-align: center">
+                <a href="/group/{{ summary.group.domain }}/{{ summary.group.id }}" role="button" class="secondary">
+                    {{ ctx.t("control.view") }}
+                    <span class="material-icons">arrow_forward</span>
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}

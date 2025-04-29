@@ -41,6 +41,17 @@
             </select>
         </label>
         <label>
+            {{ ctx.t("groups.list.control.layout.label") }}
+            <select name="layout">
+                <option {% call utils::option(ListGroupsLayout::Normal, layout) %}>
+                    {{ ctx.t("groups.list.control.layout.option.normal") }}
+                </option>
+                <option {% call utils::option(ListGroupsLayout::Compact, layout) %}>
+                    {{ ctx.t("groups.list.control.layout.option.compact") }}
+                </option>
+            </select>
+        </label>
+        <label>
             {{ ctx.t("groups.list.control.domain-filter.label") }}
             <select name="domain">
                 <option {% call utils::option("", domain_filter.unwrap_or("")) %} style="font-style: italic">
@@ -58,71 +69,12 @@
 
 <div id="listing-block" class="htmx-anti-indicator">
     {% block inner_groups_listing %}
-    {% for summary in summaries %}
-    <article>
-        <header class="flex-between">
-            <hgroup>
-                <h3>
-                    {{ summary.group.localized_name(ctx.lang)|e|highlight(q.unwrap_or("")) }}
-
-                    {% match summary.role %}
-                    {% when Some(RoleInGroup::Manager) %}
-                    <span class="primary material-icons" data-tooltip='{{ ctx.t("groups.list.icon.manager") }}'>
-                        local_police
-                    </span>
-                    {% when Some(RoleInGroup::Member) %}
-                    <span class="secondary material-icons" data-tooltip='{{ ctx.t("groups.list.icon.member") }}'>
-                        account_circle
-                    </span>
-                    {% when None %}
-                    {% endmatch %}
-
-                    {% if let Some(GroupMembershipKind::Direct) = summary.membership_kind %}
-                    <span class="secondary material-icons" data-tooltip='{{ ctx.t("groups.list.icon.direct-member") }}'>
-                        verified_user
-                    </span>
-                    {% endif %}
-                </h3>
-                {% let other_lang = ctx.lang.other() %}
-                <h4 lang="{{ other_lang }}">
-                    ({{ summary.group.localized_name(other_lang)|e|highlight(q.unwrap_or("")) }})
-                </h4>
-            </hgroup>
-            <a href="/group/{{ summary.group.domain }}/{{ summary.group.id }}" role="button" class="secondary">
-                {{ ctx.t("control.view") }}
-                <span class="material-icons">arrow_forward</span>
-            </a>
-        </header>
-        {{ summary.group.localized_description(ctx.lang)|e|highlight(q.unwrap_or("")) }}
-        <footer class="flex-between">
-            <div>
-                <button class="outline secondary chip"
-                    data-tooltip='{{ ctx.t1("groups.list.stats.icon.n-direct-members", summary.n_direct_members) }}'>
-                    <span class="material-icons">verified_user</span>
-                    {{ summary.n_direct_members }}
-                    </span>
-                </button>
-                <button class="outline secondary chip"
-                    data-tooltip='{{ ctx.t1("groups.list.stats.icon.n-total-members", summary.n_total_members) }}'>
-                    <span class="material-icons">account_circle</span>
-                    {{ summary.n_total_members }}
-                </button>
-                <button class="outline secondary chip"
-                    data-tooltip='{{ ctx.t1("groups.list.stats.icon.n-permissions", summary.n_permissions) }}'>
-                    <span class="material-icons">key</span>
-                    {{ summary.n_permissions }}
-                </button>
-            </div>
-            <samp data-tooltip='{{ ctx.t("groups.list.key.tooltip") }}'>
-                <strong>
-                    {{- summary.group.id|e|highlight(q.unwrap_or("")) -}}
-                </strong><span class="primary">@
-                    {{- summary.group.domain|e|highlight(q.unwrap_or("")) -}}
-                </span>
-            </samp>
-        </footer>
-    </article>
-    {% endfor %}
+    {% match layout %}
+    {% when ListGroupsLayout::Normal %}
+    {% include "list-layouts/normal.html.j2" %}
+    {% when ListGroupsLayout::Compact %}
+    {% include "list-layouts/compact.html.j2" %}
+    {% endmatch %}
     <p class="secondary">
         <em>
             {% if summaries.len() > 0 %}

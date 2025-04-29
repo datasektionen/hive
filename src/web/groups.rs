@@ -60,6 +60,7 @@ struct ListGroupsView<'r, 'f, 'v> {
     summaries: Vec<GroupOverviewSummary>,
     q: Option<&'r str>,
     sort: ListGroupsSort,
+    layout: ListGroupsLayout,
     domain_filter: Option<&'r str>,
     domains: Vec<String>,
     can_create: bool,
@@ -73,6 +74,7 @@ struct PartialListGroupsView<'q> {
     ctx: PageContext,
     summaries: Vec<GroupOverviewSummary>,
     q: Option<&'q str>,
+    layout: ListGroupsLayout,
 }
 
 #[derive(Template)]
@@ -200,11 +202,28 @@ impl ListGroupsSort {
     }
 }
 
-#[rocket::get("/groups?<q>&<sort>&<domain>")]
+#[derive(FromFormField, UriDisplayQuery, PartialEq, Eq, Default)]
+enum ListGroupsLayout {
+    #[default]
+    Normal,
+    Compact,
+}
+
+impl fmt::Display for ListGroupsLayout {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Normal => write!(f, "normal"),
+            Self::Compact => write!(f, "compact"),
+        }
+    }
+}
+
+#[rocket::get("/groups?<q>&<sort>&<layout>&<domain>")]
 #[allow(clippy::too_many_arguments)]
 async fn list_groups(
     q: Option<&str>,
     sort: Option<ListGroupsSort>,
+    layout: Option<ListGroupsLayout>,
     domain: Option<&str>,
     db: &State<PgPool>,
     ctx: PageContext,
@@ -213,6 +232,7 @@ async fn list_groups(
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<RenderedTemplate> {
     let sort = sort.unwrap_or_default();
+    let layout = layout.unwrap_or_default();
     let domain_filter = domain.map(str::to_lowercase);
 
     let mut summaries = groups::list::list_summaries(q, domain, db.inner(), perms, &user).await?;
@@ -225,7 +245,12 @@ async fn list_groups(
     domains.dedup();
 
     if partial.is_some() {
-        let template = PartialListGroupsView { ctx, summaries, q };
+        let template = PartialListGroupsView {
+            ctx,
+            summaries,
+            q,
+            layout,
+        };
 
         Ok(RawHtml(template.render()?))
     } else {
@@ -245,6 +270,7 @@ async fn list_groups(
             summaries,
             q,
             sort,
+            layout,
             domain_filter: domain,
             domains,
             can_create,
@@ -298,6 +324,7 @@ async fn create_group<'v>(
             // that form progress is not lost
 
             let sort = <ListGroupsSort as Default>::default();
+            let layout = <ListGroupsLayout as Default>::default();
 
             let mut summaries =
                 groups::list::list_summaries(None, None, db.inner(), perms, &user).await?;
@@ -317,6 +344,7 @@ async fn create_group<'v>(
                 summaries,
                 q: None,
                 sort,
+                layout,
                 domain_filter: None,
                 domains,
                 can_create,
@@ -402,6 +430,7 @@ pub async fn delete_group(
         uri!(list_groups(
             None::<&str>,
             None::<ListGroupsSort>,
+            None::<ListGroupsLayout>,
             None::<&str>
         )),
         partial.is_some(),

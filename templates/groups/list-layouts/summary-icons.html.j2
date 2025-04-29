@@ -1,0 +1,17 @@
+{% match summary.role %}
+{% when Some(RoleInGroup::Manager) %}
+<span class="primary material-icons" data-tooltip='{{ ctx.t("groups.list.icon.manager") }}'>
+    local_police
+</span>
+{% when Some(RoleInGroup::Member) %}
+<span class="secondary material-icons" data-tooltip='{{ ctx.t("groups.list.icon.member") }}'>
+    account_circle
+</span>
+{% when None %}
+{% endmatch %}
+
+{% if let Some(GroupMembershipKind::Direct) = summary.membership_kind %}
+<span class="secondary material-icons" data-tooltip='{{ ctx.t("groups.list.icon.direct-member") }}'>
+    verified_user
+</span>
+{% endif %}

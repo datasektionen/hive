@@ -300,12 +300,33 @@ groups.form.field.name-sv.tip:
 groups.list.action.create:
   en: Create
   sv: Skapa ny
+groups.list.compact.col.key:
+  en: Group Key
+  sv: Gruppnyckel
+groups.list.compact.col.members:
+  en: Members
+  sv: Medlemmar
+groups.list.compact.col.members.tooltip:
+  en: "# Direct / Total"
+  sv: "Antal direkta / totalt"
+groups.list.compact.col.name:
+  en: Name (English)
+  sv: Namn (svenska)
 groups.list.control.domain-filter.any:
   en: (Any domain)
   sv: (Alla domäner)
 groups.list.control.domain-filter.label:
   en: Domain
   sv: Domän
+groups.list.control.layout.label:
+  en: Layout
+  sv: Layout
+groups.list.control.layout.option.compact:
+  en: Compact
+  sv: Kompakt
+groups.list.control.layout.option.normal:
+  en: Normal
+  sv: Normal
 groups.list.control.sort.label:
   en: Sort by
   sv: Sortera efter
