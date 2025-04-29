@@ -6,12 +6,12 @@
             <th scope="col">{{ ctx.t("groups.list.compact.col.key") }}</th>
             <th scope="col">{{ ctx.t("groups.list.compact.col.name") }}</th>
             <th scope="col">{{ other_lang.t("groups.list.compact.col.name") }}</th>
-            <th scope="col" style="text-align: center">
+            <th scope="col" class="center">
                 <span data-tooltip='{{ ctx.t("groups.list.compact.col.members.tooltip") }}'>
                     {{ ctx.t("groups.list.compact.col.members") }}
                 </span>
             </th>
-            <th scope="col" style="text-align: center">{{ ctx.t("col.actions") }}</th>
+            <th scope="col" class="center">{{ ctx.t("col.actions") }}</th>
         </tr>
     </thead>
     <tbody>
@@ -34,12 +34,12 @@
             <td class="secondary">
                 {{ summary.group.localized_name(other_lang)|e|highlight(q.unwrap_or("")) }}
             </td>
-            <td style="text-align: center">
+            <td class="center">
                 {{ summary.n_direct_members }}
                 <span class="secondary">/</span>
                 <span class="primary">{{ summary.n_total_members }}</span>
             </td>
-            <td style="text-align: center">
+            <td class="center">
                 <a href="/group/{{ summary.group.domain }}/{{ summary.group.id }}" role="button" class="secondary">
                     {{ ctx.t("control.view") }}
                     <span class="material-icons">arrow_forward</span>

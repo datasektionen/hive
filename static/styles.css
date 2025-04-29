@@ -167,6 +167,10 @@ section:last-of-type {
   column-gap: var(--pico-grid-column-gap);
 }
 
+.center {
+  text-align: center;
+}
+
 /* empty text that automatically goes away if a new row is appended */
 table tbody > .if-table-empty:not(:only-child) {
   display: none;
