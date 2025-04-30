@@ -12,7 +12,7 @@ use crate::{
 };
 
 pub fn catchers() -> Vec<rocket::Catcher> {
-    catchers![not_found, unauthenticated, unknown]
+    catchers![not_found, invalid_submission, unauthenticated, unknown]
 }
 
 #[derive(Responder)]
@@ -58,6 +58,12 @@ macro_rules! show_error_page {
 }
 
 show_error_page!(not_found, 404, Status::NotFound, "not-found");
+show_error_page!(
+    invalid_submission,
+    422,
+    Status::UnprocessableEntity,
+    "invalid-submission"
+);
 show_error_page!(unknown, default, Status::InternalServerError, "unknown");
 
 #[rocket::catch(401)]

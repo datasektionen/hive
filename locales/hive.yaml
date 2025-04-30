@@ -134,6 +134,17 @@ control.search:
 control.view:
   en: View
   sv: Visa
+errors.caught.invalid-submission.title:
+  en: Invalid Submission
+  sv: Ogiltig inlämning
+errors.caught.invalid-submission.description:
+  en: >
+    The values you submitted are malformed or incorrect. Please revise your
+    submission and ensure that all relevant values are both present and properly
+    formatted.
+  sv: >
+    Värdena du skickades in är felaktiga. Vänligen revidera din inlämning och se
+    till att alla relevanta värden finns med och är korrekt formaterade.
 errors.caught.not-found.title:
   en: Page Not Found
   sv: Sidan hittades inte
