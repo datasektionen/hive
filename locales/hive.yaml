@@ -165,6 +165,21 @@ errors.caught.unknown.description:
   sv: >
     Ett ospecificerat serverfel har inträffat och ingen ytterligare information
     kunde fastställas. Vänligen kontakta en administratör om problemet kvarstår.
+groups.bulk-tag.description:
+  en: Assign a tag (without content) to multiple groups at the same time.
+  sv: Tilldela en tagg (utan innehåll) till flera grupper samtidigt.
+groups.bulk-tag.field.tag.label:
+  en: Tag key
+  sv: Tagg-nyckel
+groups.bulk-tag.field.tag.placeholder:
+  en: "e.g., #calypso:author-pseudonym"
+  sv: "t.ex. #calypso:author-pseudonym"
+groups.bulk-tag.field.tag.tip:
+  en: This tag will be assigned to all the groups that you have selected.
+  sv: Den här taggen kommer att tilldelas alla grupper som du har valt.
+groups.bulk-tag.title:
+  en: Bulk tag groups
+  sv: Tagga grupper i bulk
 groups.create.description:
   en: Add a new group to be managed by Hive
   sv: Lägg till en ny grupp som ska hanteras av Hive
@@ -311,6 +326,9 @@ groups.form.field.name-sv.tip:
 groups.list.action.create:
   en: Create
   sv: Skapa ny
+groups.list.compact.bulk-tag.tooltip:
+  en: Bulk tag selected groups
+  sv: Tagga de valda grupperna i bulk
 groups.list.compact.col.key:
   en: Group Key
   sv: Gruppnyckel

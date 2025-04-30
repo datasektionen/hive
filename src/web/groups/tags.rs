@@ -8,18 +8,22 @@ use rocket::{
 use sqlx::PgPool;
 
 use crate::{
-    dto::tags::AssignTagDto,
+    dto::tags::{AssignTagDto, BulkTagGroupsDto},
     errors::AppResult,
     guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
     models::{SimpleGroup, Tag, TagAssignment},
     perms::{HivePermission, SystemsScope},
     routing::RouteTree,
     services::groups::{self, AuthorityInGroup},
-    web::{Either, RenderedTemplate},
+    web::{
+        self,
+        groups::{ListGroupsLayout, ListGroupsSort},
+        Either, RenderedTemplate,
+    },
 };
 
 pub fn routes() -> RouteTree {
-    rocket::routes![list_tag_assignments, assign_tag].into()
+    rocket::routes![list_tag_assignments, assign_tag, bulk_assign_tag].into()
 }
 
 #[derive(Template)]
@@ -147,5 +151,37 @@ pub async fn assign_tag<'v>(
             let target = uri!(super::group_details(id = id, domain = domain));
             Ok(Either::Right(Redirect::to(target)))
         }
+    }
+}
+
+#[rocket::post("/groups/bulk-tag", data = "<form>")]
+pub async fn bulk_assign_tag<'v>(
+    form: Form<Contextual<'v, BulkTagGroupsDto<'v>>>,
+    db: &State<PgPool>,
+    perms: &PermsEvaluator,
+    user: User,
+) -> AppResult<Redirect> {
+    if let Some(dto) = &form.value {
+        let min = HivePermission::AssignPerms(SystemsScope::Id(dto.tag.system_id.to_owned()));
+        perms.require(min).await?;
+
+        groups::tags::bulk_assign(dto, db.inner(), &user).await?;
+
+        let target = uri!(web::tags::tag_details(
+            system_id = dto.tag.system_id,
+            tag_id = dto.tag.tag_id
+        ));
+        Ok(Redirect::to(target))
+    } else {
+        // some errors are present; reload page
+        debug!("Bulk assign tag form errors: {:?}", &form.context);
+
+        let target = uri!(super::list_groups(
+            None::<&str>,
+            None::<ListGroupsSort>,
+            Some(ListGroupsLayout::Compact),
+            None::<&str>
+        ));
+        Ok(Redirect::to(target))
     }
 }

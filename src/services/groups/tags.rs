@@ -1,7 +1,8 @@
 use serde_json::json;
+use uuid::Uuid;
 
 use crate::{
-    dto::tags::AssignTagDto,
+    dto::tags::{AssignTagDto, BulkTagGroupsDto},
     errors::{AppError, AppResult},
     guards::{perms::PermsEvaluator, user::User},
     models::{ActionKind, Tag, TagAssignment, TargetKind},
@@ -165,6 +166,60 @@ where
     txn.commit().await?;
 
     Ok(assignment)
+}
+
+pub async fn bulk_assign<'x, X>(dto: &BulkTagGroupsDto<'_>, db: X, user: &User) -> AppResult<()>
+where
+    X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
+{
+    let mut txn = db.begin().await?;
+
+    if tags::has_content(dto.tag.system_id, dto.tag.tag_id, &mut *txn).await? {
+        // we currently don't support bulk-assigning tags with content
+        return Err(AppError::MissingTagContent(
+            dto.tag.system_id.to_string(),
+            dto.tag.tag_id.to_string(),
+        ));
+    }
+
+    for group in &dto.selected {
+        let assignment_id: Option<Uuid> = sqlx::query_scalar(
+            "INSERT INTO tag_assignments (system_id, tag_id, content, group_id, group_domain)
+            VALUES ($1, $2, NULL, $3, $4)
+            ON CONFLICT DO NOTHING
+            RETURNING id",
+        )
+        .bind(dto.tag.system_id)
+        .bind(dto.tag.tag_id)
+        .bind(group.id)
+        .bind(group.domain)
+        .fetch_optional(&mut *txn)
+        .await?;
+
+        if let Some(assignment_id) = assignment_id {
+            audit_logs::add_entry(
+                ActionKind::Create,
+                TargetKind::TagAssignment,
+                dto.tag.key(),
+                user.username(),
+                json!({
+                    "new": {
+                        "entity_type": "group",
+                        "id": assignment_id,
+                        "group_id": group.id,
+                        "group_domain": group.domain,
+                        "content": None::<&str>,
+                    }
+                }),
+                &mut *txn,
+            )
+            .await?;
+        }
+    }
+
+    txn.commit().await?;
+
+    Ok(())
 }
 
 pub async fn is_tagged_for_system<'x, X>(

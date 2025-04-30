@@ -41,6 +41,13 @@ pub struct AssignTagToUserDto<'v> {
 }
 
 #[derive(FromForm)]
+pub struct BulkTagGroupsDto<'v> {
+    pub tag: TagKey<'v>,
+    #[field(validate = len(1..))]
+    pub selected: Vec<GroupRefDto<'v>>,
+}
+
+#[derive(FromForm)]
 pub struct CreateSubtagDto<'v> {
     pub subtag: TagKey<'v>,
 }
@@ -48,6 +55,12 @@ pub struct CreateSubtagDto<'v> {
 pub struct TagKey<'v> {
     pub system_id: &'v str,
     pub tag_id: &'v str,
+}
+
+impl TagKey<'_> {
+    pub fn key(&self) -> String {
+        format!("#{}:{}", self.system_id, self.tag_id)
+    }
 }
 
 #[rocket::async_trait]

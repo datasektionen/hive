@@ -1,0 +1,25 @@
+<dialog id="bulk-tag">
+    <article>
+        <h2>{{ ctx.t("groups.bulk-tag.title") }}</h2>
+        <p>{{ ctx.t("groups.bulk-tag.description") }}</p>
+        <form id="bulk-tag-form" action="/groups/bulk-tag" method="post">
+            <label>
+                {# TODO: use a combobox here (probably items loaded lazily) #}
+                {{ ctx.t("groups.bulk-tag.field.tag.label") }}
+                <input name="tag" placeholder='{{ ctx.t("groups.bulk-tag.field.tag.placeholder") }}' required
+                    pattern="#[a-z0-9]+(-[a-z0-9]+)*:[a-z0-9]+(-[a-z0-9]+)*" aria-describedby="bulk-tag-tip" />
+                <small id="bulk-tag-tip">
+                    {{ ctx.t("groups.bulk-tag.field.tag.tip") }}
+                </small>
+            </label>
+        </form>
+        <footer>
+            <button form="bulk-tag-form" type="reset" class="secondary" onclick="closeModal('bulk-tag')">
+                {{ ctx.t("control.cancel") }}
+            </button>
+            <button form="bulk-tag-form">
+                {{ ctx.t("control.assign") }}
+            </button>
+        </footer>
+    </article>
+</dialog>

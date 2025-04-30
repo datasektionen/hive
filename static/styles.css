@@ -184,6 +184,18 @@ table tbody > .if-table-empty td .material-icons {
   vertical-align: text-bottom;
 }
 
+tr:has(> td input.row-selection:checked) {
+  background-color: var(--pico-table-border-color);
+}
+
+table:not(:has(> tbody > tr > td input.row-selection:checked))
+  > thead
+  > tr
+  > th.requires-row-selection {
+  pointer-events: none;
+  --pico-color: var(--pico-secondary);
+}
+
 .multiline {
   white-space: pre-line;
 }
