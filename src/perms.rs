@@ -16,6 +16,7 @@ pub enum HivePermission {
     AssignPerms(SystemsScope),
     ManageTags(SystemsScope),
     AssignTags(SystemsScope),
+    LongTermAppointment(UpperBoundScope),
     ApiCheckPermissions,
     ApiListTagged,
 }
@@ -32,6 +33,7 @@ impl HivePermission {
             Self::AssignPerms(..) => "assign-perms",
             Self::ManageTags(..) => "manage-tags",
             Self::AssignTags(..) => "assign-tags",
+            Self::LongTermAppointment(..) => "long-term-appointment",
             Self::ApiCheckPermissions => "api-check-permissions",
             Self::ApiListTagged => "api-list-tagged",
         }
@@ -55,6 +57,7 @@ impl fmt::Display for HivePermission {
             | Self::AssignTags(s) => {
                 write!(f, "$hive:{key}:{s}")
             }
+            Self::LongTermAppointment(s) => write!(f, "$hive:{key}:{s}"),
         }
     }
 }
@@ -73,6 +76,7 @@ impl PartialOrd for HivePermission {
             (Self::AssignPerms(a), Self::AssignPerms(b)) => a.partial_cmp(b),
             (Self::ManageTags(a), Self::ManageTags(b)) => a.partial_cmp(b),
             (Self::AssignTags(a), Self::AssignTags(b)) => a.partial_cmp(b),
+            (Self::LongTermAppointment(a), Self::LongTermAppointment(b)) => a.partial_cmp(b),
             _ => None,
         }
     }
@@ -130,6 +134,11 @@ impl TryFrom<BasePermissionAssignment> for HivePermission {
                 let scope = SystemsScope::try_from(scope)?;
 
                 Ok(Self::AssignTags(scope))
+            }
+            ("long-term-appointment", Some(scope)) => {
+                let scope = UpperBoundScope::try_from(scope)?;
+
+                Ok(Self::LongTermAppointment(scope))
             }
             ("api-check-permissions", None) => Ok(Self::ApiCheckPermissions),
             ("api-list-tagged", None) => Ok(Self::ApiListTagged),
@@ -296,6 +305,62 @@ impl PartialOrd for SystemsScope {
             (_, Self::Any) => Some(Ordering::Greater),
             _ => None,
         }
+    }
+}
+
+#[derive(PartialEq, Eq, Hash, Debug, Clone)]
+pub enum UpperBoundScope {
+    Wildcard,
+    UpTo(u8), // note that bigger number wins; this N is comparable
+    Any,      // pseudo-scope meaning "any of the above"
+}
+
+impl TryFrom<&str> for UpperBoundScope {
+    type Error = InvalidHivePermissionError;
+
+    fn try_from(scope: &str) -> Result<Self, Self::Error> {
+        if scope == "*" {
+            Ok(Self::Wildcard)
+        } else {
+            let n = scope
+                .parse()
+                .map_err(|_| InvalidHivePermissionError::Scope)?;
+
+            Ok(Self::UpTo(n))
+        }
+        // intentionally not handling ? => Any since it's not a real scope
+    }
+}
+
+impl fmt::Display for UpperBoundScope {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Wildcard => write!(f, "*"),
+            Self::UpTo(n) => write!(f, "{n}"),
+            Self::Any => write!(f, "?"),
+        }
+    }
+}
+
+impl Ord for UpperBoundScope {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if self == other {
+            return Ordering::Equal;
+        }
+
+        match (self, other) {
+            (Self::Wildcard, _) => Ordering::Greater,
+            (_, Self::Wildcard) => Ordering::Less,
+            (Self::Any, _) => Ordering::Less,
+            (_, Self::Any) => Ordering::Greater,
+            (Self::UpTo(a), Self::UpTo(b)) => a.cmp(b),
+        }
+    }
+}
+
+impl PartialOrd for UpperBoundScope {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
