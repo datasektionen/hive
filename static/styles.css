@@ -186,6 +186,7 @@ table tbody > .if-table-empty td .material-icons {
 
 tr:has(> td input.row-selection:checked) {
   background-color: var(--pico-table-border-color);
+  --pico-background-color: var(--pico-table-border-color);
 }
 
 table:not(:has(> tbody > tr > td input.row-selection:checked))
