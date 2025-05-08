@@ -288,8 +288,7 @@ fn add_search_clauses(
     additional_conds: bool,
 ) {
     const SEARCH_COLS: &[&str] = &[
-        "id",
-        "domain",
+        // id@domain is treated specially
         "name_sv",
         "name_en",
         "description_sv",
@@ -306,10 +305,20 @@ fn add_search_clauses(
 
         query.push(" WHERE (");
 
-        for (i, col) in SEARCH_COLS.iter().enumerate() {
-            if i > 0 {
-                query.push(" OR ");
-            }
+        if let Some(alias) = table_alias {
+            query.push(alias);
+            query.push(".");
+        }
+        query.push("id || '@' || ");
+        if let Some(alias) = table_alias {
+            query.push(alias);
+            query.push(".");
+        }
+        query.push("domain ILIKE ");
+        query.push_bind(term.clone());
+
+        for col in SEARCH_COLS {
+            query.push(" OR ");
             if let Some(alias) = table_alias {
                 query.push(alias);
                 query.push(".");
