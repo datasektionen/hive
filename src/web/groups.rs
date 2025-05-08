@@ -233,7 +233,8 @@ async fn list_groups(
 ) -> AppResult<RenderedTemplate> {
     let sort = sort.unwrap_or_default();
     let layout = layout.unwrap_or_default();
-    let domain_filter = domain.map(str::to_lowercase);
+    let domain_lower = domain.map(str::to_lowercase);
+    let domain = domain_lower.as_deref();
 
     let mut summaries = groups::list::list_summaries(q, domain, db.inner(), perms, &user).await?;
 
@@ -254,7 +255,7 @@ async fn list_groups(
 
         Ok(RawHtml(template.render()?))
     } else {
-        if let Some(filter) = domain_filter {
+        if let Some(filter) = domain.map(str::to_owned) {
             // ensure current value can be shown to be selected
             if !domains.contains(&filter) {
                 domains.push(filter);

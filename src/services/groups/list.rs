@@ -189,7 +189,7 @@ where
     for probe in probes {
         if populate_from_permission(probe, &mut domains, &mut tags, domain_filter, perms).await? {
             // wildcard was found, just return everything
-            return get_all_groups(q, db).await;
+            return get_all_groups(q, domain_filter, db).await;
         };
     }
 
@@ -261,13 +261,22 @@ pub(super) async fn populate_from_permission(
     Ok(false)
 }
 
-async fn get_all_groups<'x, X>(q: Option<&str>, db: X) -> AppResult<Vec<Group>>
+async fn get_all_groups<'x, X>(
+    q: Option<&str>,
+    domain_filter: Option<&str>,
+    db: X,
+) -> AppResult<Vec<Group>>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
     let mut query = sqlx::QueryBuilder::new("SELECT * FROM groups");
 
-    add_search_clauses(&mut query, q, None, false);
+    add_search_clauses(&mut query, q, None, domain_filter.is_some());
+
+    if let Some(domain) = domain_filter {
+        query.push(" domain = ");
+        query.push_bind(domain);
+    }
 
     Ok(query.build_query_as().fetch_all(db).await?)
 }
