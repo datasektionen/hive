@@ -1,5 +1,4 @@
 use chrono::Local;
-use log::*;
 use serde_json::json;
 use uuid::Uuid;
 
@@ -182,11 +181,8 @@ pub async fn create_new<'v, 'x, X>(
 where
     X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
 {
-    if system_id == crate::HIVE_SYSTEM_ID {
-        // we manage our own tags via database migrations
-        warn!("Disallowing tags tampering from {}", user.username());
-        return Err(AppError::SelfPreservation);
-    }
+    // managing HIVE_SYSTEM_ID tags is not a self-preservation error because
+    // these are necessary for $hive:manage-groups:tag == #hive:tag
 
     let mut txn = db.begin().await?;
 
@@ -232,11 +228,8 @@ pub async fn delete<'x, X>(system_id: &str, tag_id: &str, db: X, user: &User) ->
 where
     X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
 {
-    if system_id == crate::HIVE_SYSTEM_ID {
-        // we manage our own tags via database migrations
-        warn!("Disallowing tags tampering from {}", user.username());
-        return Err(AppError::SelfPreservation);
-    }
+    // managing HIVE_SYSTEM_ID tags is not a self-preservation error because
+    // these are necessary for $hive:manage-groups:tag == #hive:tag
 
     let mut txn = db.begin().await?;
 

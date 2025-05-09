@@ -69,7 +69,7 @@
     <div hx-get="/system/{{ system.id }}/tags" hx-trigger="load delay:100ms" hx-swap="outerHTML">
         {# delay is to give event listener time to be set, for aria-busy=true #}
     </div>
-    {% if can_manage_tags && system.id != crate::HIVE_SYSTEM_ID %}
+    {% if can_manage_tags %}
     <footer>
         <details>
             <summary role="button" class="secondary">
