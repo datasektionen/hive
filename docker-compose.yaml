@@ -1,12 +1,30 @@
 services:
+  nyckeln:
+    image: ghcr.io/datasektionen/nyckeln-under-dorrmattan
+    configs:
+      - source: nyckeln.yaml
+        target: /config.yaml
+    ports:
+      - 7003:7003
+
   hive:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     ports:
       - "6869:6869"
-    env_file: secrets.env
     environment:
       HIVE_DB_URL: postgresql://hive:hive@db:5432/hive
       TZ: Europe/Stockholm
+      HIVE_OIDC_ISSUER_URL: http://localhost:7003
+      HIVE_OIDC_CLIENT_ID: client-id
+      HIVE_OIDC_CLIENT_SECRET: client-secret
+      HIVE_SECRET_KEY: 2be50af223f3257ee45f0f95127be5190579c411c1fea2ecec9c9fbdcfb30d3458742011dda42d07b7773a01ca136372c0b13f7b673cf2e3b350b6a7614af020
+
+    configs:
+      - source: nginx.conf
+        target: /etc/nginx/nginx.conf
+
     develop:
       watch:
         - path: ./static
@@ -50,3 +68,34 @@ services:
 
 volumes:
   hive-db-data:
+
+configs:
+  nyckeln.yaml:
+    content: |
+      clients:
+        - id: "client-id"
+          secret: "client-secret"
+          redirect_uris:
+            - "http://localhost:6869/auth/oidc-callback"
+            - "http://localhost:6869/auth/login"
+
+      users:
+        - kth_id: turetek
+          email: turetek@kth.se
+          first_name: Ture
+          family_name: Teknolog
+
+  # This is very cursed, but we proxy localhost:7003 to the nyckeln service, so
+  # that we can use the same http://localhost:7003 url for the oidc provider worker
+  # and the browser when logging in via oidc.
+  nginx.conf:
+    content: |
+      events {}
+      http {
+        server {
+          listen 7003;
+          location / {
+            proxy_pass http://nyckeln:7003;
+          }
+        }
+      }
