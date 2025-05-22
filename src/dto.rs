@@ -1,4 +1,7 @@
-use std::ops::{Deref, RangeBounds};
+use std::{
+    fmt,
+    ops::{Deref, RangeBounds},
+};
 
 use regex::Regex;
 use rocket::form::{self, FromFormField};
@@ -41,6 +44,12 @@ impl<'v> From<&TrimmedStr<'v>> for &'v str {
 impl From<TrimmedStr<'_>> for serde_json::Value {
     fn from(t: TrimmedStr) -> Self {
         (*t).into()
+    }
+}
+
+impl fmt::Display for TrimmedStr<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
     }
 }
 
