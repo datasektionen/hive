@@ -387,6 +387,19 @@ pub async fn assign_to_user<'v, 'x, X>(
 where
     X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
 {
+    let display_name = if let Some(resolver) = resolver {
+        Some(
+            resolver
+                .resolve_one(&dto.user)
+                .await
+                .map_err(|e| AppError::UnknownUser(dto.user.to_string(), Box::new(e)))?,
+            // ^ in this situation we can reasonably assume it's a layer 8 problem and not
+            // the resolver that is down (+ it leads to better error messages 99% of the time)
+        )
+    } else {
+        None
+    };
+
     let mut txn = db.begin().await?;
 
     let has_content = has_content(system_id, tag_id, &mut *txn).await?;
@@ -424,6 +437,7 @@ where
         })?;
 
     assignment.can_manage = Some(true);
+    assignment.label = display_name;
 
     audit_logs::add_entry(
         ActionKind::Create,
@@ -443,18 +457,6 @@ where
     .await?;
 
     txn.commit().await?;
-
-    // design choice: a name resolution fail does not abort the transaction,
-    // which (arguably) might make sense to allow management even when the
-    // resolver is down / broken. this also means invalid usernames can still be
-    // assigned tags, even if they don't exist
-    if let Some(resolver) = resolver {
-        assignment.label = Some(
-            resolver
-                .resolve_one(assignment.username.as_deref().unwrap())
-                .await?,
-        );
-    }
 
     Ok(assignment)
 }

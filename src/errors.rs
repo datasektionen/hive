@@ -96,6 +96,9 @@ pub enum AppError {
     DuplicateSubgroup(String, String),
     #[error("user `{0}` is already a member of this group within the specified period")]
     RedundantMembership(String),
+
+    #[error("could not fetch information on user with username `{0}`: {1}")]
+    UnknownUser(String, #[source] Box<AppError>), // client-facing when likely user fault
 }
 
 impl AppError {
@@ -148,6 +151,7 @@ impl AppError {
             AppError::InvalidSubgroup(..) => Status::BadRequest,
             AppError::DuplicateSubgroup(..) => Status::Conflict,
             AppError::RedundantMembership(..) => Status::Conflict,
+            AppError::UnknownUser(..) => Status::BadRequest,
         }
     }
 }
