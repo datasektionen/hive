@@ -86,8 +86,6 @@ enum InnerAppErrorDto {
     },
     #[serde(rename = "group.add.membership.redundant")]
     RedundantMembership { username: String },
-    #[serde(rename = "user.unknown")]
-    UnknownUser { username: String },
 }
 
 impl From<AppError> for InnerAppErrorDto {
@@ -162,7 +160,6 @@ impl From<AppError> for InnerAppErrorDto {
                 child_domain: domain,
             },
             AppError::RedundantMembership(username) => Self::RedundantMembership { username },
-            AppError::UnknownUser(username, ..) => Self::UnknownUser { username },
         }
     }
 }
@@ -247,8 +244,6 @@ impl InnerAppErrorDto {
             (Self::DuplicateSubgroup { .. }, Language::Swedish) => "Duplicerat undergrupp",
             (Self::RedundantMembership { .. }, Language::English) => "Redundant Membership",
             (Self::RedundantMembership { .. }, Language::Swedish) => "Överflödigt medlemskap",
-            (Self::UnknownUser { .. }, Language::English) => "Unknown User",
-            (Self::UnknownUser { .. }, Language::Swedish) => "Okänt användare",
         }
     }
 
@@ -607,15 +602,6 @@ impl InnerAppErrorDto {
                      perioden med motsvarande åtkomsträttigheter."
                 )
             }
-            (Self::UnknownUser { username }, Language::English) => format!(
-                "Failed to resolve username \"{username}\", which likely indicates that it does \
-                 not exist. Please check your spelling and ensure the username is correct."
-            ),
-            (Self::UnknownUser { username }, Language::Swedish) => format!(
-                "Misslyckades med att lösa användarnamnet \"{username}\", vilket troligen \
-                 indikerar att det finns inte. Kontrollera stavningen och se till att \
-                 användarnamnet är korrekt."
-            ),
         }
     }
 }
