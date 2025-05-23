@@ -34,7 +34,7 @@
     {% endif %}
 </td>
 <td style="font-weight: bold">
-    {{ member.display_name.as_deref().unwrap_or("John Doe") }}
+    {{ member.display_name.as_deref().unwrap_or("?") }}
 </td>
 {% if is_future_member %}
 <td class="blue">{{ member.from }}</td>
