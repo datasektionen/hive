@@ -174,7 +174,8 @@ where
         // need to re-sort by label
         assignments.sort_unstable_by_key(|assignment| {
             (
-                assignment.id.is_none(), // false comes first (direct assignment)
+                assignment.id.is_none(),    // false comes first (direct assignment)
+                assignment.label.is_none(), // false comes first (known label)
                 assignment.label.clone(),
                 assignment.username.clone(),
             )

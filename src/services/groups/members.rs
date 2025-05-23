@@ -1,4 +1,4 @@
-use chrono::Local;
+use chrono::{Local, NaiveDate};
 use log::*;
 use serde_json::json;
 use sqlx::Row;
@@ -38,7 +38,7 @@ where
     .fetch_all(db)
     .await?;
 
-    populate_member_names(&mut members, resolver).await?;
+    populate_member_names(&mut members, resolver, Some(today)).await?;
 
     Ok(members)
 }
@@ -69,7 +69,7 @@ where
     .fetch_all(db)
     .await?;
 
-    populate_member_names(&mut members, resolver).await?;
+    populate_member_names(&mut members, resolver, None).await?;
 
     Ok(members)
 }
@@ -516,6 +516,7 @@ where
 async fn populate_member_names(
     members: &mut [GroupMember],
     resolver: &Option<IdentityResolver>,
+    today: Option<NaiveDate>,
 ) -> AppResult<()> {
     if let Some(resolver) = resolver {
         resolver
@@ -525,6 +526,20 @@ async fn populate_member_names(
                 |member, name| member.display_name = Some(name),
             )
             .await?;
+
+        // need to re-sort by label
+        members.sort_unstable_by_key(|member| {
+            (
+                today.map(|today| member.from > today),
+                // ^ false comes first (current member)
+                // (if today is not set, None for all elements, aka ignore)
+                !member.manager,               // false comes first (manager)
+                member.display_name.is_none(), // false comes first (known name)
+                member.display_name.clone(),
+                member.username.clone(),
+                member.id,
+            )
+        });
     }
 
     Ok(())
