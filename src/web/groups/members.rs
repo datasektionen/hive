@@ -262,8 +262,9 @@ async fn add_member<'v>(
     // TODO: anti-CSRF
 
     if let Some(until) = form.value.as_ref().map(|dto| dto.until.0) {
-        // the default limit for membership upper bound is either 31/Dec of the current year or
-        // 30/Jun of the following year, whichever is closer but more than 6 months away
+        // the default limit for membership upper bound is either 31/Dec of the current
+        // year or 30/Jun of the following year, whichever is closer but more
+        // than 6 months away
         let today = Local::now().date_naive();
         let limit = if today < NaiveDate::from_ymd_opt(today.year(), 6, 30).unwrap() {
             NaiveDate::from_ymd_opt(today.year(), 12, 31).unwrap()
