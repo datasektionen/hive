@@ -1151,6 +1151,7 @@ dependencies = [
  "log",
  "openidconnect",
  "regex",
+ "reqwest",
  "rinja",
  "rocket",
  "rust-i18n",

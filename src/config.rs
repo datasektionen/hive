@@ -23,6 +23,9 @@ pub struct Config {
     #[serde(default = "defaults::log_file")]
     pub log_file: PathBuf,
 
+    #[serde(default)]
+    pub identity_resolver_endpoint: Option<String>,
+
     // no default! must be specified in some way
     pub db_url: String,
     pub secret_key: String,
@@ -128,6 +131,11 @@ pub struct CliArgs {
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub oidc_client_secret: Option<String>,
+
+    /// HTTP URL to query when translating usernames to display names [optional]
+    #[arg(short, long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub identity_resolver_endpoint: Option<String>,
 
     /// How much information to show and log [default: normal]
     #[arg(short, long)]

@@ -33,7 +33,9 @@
     </span>
     {% endif %}
 </td>
-<td style="font-weight: bold">Johnny Louis Armstrong</td>
+<td style="font-weight: bold">
+    {{ member.display_name.as_deref().unwrap_or("John Doe") }}
+</td>
 {% if is_future_member %}
 <td class="blue">{{ member.from }}</td>
 {% else %}

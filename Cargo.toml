@@ -23,6 +23,10 @@ openidconnect = { version = "4.0.0", features = [
     "timing-resistant-secret-traits",
 ] }
 regex = "1.11.1"
+reqwest = { version = "0.12.15", features = [
+    "json",
+    "rustls-tls",
+], default-features = false }
 rinja = "0.3.5" # will be replaced with askama next release
 rocket = { version = "0.5.1", features = ["json", "secrets", "uuid"] }
 rust-i18n = "3.1.3"

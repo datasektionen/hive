@@ -98,7 +98,7 @@ async fn tagged_users(
         .await?;
 
     let assignments =
-        tags::list_user_assignments(&consumer.system_id, tag_id, None, db.inner(), None)
+        tags::list_user_assignments(&consumer.system_id, tag_id, db.inner(), &None, None)
             .await?
             .into_iter()
             .map(Into::into)
@@ -155,7 +155,7 @@ async fn tagged_group_members(
         return Err(AppError::NotAllowed(HivePermission::ApiListTagged));
     }
 
-    let members = groups::members::get_all_members(group_id, group_domain, db.inner())
+    let members = groups::members::get_all_members(group_id, group_domain, db.inner(), &None)
         .await?
         .into_iter()
         .map(|member| member.username)

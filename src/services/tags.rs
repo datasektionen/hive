@@ -9,6 +9,7 @@ use crate::{
     guards::{lang::Language, perms::PermsEvaluator, user::User},
     models::{ActionKind, AffiliatedTagAssignment, Tag, TargetKind},
     perms::{HivePermission, SystemsScope},
+    resolver::IdentityResolver,
 };
 
 pub async fn get_one<'x, X>(system_id: &str, tag_id: &str, db: X) -> AppResult<Option<Tag>>
@@ -130,18 +131,14 @@ where
 pub async fn list_user_assignments<'x, X>(
     system_id: &str,
     tag_id: &str,
-    label_lang: Option<&Language>,
     db: X,
+    resolver: &Option<IdentityResolver>,
     perms: Option<&PermsEvaluator>,
 ) -> AppResult<Vec<AffiliatedTagAssignment>>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
     let mut query = sqlx::QueryBuilder::new("SELECT *");
-
-    if label_lang.is_some() {
-        query.push(", 'Benjamin Widman' AS label");
-    }
 
     query.push(
         " FROM all_tag_assignments
@@ -152,11 +149,7 @@ where
     query.push_bind(tag_id);
     query.push(" AND username IS NOT NULL");
 
-    query.push(" ORDER BY (id IS NULL)");
-    if label_lang.is_some() {
-        query.push(", label");
-    }
-    query.push(", username");
+    query.push(" ORDER BY (id IS NULL), username");
 
     let mut assignments: Vec<AffiliatedTagAssignment> =
         query.build_query_as().fetch_all(db).await?;
@@ -167,6 +160,25 @@ where
             // query should be OK since perms are cached by perm_id
             assignment.can_manage = Some(perms.satisfies(min).await?);
         }
+    }
+
+    if let Some(resolver) = resolver {
+        resolver
+            .populate_identities(
+                &mut assignments,
+                |assignment| assignment.username.as_deref().unwrap(),
+                |assignment, name| assignment.label = Some(name),
+            )
+            .await?;
+
+        // need to re-sort by label
+        assignments.sort_unstable_by_key(|assignment| {
+            (
+                assignment.id.is_none(), // false comes first (direct assignment)
+                assignment.label.clone(),
+                assignment.username.clone(),
+            )
+        });
     }
 
     Ok(assignments)
@@ -368,8 +380,8 @@ pub async fn assign_to_user<'v, 'x, X>(
     system_id: &str,
     tag_id: &str,
     dto: &AssignTagToUserDto<'v>,
-    label_lang: Option<&Language>,
     db: X,
+    resolver: &Option<IdentityResolver>,
     user: &User,
 ) -> AppResult<AffiliatedTagAssignment>
 where
@@ -397,10 +409,6 @@ where
         RETURNING *, TRUE AS can_manage",
         pg_args!(system_id, tag_id, dto.content, dto.user),
     );
-
-    if label_lang.is_some() {
-        query.push(", 'Benjamin Widman' AS label");
-    }
 
     let mut assignment: AffiliatedTagAssignment = query
         .build_query_as()
@@ -436,12 +444,25 @@ where
 
     txn.commit().await?;
 
+    // design choice: a name resolution fail does not abort the transaction,
+    // which (arguably) might make sense to allow management even when the
+    // resolver is down / broken. this also means invalid usernames can still be
+    // assigned tags, even if they don't exist
+    if let Some(resolver) = resolver {
+        assignment.label = Some(
+            resolver
+                .resolve_one(assignment.username.as_deref().unwrap())
+                .await?,
+        );
+    }
+
     Ok(assignment)
 }
 
 pub async fn unassign<'x, X>(
     assignment_id: Uuid,
     db: X,
+    resolver: &Option<IdentityResolver>,
     perms: &PermsEvaluator,
     user: &User,
 ) -> AppResult<AffiliatedTagAssignment>
@@ -450,7 +471,7 @@ where
 {
     let mut txn = db.begin().await?;
 
-    let old: AffiliatedTagAssignment = sqlx::query_as(
+    let mut old: AffiliatedTagAssignment = sqlx::query_as(
         "DELETE FROM tag_assignments
         WHERE id = $1
         RETURNING *",
@@ -501,6 +522,17 @@ where
     .await?;
 
     txn.commit().await?;
+
+    // design choice: a name resolution fail does not abort the transaction,
+    // which (arguably) might make sense to allow management even when the
+    // resolver is down / broken
+    if let Some(resolver) = resolver {
+        old.label = Some(
+            resolver
+                .resolve_one(old.username.as_deref().unwrap())
+                .await?,
+        );
+    }
 
     Ok(old)
 }

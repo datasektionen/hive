@@ -12,6 +12,7 @@ Possible configuration settings are listed via `--help`, with corresponding
 | OIDC Issuer URL    | **Yes**      | e.g., `https://sso.datasektionen.se/op`  |
 | OIDC Client ID     | **Yes**      | Ask authentication server provider (\*)  |
 | OIDC Client Secret | **Yes**      | Ask authentication server provider (\*)  |
+| Identity Resolver  | No           | Endpoint URL; Unset: no username -> name |
 | Port               | No           | Default: `6869`                          |
 | Listen Address     | No           | Default: `0.0.0.0` (listen everywhere)   |
 | Verbosity          | No           | Default: `normal` (show warnings/errors) |

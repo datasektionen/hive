@@ -97,6 +97,7 @@ impl From<AppError> for InnerAppErrorDto {
             AppError::OidcAuthenticationError(..) => Self::PipelineError,
             AppError::StateSerializationError(..) => Self::PipelineError,
             AppError::StateDeserializationError(..) => Self::PipelineError,
+            AppError::IdentityResolutionError(..) => Self::PipelineError,
             AppError::ErrorDecodeFailure => Self::PipelineError,
             AppError::NotAllowed(..) => Self::NotAllowed,
             AppError::InsufficientAuthorityInGroup(min) => {

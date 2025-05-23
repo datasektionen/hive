@@ -6,8 +6,8 @@
     {% if let Some(member) = add_member_success %}
     <p class="success">
         <span class="material-icons">task_alt</span>
-        {# TODO: show name? #}
-        <strong>{{ ctx.t1("groups.members.add.member.success", member.username) }}</strong>
+        {% let display_name = member.display_name.as_deref().unwrap_or(member.username.as_str()) %}
+        <strong>{{ ctx.t1("groups.members.add.member.success", display_name) }}</strong>
     </p>
     <br />
     <template>

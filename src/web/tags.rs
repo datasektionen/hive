@@ -15,6 +15,7 @@ use crate::{
     guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
     models::{AffiliatedTagAssignment, Tag},
     perms::{HivePermission, SystemsScope},
+    resolver::IdentityResolver,
     routing::RouteTree,
     services::{systems, tags},
 };
@@ -277,12 +278,13 @@ pub async fn delete_tag(
 }
 
 macro_rules! list_tag_assignments {
-    ($path:expr, $fname:ident, $template:ident, $lister:path, $($extra:expr),*) => {
+    ($path:expr, $fname:ident, $template:ident, $lister:expr) => {
         #[rocket::get($path)]
         async fn $fname(
             system_id: &str,
             tag_id: &str,
             db: &State<PgPool>,
+            resolver: &State<Option<IdentityResolver>>,
             ctx: PageContext,
             perms: &PermsEvaluator,
             partial: Option<HxRequest<'_>>,
@@ -306,7 +308,7 @@ macro_rules! list_tag_assignments {
             let has_content = tags::has_content(system_id, tag_id, db.inner()).await?;
 
             let tag_assignments =
-                $lister(system_id, tag_id, Some(&ctx.lang), $($extra,)* db.inner(), Some(perms)).await?;
+                ($lister)(system_id, tag_id, &ctx.lang, db.inner(), resolver, perms).await?;
 
             // this could've been directly in the template, but askama doesn't seem
             // to support closures defined in the source (parsing error)
@@ -330,15 +332,18 @@ list_tag_assignments!(
     "/system/<system_id>/tag/<tag_id>/groups",
     list_tag_groups,
     PartialListTagGroupsView,
-    tags::list_group_assignments,
-    None
+    |system_id, tag_id, lang, db, _resolver, perms| {
+        tags::list_group_assignments(system_id, tag_id, Some(lang), None, db, Some(perms))
+    }
 );
 
 list_tag_assignments!(
     "/system/<system_id>/tag/<tag_id>/users",
     list_tag_users,
     PartialListTagUsersView,
-    tags::list_user_assignments,
+    |system_id, tag_id, _lang, db, resolver, perms| {
+        tags::list_user_assignments(system_id, tag_id, db, resolver, Some(perms))
+    }
 );
 
 #[rocket::post("/system/<system_id>/tag/<tag_id>/groups", data = "<form>")]
@@ -413,6 +418,7 @@ async fn assign_tag_to_user<'v>(
     tag_id: &str,
     form: Form<Contextual<'v, AssignTagToUserDto<'v>>>,
     db: &State<PgPool>,
+    resolver: &State<Option<IdentityResolver>>,
     ctx: PageContext,
     perms: &PermsEvaluator,
     user: User,
@@ -429,8 +435,7 @@ async fn assign_tag_to_user<'v>(
         // validation passed
 
         let assignment =
-            tags::assign_to_user(system_id, tag_id, dto, Some(&ctx.lang), db.inner(), &user)
-                .await?;
+            tags::assign_to_user(system_id, tag_id, dto, db.inner(), resolver, &user).await?;
 
         if partial.is_some() {
             let template = AssignTagToUserView {
@@ -475,6 +480,7 @@ async fn assign_tag_to_user<'v>(
 async fn unassign_tag(
     id: Uuid,
     db: &State<PgPool>,
+    resolver: &State<Option<IdentityResolver>>,
     perms: &PermsEvaluator,
     user: User,
     partial: Option<HxRequest<'_>>,
@@ -483,7 +489,7 @@ async fn unassign_tag(
 
     // TODO: anti-CSRF(?), DELETE isn't a normal form method
 
-    let old = tags::unassign(id, db.inner(), perms, &user).await?;
+    let old = tags::unassign(id, db.inner(), resolver, perms, &user).await?;
 
     if partial.is_some() {
         Ok(Either::Left(()))

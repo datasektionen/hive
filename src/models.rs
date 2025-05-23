@@ -119,6 +119,8 @@ pub struct GroupMember {
     pub from: NaiveDate,
     pub until: NaiveDate,
     pub manager: bool,
+    #[sqlx(default)]
+    pub display_name: Option<String>, // None if not loaded yet
 }
 
 impl GroupMember {
@@ -307,7 +309,7 @@ pub struct AffiliatedTagAssignment {
     pub group_domain: Option<String>,
     pub username: Option<String>,
     #[sqlx(default)]
-    pub label: Option<String>, // group name or user username
+    pub label: Option<String>, // group name or user display name
     #[sqlx(default)]
     pub can_manage: Option<bool>, // whether current user can e.g. unassign
 }

@@ -1,6 +1,7 @@
 use auth::oidc::OidcClient;
 use errors::ErrorPageGenerator;
 use log::*;
+use resolver::IdentityResolver;
 use rocket::fs::FileServer;
 use routing::cors::Cors;
 use sqlx::PgPool;
@@ -14,6 +15,7 @@ mod guards;
 mod logging;
 mod models;
 mod perms;
+mod resolver;
 mod routing;
 mod sanitizers;
 mod services;
@@ -55,9 +57,12 @@ async fn rocket() -> _ {
         .await
         .expect("Failed to initialize OIDC");
 
+    let resolver = IdentityResolver::new(config.identity_resolver_endpoint.clone());
+
     rocket::custom(config.get_rocket_config())
         .manage(db)
         .manage(oidc_client)
+        .manage(resolver)
         .attach(ErrorPageGenerator)
         .attach(Cors)
         .mount("/", &web::tree())

@@ -9,16 +9,22 @@ use crate::{
     errors::{AppError, AppResult},
     guards::user::User,
     models::{ActionKind, GroupMember, Subgroup, TargetKind},
+    resolver::IdentityResolver,
     services::audit_logs,
 };
 
-pub async fn get_direct_members<'x, X>(id: &str, domain: &str, db: X) -> AppResult<Vec<GroupMember>>
+pub async fn get_direct_members<'x, X>(
+    id: &str,
+    domain: &str,
+    db: X,
+    resolver: &Option<IdentityResolver>,
+) -> AppResult<Vec<GroupMember>>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
     let today = Local::now().date_naive();
 
-    let members = sqlx::query_as(
+    let mut members = sqlx::query_as(
         "SELECT *
         FROM direct_memberships
         WHERE group_id = $1
@@ -32,16 +38,23 @@ where
     .fetch_all(db)
     .await?;
 
+    populate_member_names(&mut members, resolver).await?;
+
     Ok(members)
 }
 
-pub async fn get_all_members<'x, X>(id: &str, domain: &str, db: X) -> AppResult<Vec<GroupMember>>
+pub async fn get_all_members<'x, X>(
+    id: &str,
+    domain: &str,
+    db: X,
+    resolver: &Option<IdentityResolver>,
+) -> AppResult<Vec<GroupMember>>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
     let today = Local::now().date_naive();
 
-    let members = sqlx::query_as(
+    let mut members: Vec<GroupMember> = sqlx::query_as(
         "SELECT username,
             bool_or(manager) AS manager,
             min(\"from\") AS \"from\",
@@ -55,6 +68,8 @@ where
     .bind(today)
     .fetch_all(db)
     .await?;
+
+    populate_member_names(&mut members, resolver).await?;
 
     Ok(members)
 }
@@ -253,6 +268,7 @@ pub async fn add_member<'v, 'x, X>(
     domain: &str,
     dto: &AddMemberDto<'v>,
     db: X,
+    resolver: &Option<IdentityResolver>,
     user: &User,
 ) -> AppResult<GroupMember>
 where
@@ -283,7 +299,7 @@ where
         return Err(AppError::RedundantMembership(dto.username.to_string()));
     }
 
-    let added: GroupMember = sqlx::query_as(
+    let mut added: GroupMember = sqlx::query_as(
         "INSERT INTO direct_memberships(username, group_id, group_domain, \"from\", \"until\", \
          manager)
         VALUES ($1, $2, $3, $4, $5, $6)
@@ -319,6 +335,14 @@ where
     .await?;
 
     txn.commit().await?;
+
+    // design choice: a name resolution fail does not abort the transaction,
+    // which (arguably) might make sense to allow management even when the
+    // resolver is down / broken. this also means invalid usernames can still be
+    // added to groups, even if they don't exist
+    if let Some(resolver) = resolver {
+        added.display_name = Some(resolver.resolve_one(&added.username).await?);
+    }
 
     Ok(added)
 }
@@ -480,4 +504,21 @@ where
     txn.commit().await?;
 
     Ok(true)
+}
+
+async fn populate_member_names(
+    members: &mut [GroupMember],
+    resolver: &Option<IdentityResolver>,
+) -> AppResult<()> {
+    if let Some(resolver) = resolver {
+        resolver
+            .populate_identities(
+                members,
+                |member| &member.username,
+                |member, name| member.display_name = Some(name),
+            )
+            .await?;
+    }
+
+    Ok(())
 }

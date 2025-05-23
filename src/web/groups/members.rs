@@ -15,6 +15,7 @@ use crate::{
     guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
     models::{GroupMember, GroupRef, SimpleGroup, Subgroup},
     perms::{HivePermission, UpperBoundScope},
+    resolver::IdentityResolver,
     routing::RouteTree,
     services::groups::{self, AuthorityInGroup},
     web::{Either, RenderedTemplate},
@@ -86,6 +87,7 @@ pub async fn list_members(
     domain: &str,
     show_indirect: bool,
     db: &State<PgPool>,
+    resolver: &State<Option<IdentityResolver>>,
     ctx: PageContext,
     perms: &PermsEvaluator,
     user: User,
@@ -112,12 +114,12 @@ pub async fn list_members(
     let (subgroups, members) = if show_indirect {
         (
             vec![],
-            groups::members::get_all_members(id, domain, db.inner()).await?,
+            groups::members::get_all_members(id, domain, db.inner(), resolver).await?,
         )
     } else {
         (
             groups::members::get_direct_subgroups(id, domain, db.inner()).await?,
-            groups::members::get_direct_members(id, domain, db.inner()).await?,
+            groups::members::get_direct_members(id, domain, db.inner(), resolver).await?,
         )
     };
 
@@ -241,6 +243,7 @@ async fn add_member<'v>(
     domain: &str,
     mut form: Form<Contextual<'v, AddMemberDto<'v>>>,
     db: &State<PgPool>,
+    resolver: &State<Option<IdentityResolver>>,
     ctx: PageContext,
     perms: &PermsEvaluator,
     user: User,
@@ -292,7 +295,8 @@ async fn add_member<'v>(
     if let Some(dto) = &form.value {
         // validation passed
 
-        let added = groups::members::add_member(id, domain, dto, db.inner(), &user).await?;
+        let added =
+            groups::members::add_member(id, domain, dto, db.inner(), resolver, &user).await?;
 
         if partial.is_some() {
             let template = PartialAddMemberView {
