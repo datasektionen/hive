@@ -21,7 +21,7 @@
 {% endblock heading %}
 
 {% block action_buttons %}
-{% if fully_authorized && tag.system_id != crate::HIVE_SYSTEM_ID %}
+{% if fully_authorized %}
 <button class="btn-danger" onclick="openModal('delete-tag')">
     <span class="material-icons">delete</span>
     {{ ctx.t("control.delete") }}
@@ -90,7 +90,7 @@
     {% endif %}
 </article>
 
-{% if fully_authorized && tag.system_id != crate::HIVE_SYSTEM_ID %}
+{% if fully_authorized %}
 {% include "delete.html.j2" %}
 {% endif %}
 {% endblock content %}
