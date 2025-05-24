@@ -58,13 +58,22 @@ impl IdentityResolver {
         Ok(display_names)
     }
 
-    pub async fn resolve_one(&self, username: &str) -> AppResult<String> {
-        let name = self
+    pub async fn resolve_one(&self, username: &str) -> AppResult<Option<String>> {
+        let result = self
             .client
             .get(&self.endpoint)
             .query(&[("format", "single"), ("u", username)])
             .send()
-            .await
+            .await;
+
+        if let Ok(ref response) = result {
+            if response.status() == reqwest::StatusCode::NOT_FOUND {
+                // resolver does not know this username
+                return Ok(None);
+            }
+        }
+
+        let name = result
             .and_then(reqwest::Response::error_for_status)
             .map_err(AppError::IdentityResolutionError)?
             .json::<ResolvedEntry>()
@@ -72,7 +81,7 @@ impl IdentityResolver {
             .map_err(AppError::IdentityResolutionError)?
             .display_name();
 
-        Ok(name)
+        Ok(Some(name))
     }
 
     pub async fn populate_identities<T>(

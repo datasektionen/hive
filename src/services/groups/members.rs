@@ -340,8 +340,9 @@ where
     // which (arguably) might make sense to allow management even when the
     // resolver is down / broken. this also means invalid usernames can still be
     // added to groups, even if they don't exist
+    // (see also: commit fdf8908115b3726c8b8bc119b1b24fb25a2d9900)
     if let Some(resolver) = resolver {
-        added.display_name = Some(resolver.resolve_one(&added.username).await?);
+        added.display_name = resolver.resolve_one(&added.username).await?;
     }
 
     Ok(added)

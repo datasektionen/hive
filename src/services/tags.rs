@@ -449,12 +449,11 @@ where
     // which (arguably) might make sense to allow management even when the
     // resolver is down / broken. this also means invalid usernames can still be
     // assigned tags, even if they don't exist
+    // (see also: commit fdf8908115b3726c8b8bc119b1b24fb25a2d9900)
     if let Some(resolver) = resolver {
-        assignment.label = Some(
-            resolver
-                .resolve_one(assignment.username.as_deref().unwrap())
-                .await?,
-        );
+        assignment.label = resolver
+            .resolve_one(assignment.username.as_deref().unwrap())
+            .await?;
     }
 
     Ok(assignment)
@@ -528,11 +527,9 @@ where
     // which (arguably) might make sense to allow management even when the
     // resolver is down / broken
     if let Some(resolver) = resolver {
-        old.label = Some(
-            resolver
-                .resolve_one(old.username.as_deref().unwrap())
-                .await?,
-        );
+        old.label = resolver
+            .resolve_one(old.username.as_deref().unwrap())
+            .await?;
     }
 
     Ok(old)
