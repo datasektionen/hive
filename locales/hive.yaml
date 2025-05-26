@@ -283,10 +283,10 @@ groups.form.field.description-sv.placeholder:
 groups.form.field.description-sv.tip:
   en: >
     Describe this group's purpose and members clearly. Strive for it to be
-    easily understood even by people not familiar with the group.
+    easily understood even by people not familiar with the group
   sv: >
     Beskriv denna grupps syfte och medlemmar tydligt. Sträva efter att det ska
-    vara lätt att förstå även av personer som inte är bekanta med gruppen.
+    vara lätt att förstå även av personer som inte är bekanta med gruppen
 groups.form.field.domain.label:
   en: Domain
   sv: Domän
