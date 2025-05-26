@@ -22,7 +22,12 @@
     {% for system in systems %}
     <article>
         <header class="flex-between">
-            <h3>{{ system.id|e|highlight(q.unwrap_or("")) }}</h3>
+            <h3>
+                {{ system.id|e|highlight(q.unwrap_or("")) }}
+                {% if system.id == crate::HIVE_SYSTEM_ID %}
+                <span class="primary material-icons">stars</span>
+                {% endif %}
+            </h3>
             <a href="/system/{{ system.id }}" role="button" class="secondary">
                 {{ ctx.t("control.manage") }}
                 <span class="material-icons">arrow_forward</span>
