@@ -305,7 +305,9 @@ macro_rules! list_tag_assignments {
                 ])
                 .await?;
 
-            let has_content = tags::has_content(system_id, tag_id, db.inner()).await?;
+            let has_content = tags::get_morphology(system_id, tag_id, db.inner())
+                .await?
+                .has_content;
 
             let tag_assignments =
                 ($lister)(system_id, tag_id, &ctx.lang, db.inner(), resolver, perms).await?;

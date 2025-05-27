@@ -55,6 +55,8 @@ enum InnerAppErrorDto {
         tag_id: String,
         content: Option<String>,
     },
+    #[serde(rename = "tag.assignment.unsupported")]
+    UnsupportedTagAssignment { system_id: String, tag_id: String },
     #[serde(rename = "tag.assignment.content.missing")]
     MissingTagContent { system_id: String, tag_id: String },
     #[serde(rename = "tag.assignment.content.extraneous")]
@@ -134,6 +136,9 @@ impl From<AppError> for InnerAppErrorDto {
                     tag_id,
                     content,
                 }
+            }
+            AppError::UnsupportedTagAssignment(system_id, tag_id) => {
+                Self::UnsupportedTagAssignment { system_id, tag_id }
             }
             AppError::MissingTagContent(system_id, tag_id) => {
                 Self::MissingTagContent { system_id, tag_id }
@@ -225,6 +230,12 @@ impl InnerAppErrorDto {
             (Self::DuplicateTagAssignment { .. }, Language::English) => "Duplicate Tag Assignment",
             (Self::DuplicateTagAssignment { .. }, Language::Swedish) => {
                 "Duplicerat tagg-tilldelning"
+            }
+            (Self::UnsupportedTagAssignment { .. }, Language::English) => {
+                "Unsupported Tag Assignment"
+            }
+            (Self::UnsupportedTagAssignment { .. }, Language::Swedish) => {
+                "Tagg-tilldelning stöds inte"
             }
             (Self::MissingTagContent { .. }, Language::English) => "Missing Tag Content",
             (Self::MissingTagContent { .. }, Language::Swedish) => "Taggsinnehåll saknas",
@@ -459,6 +470,14 @@ impl InnerAppErrorDto {
                     }
                 )
             }
+            (Self::UnsupportedTagAssignment { system_id, tag_id }, Language::English) => format!(
+                "Tag \"#{system_id}:{tag_id}\" does not support being assigned to this kind of \
+                 entity (user/group)."
+            ),
+            (Self::UnsupportedTagAssignment { system_id, tag_id }, Language::Swedish) => format!(
+                "Taggen \"#{system_id}:{tag_id}\" stöder inte tilldelning till den här typen av \
+                 entitet (användare/grupp)."
+            ),
             (Self::MissingTagContent { system_id, tag_id }, Language::English) => {
                 format!(
                     "Tag with key \"#{system_id}:{tag_id}\" requires a concrete content value to \

@@ -77,6 +77,8 @@ pub enum AppError {
     DuplicateTagId(String),
     #[error("tag `#{0}:{1}:{content}` is already assigned to this entity", content = .2.as_deref().unwrap_or("/"))]
     DuplicateTagAssignment(String, String, Option<String>),
+    #[error("tag `#{0}:{1}` does not support being assigned to this entity")]
+    UnsupportedTagAssignment(String, String),
     #[error("tag with key `#{0}:{1}` requires a content value to be specified on assignment")]
     MissingTagContent(String, String),
     #[error("tag with key `#{0}:{1}` does not accept a content value on assignment")]
@@ -139,6 +141,7 @@ impl AppError {
             AppError::NoSuchTag(..) => Status::NotFound,
             AppError::DuplicateTagId(..) => Status::Conflict,
             AppError::DuplicateTagAssignment(..) => Status::Conflict,
+            AppError::UnsupportedTagAssignment(..) => Status::BadRequest,
             AppError::MissingTagContent(..) => Status::BadRequest,
             AppError::ExtraneousTagContent(..) => Status::BadRequest,
             AppError::InvalidSubtag(..) => Status::BadRequest,

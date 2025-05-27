@@ -7,7 +7,7 @@ use crate::{
     dto::tags::{AssignTagToGroupDto, AssignTagToUserDto, CreateSubtagDto, CreateTagDto},
     errors::{AppError, AppResult},
     guards::{lang::Language, perms::PermsEvaluator, user::User},
-    models::{ActionKind, AffiliatedTagAssignment, Tag, TargetKind},
+    models::{ActionKind, AffiliatedTagAssignment, Tag, TagMorphology, TargetKind},
     perms::{HivePermission, SystemsScope},
     resolver::IdentityResolver,
 };
@@ -293,19 +293,7 @@ where
 {
     let mut txn = db.begin().await?;
 
-    let has_content = has_content(system_id, tag_id, &mut *txn).await?;
-
-    if has_content && dto.content.is_none() {
-        return Err(AppError::MissingTagContent(
-            system_id.to_string(),
-            tag_id.to_string(),
-        ));
-    } else if !has_content && dto.content.is_some() {
-        return Err(AppError::ExtraneousTagContent(
-            system_id.to_string(),
-            tag_id.to_string(),
-        ));
-    }
+    assert_supported_assignment(system_id, tag_id, true, dto.content.is_some(), &mut *txn).await?;
 
     let mut query = sqlx::QueryBuilder::with_arguments(
         "INSERT INTO tag_assignments (system_id, tag_id, content, group_id, group_domain)
@@ -390,19 +378,7 @@ where
 {
     let mut txn = db.begin().await?;
 
-    let has_content = has_content(system_id, tag_id, &mut *txn).await?;
-
-    if has_content && dto.content.is_none() {
-        return Err(AppError::MissingTagContent(
-            system_id.to_string(),
-            tag_id.to_string(),
-        ));
-    } else if !has_content && dto.content.is_some() {
-        return Err(AppError::ExtraneousTagContent(
-            system_id.to_string(),
-            tag_id.to_string(),
-        ));
-    }
+    assert_supported_assignment(system_id, tag_id, false, dto.content.is_some(), &mut *txn).await?;
 
     let mut query = sqlx::QueryBuilder::with_arguments(
         "INSERT INTO tag_assignments (system_id, tag_id, content, username)
@@ -699,12 +675,12 @@ where
     Ok(())
 }
 
-pub async fn has_content<'x, X>(system_id: &str, tag_id: &str, db: X) -> AppResult<bool>
+pub async fn get_morphology<'x, X>(system_id: &str, tag_id: &str, db: X) -> AppResult<TagMorphology>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
-    sqlx::query_scalar(
-        "SELECT has_content
+    sqlx::query_as(
+        "SELECT has_content, supports_groups, supports_users
         FROM tags
         WHERE system_id = $1
             AND tag_id = $2",
@@ -714,4 +690,42 @@ where
     .fetch_optional(db)
     .await?
     .ok_or_else(|| AppError::NoSuchTag(system_id.to_string(), tag_id.to_string()))
+}
+
+pub async fn assert_supported_assignment<'x, X>(
+    system_id: &str,
+    tag_id: &str,
+    assignment_to_group: bool,
+    assignment_with_content: bool,
+    db: X,
+) -> AppResult<()>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+{
+    let morph = get_morphology(system_id, tag_id, db).await?;
+
+    let supports_entity = if assignment_to_group {
+        morph.supports_groups
+    } else {
+        morph.supports_users
+    };
+
+    if !supports_entity {
+        Err(AppError::UnsupportedTagAssignment(
+            system_id.to_string(),
+            tag_id.to_string(),
+        ))
+    } else if morph.has_content && !assignment_with_content {
+        Err(AppError::MissingTagContent(
+            system_id.to_string(),
+            tag_id.to_string(),
+        ))
+    } else if !morph.has_content && assignment_with_content {
+        Err(AppError::ExtraneousTagContent(
+            system_id.to_string(),
+            tag_id.to_string(),
+        ))
+    } else {
+        Ok(())
+    }
 }

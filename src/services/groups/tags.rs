@@ -102,19 +102,14 @@ where
 {
     let mut txn = db.begin().await?;
 
-    let has_content = tags::has_content(dto.tag.system_id, dto.tag.tag_id, &mut *txn).await?;
-
-    if has_content && dto.content.is_none() {
-        return Err(AppError::MissingTagContent(
-            dto.tag.system_id.to_string(),
-            dto.tag.tag_id.to_string(),
-        ));
-    } else if !has_content && dto.content.is_some() {
-        return Err(AppError::ExtraneousTagContent(
-            dto.tag.system_id.to_string(),
-            dto.tag.tag_id.to_string(),
-        ));
-    }
+    tags::assert_supported_assignment(
+        dto.tag.system_id,
+        dto.tag.tag_id,
+        true,
+        dto.content.is_some(),
+        &mut *txn,
+    )
+    .await?;
 
     let assignment: TagAssignment = sqlx::query_as(
         "INSERT INTO tag_assignments (system_id, tag_id, content, group_id, group_domain)
@@ -174,13 +169,14 @@ where
 {
     let mut txn = db.begin().await?;
 
-    if tags::has_content(dto.tag.system_id, dto.tag.tag_id, &mut *txn).await? {
-        // we currently don't support bulk-assigning tags with content
-        return Err(AppError::MissingTagContent(
-            dto.tag.system_id.to_string(),
-            dto.tag.tag_id.to_string(),
-        ));
-    }
+    tags::assert_supported_assignment(
+        dto.tag.system_id,
+        dto.tag.tag_id,
+        true,
+        false, // we currently don't support bulk-assigning tags with content
+        &mut *txn,
+    )
+    .await?;
 
     for group in &dto.selected {
         let assignment_id: Option<Uuid> = sqlx::query_scalar(

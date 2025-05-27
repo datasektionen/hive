@@ -270,6 +270,13 @@ impl Tag {
 }
 
 #[derive(FromRow)]
+pub struct TagMorphology {
+    pub has_content: bool,
+    pub supports_groups: bool,
+    pub supports_users: bool,
+}
+
+#[derive(FromRow)]
 pub struct TagAssignment {
     pub id: Uuid,
     pub system_id: String,
