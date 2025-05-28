@@ -26,6 +26,19 @@ info:
     associated with the API key passed via the HTTP `Authorization` header (see
     below). This means that anywhere a system ID is not passed, the current
     "relevant" one is used.
+
+    ## Overriding Consumer System
+    In rare cases, certain API tokens may be authorized to invoke this API's
+    endpoints on behalf of other systems with which they are not directly
+    associated (for example, a login system forwarding information relevant to
+    its clients as a convenience, or a gateway mediating requests to Hive). To
+    achieve this, consumers may include the `X-Hive-Impersonate-System` HTTP
+    header set to the target system ID, indicating that Hive should override the
+    consumer to that system and all results will then be relevant to it (and not
+    the system associated with the invoking API token as normal). Note that this
+    will only be accepted if the invoking API token has a matching
+    `$hive:api-impersonate-system:<other-system-id>` permission, otherwise a
+    `403 Forbidden` HTTP status will be returned.
   version: 1.0.0
 
 servers:

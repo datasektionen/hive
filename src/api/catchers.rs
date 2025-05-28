@@ -2,7 +2,7 @@ use rocket::catchers;
 use serde_json::json;
 
 pub fn catchers() -> Vec<rocket::Catcher> {
-    catchers![not_found, unauthorized, unknown]
+    catchers![not_found, unauthorized, forbidden, unknown]
 }
 
 #[rocket::catch(404)]
@@ -23,6 +23,17 @@ fn unauthorized() -> serde_json::Value {
         "error": true,
         "info": {
             "key": "api.unauthorized"
+        }
+    })
+}
+
+#[rocket::catch(403)]
+fn forbidden() -> serde_json::Value {
+    // same format as AppErrorDto when serialized
+    json!({
+        "error": true,
+        "info": {
+            "key": "api.forbidden"
         }
     })
 }
