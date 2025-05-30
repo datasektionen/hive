@@ -482,7 +482,6 @@ async fn assign_tag_to_user<'v>(
 async fn unassign_tag(
     id: Uuid,
     db: &State<PgPool>,
-    resolver: &State<Option<IdentityResolver>>,
     perms: &PermsEvaluator,
     user: User,
     partial: Option<HxRequest<'_>>,
@@ -491,7 +490,7 @@ async fn unassign_tag(
 
     // TODO: anti-CSRF(?), DELETE isn't a normal form method
 
-    let old = tags::unassign(id, db.inner(), resolver, perms, &user).await?;
+    let old = tags::unassign(id, db.inner(), perms, &user).await?;
 
     if partial.is_some() {
         Ok(Either::Left(()))

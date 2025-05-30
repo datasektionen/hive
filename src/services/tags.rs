@@ -438,7 +438,6 @@ where
 pub async fn unassign<'x, X>(
     assignment_id: Uuid,
     db: X,
-    resolver: &Option<IdentityResolver>,
     perms: &PermsEvaluator,
     user: &User,
 ) -> AppResult<AffiliatedTagAssignment>
@@ -447,7 +446,7 @@ where
 {
     let mut txn = db.begin().await?;
 
-    let mut old: AffiliatedTagAssignment = sqlx::query_as(
+    let old: AffiliatedTagAssignment = sqlx::query_as(
         "DELETE FROM tag_assignments
         WHERE id = $1
         RETURNING *",
@@ -498,15 +497,6 @@ where
     .await?;
 
     txn.commit().await?;
-
-    // design choice: a name resolution fail does not abort the transaction,
-    // which (arguably) might make sense to allow management even when the
-    // resolver is down / broken
-    if let Some(resolver) = resolver {
-        old.label = resolver
-            .resolve_one(old.username.as_deref().unwrap())
-            .await?;
-    }
 
     Ok(old)
 }
