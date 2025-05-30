@@ -2,7 +2,7 @@ services:
   hive:
     build: .
     ports:
-      - "6869:6869"
+      - "127.0.0.1:6869:6869"
     env_file: secrets.env
     environment:
       HIVE_DB_URL: postgresql://hive:hive@db:5432/hive
@@ -34,7 +34,7 @@ services:
   db:
     image: postgres:16
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - hive-db-data:/data/db
     environment:
