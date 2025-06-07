@@ -218,7 +218,7 @@ where
 {
     let mut txn = db.begin().await?;
 
-    let manager = sqlx::query_scalar(
+    let manager: Option<bool> = sqlx::query_scalar(
         "DELETE FROM subgroups
         WHERE parent_id = $1
             AND parent_domain = $2
@@ -233,9 +233,7 @@ where
     .fetch_optional(&mut *txn)
     .await?;
 
-    let manager: bool = if let Some(manager) = manager {
-        manager
-    } else {
+    let Some(manager) = manager else {
         // child was not a (direct) subgroup of parent, so there's nothing to do
         // (just return without committing the transaction)
         return Ok(());
@@ -363,7 +361,7 @@ where
 
     let mut txn = db.begin().await?;
 
-    let member = sqlx::query_as(
+    let member: Option<GroupMember> = sqlx::query_as(
         "DELETE FROM direct_memberships
         WHERE id = $1
             AND group_id = $2
@@ -376,9 +374,7 @@ where
     .fetch_optional(&mut *txn)
     .await?;
 
-    let member: GroupMember = if let Some(member) = member {
-        member
-    } else {
+    let Some(member) = member else {
         // ID was not associated with this group, so there's nothing to do
         // (just return without committing the transaction)
         return Ok(());
