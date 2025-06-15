@@ -10,17 +10,20 @@ publish = false
 rust-version = "1.82"
 
 [features]
-default = ["api-docs"]
+default = ["api-docs", "default-integrations"]
 api-docs = []
 integrations = [ # the underlying control mechanism
     "dep:tokio-cron-scheduler",
 ]
+default-integrations = ["integration-gworkspace"]
+integration-gworkspace = ["integrations", "dep:jsonwebtoken"]
 
 [dependencies]
 chrono = { version = "0.4.39", features = ["serde"] }
 clap = { version = "4.5.30", features = ["derive"] }
 figment = { version = "0.10.19", features = ["env", "toml"] }
 hex = "0.4.3"
+jsonwebtoken = { version = "9.3.1", optional = true }
 log = "0.4.25"
 openidconnect = { version = "4.0.0", features = [
     "timing-resistant-secret-traits",

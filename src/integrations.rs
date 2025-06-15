@@ -10,9 +10,15 @@ use crate::{
     models::{IntegrationTaskLogEntry, IntegrationTaskLogEntryKind, IntegrationTaskRun},
 };
 
+#[cfg(feature = "integration-gworkspace")]
+mod gworkspace;
+
 // can't use const because it wouldn't support async fn pointers for tasks
 pub static MANIFESTS: LazyLock<Vec<&Manifest>> = LazyLock::new(|| {
-    vec![]
+    vec![
+        #[cfg(feature = "integration-gworkspace")]
+        &*gworkspace::MANIFEST,
+    ]
 });
 
 pub struct Manifest {
