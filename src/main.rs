@@ -21,6 +21,9 @@ mod sanitizers;
 mod services;
 mod web;
 
+#[cfg(feature = "integrations")]
+mod integrations;
+
 const HIVE_SYSTEM_ID: &str = "hive";
 const HIVE_ROOT_GROUP_ID: &str = "root";
 const HIVE_INTERNAL_DOMAIN: &str = "hive.internal";
@@ -58,6 +61,17 @@ async fn rocket() -> _ {
         .expect("Failed to initialize OIDC");
 
     let resolver = IdentityResolver::new(config.identity_resolver_endpoint.clone());
+
+    #[cfg(feature = "integrations")]
+    {
+        let db = db.clone(); // cloning is cheap (Arc)
+
+        rocket::tokio::spawn(async move {
+            integrations::schedule_tasks(db)
+                .await
+                .expect("Failed to schedule integration tasks");
+        });
+    }
 
     rocket::custom(config.get_rocket_config())
         .manage(db)

@@ -357,3 +357,30 @@ pub enum TargetKind {
     Permission,
     PermissionAssignment,
 }
+
+#[derive(FromRow)]
+pub struct IntegrationTaskRun {
+    pub run_id: Uuid,
+    pub task_id: String,
+    pub start_stamp: DateTime<Local>,
+    pub end_stamp: Option<DateTime<Local>>,
+    pub succeeded: Option<bool>,
+}
+
+#[derive(FromRow)]
+pub struct IntegrationTaskLogEntry {
+    pub kind: IntegrationTaskLogEntryKind,
+    pub stamp: DateTime<Local>,
+    pub message: String,
+}
+
+#[derive(sqlx::Type, Clone, Copy)]
+#[sqlx(
+    type_name = "integration_task_log_entry_kind",
+    rename_all = "snake_case"
+)]
+pub enum IntegrationTaskLogEntryKind {
+    Error,
+    Warning,
+    Info,
+}
