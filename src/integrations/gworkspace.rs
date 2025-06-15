@@ -145,7 +145,7 @@ async fn sync_to_directory(
 
     // TODO: sync users first
 
-    let groups: Vec<models::Group> = sqlx::query_as(
+    let mut groups: Vec<models::Group> = sqlx::query_as(
         "SELECT gs.*
         FROM all_tag_assignments ta
         JOIN groups gs
@@ -157,6 +157,12 @@ async fn sync_to_directory(
     )
     .fetch_all(&db)
     .await?;
+
+    // must sort *again* despite already doing ORDER BY in postgres because
+    // collation might be different, meaning that e.g. the dash in d-sys would
+    // lead to it being placed by postgres in a different place than what rust
+    // would expect, so the binary search below fails when it shouldn't
+    groups.sort_unstable_by(|a, b| a.domain.cmp(&b.domain).then(a.id.cmp(&b.id)));
 
     // doing this before sync'ing groups to avoid listing newly-created;
     // means that we don't need to process groups that obviously should remain
