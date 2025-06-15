@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt};
 
 use chrono::{Duration, Utc};
 use log::*;
-use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 // space-separated list of permissions required
 // (options: https://developers.google.com/identity/protocols/oauth2/scopes)
@@ -370,19 +370,8 @@ pub struct SimpleGroup {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Group {
-    pub id: String,
-    pub email: String,
     pub name: String,
     pub description: String,
-    #[serde(deserialize_with = "de_u64_from_str")]
-    pub direct_members_count: u64,
-    pub aliases: Vec<String>,
-}
-
-fn de_u64_from_str<'de, D: Deserializer<'de>>(deserializer: D) -> Result<u64, D::Error> {
-    let s = <&str>::deserialize(deserializer)?;
-
-    s.parse().map_err(serde::de::Error::custom)
 }
 
 #[derive(Serialize)]
