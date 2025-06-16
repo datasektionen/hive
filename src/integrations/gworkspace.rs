@@ -82,6 +82,13 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| super::Manifes
             supports_users: false,
         },
         super::Tag {
+            id: "extra-subgroup",
+            description: "Additional Google-only subgroup email address",
+            has_content: true,
+            supports_groups: true,
+            supports_users: false,
+        },
+        super::Tag {
             id: "personal-email",
             description: "Personal email address to be used when no Workspace user is found",
             has_content: true,
@@ -216,7 +223,24 @@ async fn sync_to_directory(
                 .map(|s| s.group.key())
                 .collect();
 
-        let subgroup_emails: Vec<_> = subgroup_emails_owned.iter().map(String::as_str).collect();
+        let extra_subgroups: Vec<String> = sqlx::query_scalar(
+            "SELECT content
+            FROM all_tag_assignments
+            WHERE system_id = 'gworkspace'
+                AND tag_id = 'extra-subgroup'
+                AND group_id = $1
+                AND group_domain = $2",
+        )
+        .bind(&group.id)
+        .bind(&group.domain)
+        .fetch_all(&db)
+        .await?;
+
+        let subgroup_emails: Vec<_> = subgroup_emails_owned
+            .iter()
+            .chain(extra_subgroups.iter())
+            .map(String::as_str)
+            .collect();
 
         let direct_members_owned =
             groups::members::get_direct_members(&group.id, &group.domain, false, &db, &None)
@@ -245,7 +269,7 @@ async fn sync_to_directory(
             }
         }
 
-        let extra: Vec<UserWithEmail> = sqlx::query_scalar(
+        let extra_members: Vec<UserWithEmail> = sqlx::query_scalar(
             "SELECT content
             FROM all_tag_assignments
             WHERE system_id = 'gworkspace'
@@ -261,7 +285,7 @@ async fn sync_to_directory(
         .filter_map(UserWithEmail::new_extra)
         .collect();
 
-        direct_members.extend(extra);
+        direct_members.extend(extra_members);
 
         sync_group_members(
             &key,
