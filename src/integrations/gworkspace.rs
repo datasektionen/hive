@@ -219,7 +219,8 @@ async fn sync_to_directory(
         let subgroup_emails: Vec<_> = subgroup_emails_owned.iter().map(String::as_str).collect();
 
         let direct_members_owned =
-            groups::members::get_direct_members(&group.id, &group.domain, &db, &None).await?;
+            groups::members::get_direct_members(&group.id, &group.domain, false, &db, &None)
+                .await?;
 
         let mut direct_members = vec![];
 
