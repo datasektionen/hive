@@ -1,4 +1,4 @@
-use std::sync::LazyLock;
+use std::{collections::HashSet, sync::LazyLock};
 
 use sqlx::PgPool;
 
@@ -222,7 +222,7 @@ async fn sync_to_directory(
             groups::members::get_direct_members(&group.id, &group.domain, false, &db, &None)
                 .await?;
 
-        let mut direct_members = vec![];
+        let mut direct_members = HashSet::new();
 
         for member in direct_members_owned {
             let with_email = get_user_email(
@@ -236,7 +236,7 @@ async fn sync_to_directory(
             .await?;
 
             if let Some(with_email) = with_email {
-                direct_members.push(with_email);
+                direct_members.insert(with_email);
             } else {
                 mon.warn(format!(
                     "Skipping user {} (could not find suitable email)",
@@ -244,6 +244,24 @@ async fn sync_to_directory(
                 ));
             }
         }
+
+        let extra: Vec<UserWithEmail> = sqlx::query_scalar(
+            "SELECT content
+            FROM all_tag_assignments
+            WHERE system_id = 'gworkspace'
+                AND tag_id = 'extra-member'
+                AND group_id = $1
+                AND group_domain = $2",
+        )
+        .bind(&group.id)
+        .bind(&group.domain)
+        .fetch_all(&db)
+        .await?
+        .into_iter()
+        .filter_map(UserWithEmail::new_extra)
+        .collect();
+
+        direct_members.extend(extra);
 
         sync_group_members(
             &key,
@@ -337,7 +355,7 @@ async fn sync_group(
 async fn sync_group_members(
     key: &str,
     subgroup_emails: &[&str],
-    direct_members: &[UserWithEmail],
+    direct_members: &HashSet<UserWithEmail>,
     client: &DirectoryApiClient,
     dry_run: bool,
     mon: &mut super::TaskRunMonitor,
@@ -477,7 +495,21 @@ async fn get_user_email(
     }
 }
 
+#[derive(Hash, PartialEq, Eq)]
 struct UserWithEmail {
     username: String,
     email: String,
+}
+
+impl UserWithEmail {
+    fn new_extra(email: String) -> Option<Self> {
+        if email.contains('@') {
+            Some(UserWithEmail {
+                username: format!("extra#{email}"),
+                email,
+            })
+        } else {
+            None
+        }
+    }
 }
