@@ -119,7 +119,7 @@ pub async fn list_members(
     } else {
         (
             groups::members::get_direct_subgroups(id, domain, db.inner()).await?,
-            groups::members::get_direct_members(id, domain, db.inner(), resolver).await?,
+            groups::members::get_direct_members(id, domain, true, db.inner(), resolver).await?,
         )
     };
 

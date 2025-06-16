@@ -16,6 +16,7 @@ use crate::{
 pub async fn get_direct_members<'x, X>(
     id: &str,
     domain: &str,
+    with_future_members: bool, // otherwise just current
     db: X,
     resolver: &Option<IdentityResolver>,
 ) -> AppResult<Vec<GroupMember>>
@@ -24,19 +25,30 @@ where
 {
     let today = Local::now().date_naive();
 
-    let mut members = sqlx::query_as(
+    let mut query = sqlx::QueryBuilder::new(
         "SELECT *
         FROM direct_memberships
         WHERE group_id = $1
         AND group_domain = $2
-        AND until >= $3
-        ORDER BY (\"from\" <= $3) DESC, manager DESC, username, id", // DESC makes true come first
-    )
-    .bind(id)
-    .bind(domain)
-    .bind(today)
-    .fetch_all(db)
-    .await?;
+        AND until >= $3 ",
+    );
+
+    if with_future_members {
+        query.push("ORDER BY (\"from\" <= $3) DESC, ");
+    } else {
+        query.push("AND \"from\" <= $3 ORDER BY ");
+    }
+
+    query.push("manager DESC, username, id");
+    // ^ DESC makes true come first
+
+    let mut members = query
+        .build_query_as()
+        .bind(id)
+        .bind(domain)
+        .bind(today)
+        .fetch_all(db)
+        .await?;
 
     populate_member_names(&mut members, resolver, Some(today)).await?;
 
