@@ -18,7 +18,7 @@ pub async fn get_direct_members<'x, X>(
     domain: &str,
     with_future_members: bool, // otherwise just current
     db: X,
-    resolver: &Option<IdentityResolver>,
+    resolver: Option<&IdentityResolver>,
 ) -> AppResult<Vec<GroupMember>>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
@@ -59,7 +59,7 @@ pub async fn get_all_members<'x, X>(
     id: &str,
     domain: &str,
     db: X,
-    resolver: &Option<IdentityResolver>,
+    resolver: Option<&IdentityResolver>,
 ) -> AppResult<Vec<GroupMember>>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
@@ -278,7 +278,7 @@ pub async fn add_member<'v, 'x, X>(
     domain: &str,
     dto: &AddMemberDto<'v>,
     db: X,
-    resolver: &Option<IdentityResolver>,
+    resolver: Option<&IdentityResolver>,
     user: &User,
 ) -> AppResult<GroupMember>
 where
@@ -517,7 +517,7 @@ where
 
 async fn populate_member_names(
     members: &mut [GroupMember],
-    resolver: &Option<IdentityResolver>,
+    resolver: Option<&IdentityResolver>,
     today: Option<NaiveDate>,
 ) -> AppResult<()> {
     if let Some(resolver) = resolver {
