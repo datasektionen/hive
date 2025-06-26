@@ -288,8 +288,30 @@ macro_rules! require_string_setting {
     }};
 }
 
+macro_rules! require_serde_setting {
+    ($mon:expr, $settings:expr, $key:literal) => {
+        if let Some(value) = $settings
+            .get($key)
+            .and_then(|value| serde_json::from_value(value.clone()).ok())
+            .unwrap()
+        {
+            value
+        } else {
+            $mon.error(concat!("Setting value `", $key, "` is not set correctly"));
+
+            return Ok(());
+        }
+    };
+}
+
 // required to allow the `allow()` below
 #[allow(clippy::useless_attribute)]
 // required for usage in this module's children
 #[allow(clippy::needless_pub_self)]
 pub(self) use require_string_setting;
+
+// required to allow the `allow()` below
+#[allow(clippy::useless_attribute)]
+// required for usage in this module's children
+#[allow(clippy::needless_pub_self)]
+pub(self) use require_serde_setting;
