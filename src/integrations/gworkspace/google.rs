@@ -163,14 +163,14 @@ impl DirectoryApiClient {
         let decoded = response
             .and_then(reqwest::Response::error_for_status)
             .map_err(|e| {
-                error!("Directory API failed to execute request ({url}): {e}");
+                error!("Directory API failed to execute request ({url}): {e:?}");
 
                 error_message
             })?
             .json()
             .await
             .map_err(|e| {
-                error!("Directory API failed to decode request JSON ({url}): {e}");
+                error!("Directory API failed to decode request JSON ({url}): {e:?}");
 
                 "Failed to decode request JSON"
             })?;
@@ -199,14 +199,14 @@ impl DirectoryApiClient {
                 .await
                 .and_then(reqwest::Response::error_for_status)
                 .map_err(|e| {
-                    error!("Directory API failed to execute paginated request: {e}");
+                    error!("Directory API failed to execute paginated request: {e:?}");
 
                     error_message
                 })?
                 .json()
                 .await
                 .map_err(|e| {
-                    error!("Directory API failed to decode paginated request JSON: {e}");
+                    error!("Directory API failed to decode paginated request JSON: {e:?}");
 
                     "Failed to decode paginated request JSON"
                 })?;
