@@ -544,7 +544,10 @@ async fn get_user_email(
     }
 
     if !allow_external {
-        mon.warn(format!("Cannot use a personal email for `{username}` because group does not support external members"));
+        mon.warn(format!(
+            "Cannot use a personal email for `{username}` because group does not support external \
+             members"
+        ));
 
         return Ok(None);
     }
