@@ -268,26 +268,6 @@ async fn dispatch_task_run(integration_id: &str, task: &Task, db: &PgPool) -> Ap
     result
 }
 
-macro_rules! require_string_setting {
-    ($mon:expr, $settings:expr, $key:literal) => {
-        super::require_string_setting!($mon, $settings, $key, "")
-    };
-    ($mon:expr, $settings:expr, $key:literal, $contained:expr) => {{
-        let value = $settings.get($key).and_then(|v| match v {
-            serde_json::Value::String(s) if s.contains($contained) => Some(s),
-            _ => None,
-        });
-
-        if let Some(value) = value {
-            value
-        } else {
-            $mon.error(concat!("Setting value `", $key, "` is not set correctly"));
-
-            return Ok(());
-        }
-    }};
-}
-
 macro_rules! require_serde_setting {
     ($mon:expr, $settings:expr, $key:literal) => {
         if let Some(value) = $settings
@@ -304,14 +284,30 @@ macro_rules! require_serde_setting {
     };
 }
 
-// required to allow the `allow()` below
-#[allow(clippy::useless_attribute)]
-// required for usage in this module's children
-#[allow(clippy::needless_pub_self)]
-pub(self) use require_string_setting;
+macro_rules! require_string_setting {
+    ($mon:expr, $settings:expr, $key:literal) => {
+        super::require_string_setting!($mon, $settings, $key, "")
+    };
+    ($mon:expr, $settings:expr, $key:literal, $contained:expr) => {{
+        // we don't use `require_serde_setting!` because that'd clone the String
+
+        let value = $settings.get($key).and_then(|v| match v {
+            serde_json::Value::String(s) if s.contains($contained) => Some(s),
+            _ => None,
+        });
+
+        if let Some(value) = value {
+            value
+        } else {
+            $mon.error(concat!("Setting value `", $key, "` is not set correctly"));
+
+            return Ok(());
+        }
+    }};
+}
 
 // required to allow the `allow()` below
 #[allow(clippy::useless_attribute)]
 // required for usage in this module's children
 #[allow(clippy::needless_pub_self)]
-pub(self) use require_serde_setting;
+pub(self) use {require_serde_setting, require_string_setting};
