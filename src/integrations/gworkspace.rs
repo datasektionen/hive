@@ -1,5 +1,6 @@
 use std::{collections::HashSet, sync::LazyLock};
 
+use serde::Deserialize;
 use sqlx::PgPool;
 
 use crate::{
@@ -25,8 +26,12 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| super::Manifes
                     display_name: "Dry run",
                 },
                 super::SelectSettingOption {
-                    value: "push",
-                    display_name: "Push from Hive",
+                    value: "no-deletion",
+                    display_name: "Sync without removing existing entities",
+                },
+                super::SelectSettingOption {
+                    value: "full",
+                    display_name: "Complete push from Hive to Google directory",
                 },
             ]),
         },
@@ -103,6 +108,36 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| super::Manifes
     }],
 });
 
+#[derive(Deserialize, Clone, Copy)]
+#[serde(rename_all = "kebab-case")]
+enum Mode {
+    DryRun,     // no actions are taken
+    NoDeletion, // unwarranted groups and members are never removed
+    Full,       // complete push from Hive to Google directory
+}
+
+impl Mode {
+    fn informational_message(&self) -> &'static str {
+        match self {
+            Self::DryRun => "Dry run is enabled. No actual changes will be made!",
+            Self::NoDeletion => "No deletion is enabled. Existing entities will be preserved!",
+            Self::Full => "Full push mode is selected: all reported changes are real!",
+        }
+    }
+
+    fn should_insert(&self) -> bool {
+        matches!(self, Self::NoDeletion | Self::Full)
+    }
+
+    fn should_update(&self) -> bool {
+        matches!(self, Self::NoDeletion | Self::Full)
+    }
+
+    fn should_delete(&self) -> bool {
+        matches!(self, Self::Full)
+    }
+}
+
 macro_rules! fallible {
     ($mon:expr, $result:expr, $ret:expr) => {
         match $result {
@@ -124,8 +159,7 @@ async fn sync_to_directory(
     settings: super::SettingsValues,
     db: PgPool,
 ) -> AppResult<()> {
-    let mode = super::require_string_setting!(mon, settings, "mode");
-    let dry_run = mode != "push";
+    let mode: Mode = super::require_serde_setting!(mon, settings, "mode");
 
     let primary_domain = super::require_string_setting!(mon, settings, "primary-domain", '.');
 
@@ -144,11 +178,7 @@ async fn sync_to_directory(
         google::DirectoryApiClient::new(service_account_email, private_key, impersonate_user).await
     );
 
-    if dry_run {
-        mon.warn("Dry run is enabled. No actual changes will be made!")
-    } else {
-        mon.warn("Push mode is selected: all reported changes are real!")
-    }
+    mon.warn(mode.informational_message());
 
     // TODO: sync users first
 
@@ -186,7 +216,7 @@ async fn sync_to_directory(
                 existing.email, existing.name
             ));
 
-            if !dry_run {
+            if mode.should_delete() {
                 todo!("delete group");
             }
         }
@@ -214,7 +244,7 @@ async fn sync_to_directory(
             mon.info(format!("Group {key} allows external members"));
         }
 
-        sync_group(&key, group, &client, dry_run, mon).await?;
+        sync_group(&key, group, &client, mode, mon).await?;
 
         let subgroup_emails_owned: Vec<_> =
             groups::members::get_direct_subgroups(&group.id, &group.domain, &db)
@@ -287,15 +317,7 @@ async fn sync_to_directory(
 
         direct_members.extend(extra_members);
 
-        sync_group_members(
-            &key,
-            &subgroup_emails,
-            &direct_members,
-            &client,
-            dry_run,
-            mon,
-        )
-        .await?;
+        sync_group_members(&key, &subgroup_emails, &direct_members, &client, mode, mon).await?;
     }
 
     mon.info(format!("Synchronized {} groups!", groups.len()));
@@ -309,7 +331,7 @@ async fn sync_group(
     key: &str,
     group: &models::Group,
     client: &DirectoryApiClient,
-    dry_run: bool,
+    mode: Mode,
     mon: &mut super::TaskRunMonitor,
 ) -> AppResult<()> {
     mon.info(format!("Synchronizing group `{key}`"));
@@ -344,7 +366,7 @@ async fn sync_group(
             None
         };
 
-        if dry_run || (name_patch.is_none() && desc_patch.is_none()) {
+        if !mode.should_update() || (name_patch.is_none() && desc_patch.is_none()) {
             // nothing to do
             return Ok(());
         }
@@ -381,7 +403,7 @@ async fn sync_group_members(
     subgroup_emails: &[&str],
     direct_members: &HashSet<UserWithEmail>,
     client: &DirectoryApiClient,
-    dry_run: bool,
+    mode: Mode,
     mon: &mut super::TaskRunMonitor,
 ) -> AppResult<()> {
     let direct_member_emails: Vec<_> = direct_members.iter().map(|m| m.email.as_ref()).collect();
@@ -400,7 +422,7 @@ async fn sync_group_members(
                 entry.email, key
             ));
 
-            if !dry_run {
+            if mode.should_delete() {
                 fallible!(mon, client.remove_group_member(key, &entry.email).await);
             }
         }
@@ -415,7 +437,7 @@ async fn sync_group_members(
         if !existing_emails.contains(subgroup) {
             mon.info(format!("Adding subgroup `{subgroup}` to group `{key}`"));
 
-            if !dry_run {
+            if mode.should_insert() {
                 let member = google::GroupMember {
                     email: subgroup.to_string(),
                     role: google::GroupMemberRole::Member,
@@ -435,7 +457,7 @@ async fn sync_group_members(
             if existing_member.role != google::GroupMemberRole::Member {
                 mon.info(format!("Demoting `{username}` to MEMBER in group `{key}`"));
 
-                if !dry_run {
+                if mode.should_update() {
                     let patch = google::GroupMemberPatch {
                         role: google::GroupMemberRole::Member,
                     };
@@ -451,7 +473,7 @@ async fn sync_group_members(
         } else {
             mon.info(format!("Adding member `{username}` to group `{key}`"));
 
-            if !dry_run {
+            if mode.should_insert() {
                 let member = google::GroupMember {
                     email: direct_member.email.clone(),
                     role: google::GroupMemberRole::Member,
