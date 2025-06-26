@@ -309,8 +309,15 @@ macro_rules! list_tag_assignments {
                 .await?
                 .has_content;
 
-            let tag_assignments =
-                ($lister)(system_id, tag_id, &ctx.lang, db.inner(), resolver, perms).await?;
+            let tag_assignments = ($lister)(
+                system_id,
+                tag_id,
+                &ctx.lang,
+                db.inner(),
+                resolver.as_ref(),
+                perms,
+            )
+            .await?;
 
             // this could've been directly in the template, but askama doesn't seem
             // to support closures defined in the source (parsing error)
@@ -437,7 +444,8 @@ async fn assign_tag_to_user<'v>(
         // validation passed
 
         let assignment =
-            tags::assign_to_user(system_id, tag_id, dto, db.inner(), resolver, &user).await?;
+            tags::assign_to_user(system_id, tag_id, dto, db.inner(), resolver.as_ref(), &user)
+                .await?;
 
         if partial.is_some() {
             let template = AssignTagToUserView {

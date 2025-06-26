@@ -114,12 +114,13 @@ pub async fn list_members(
     let (subgroups, members) = if show_indirect {
         (
             vec![],
-            groups::members::get_all_members(id, domain, db.inner(), resolver).await?,
+            groups::members::get_all_members(id, domain, db.inner(), resolver.as_ref()).await?,
         )
     } else {
         (
             groups::members::get_direct_subgroups(id, domain, db.inner()).await?,
-            groups::members::get_direct_members(id, domain, true, db.inner(), resolver).await?,
+            groups::members::get_direct_members(id, domain, true, db.inner(), resolver.as_ref())
+                .await?,
         )
     };
 
@@ -297,7 +298,8 @@ async fn add_member<'v>(
         // validation passed
 
         let added =
-            groups::members::add_member(id, domain, dto, db.inner(), resolver, &user).await?;
+            groups::members::add_member(id, domain, dto, db.inner(), resolver.as_ref(), &user)
+                .await?;
 
         if partial.is_some() {
             let template = PartialAddMemberView {

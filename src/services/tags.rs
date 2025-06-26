@@ -132,7 +132,7 @@ pub async fn list_user_assignments<'x, X>(
     system_id: &str,
     tag_id: &str,
     db: X,
-    resolver: &Option<IdentityResolver>,
+    resolver: Option<&IdentityResolver>,
     perms: Option<&PermsEvaluator>,
 ) -> AppResult<Vec<AffiliatedTagAssignment>>
 where
@@ -370,7 +370,7 @@ pub async fn assign_to_user<'v, 'x, X>(
     tag_id: &str,
     dto: &AssignTagToUserDto<'v>,
     db: X,
-    resolver: &Option<IdentityResolver>,
+    resolver: Option<&IdentityResolver>,
     user: &User,
 ) -> AppResult<AffiliatedTagAssignment>
 where

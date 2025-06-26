@@ -287,8 +287,7 @@ async fn sync_to_directory(
             .collect();
 
         let mut direct_members_owned =
-            groups::members::get_direct_members(&group.id, &group.domain, false, &db, &None)
-                .await?;
+            groups::members::get_direct_members(&group.id, &group.domain, false, &db, None).await?;
 
         let embeddings: Vec<String> = sqlx::query_scalar(
             "SELECT content
@@ -306,7 +305,7 @@ async fn sync_to_directory(
 
         for embedding in embeddings {
             if let Some((id, domain)) = embedding.split_once('@') {
-                let embedded = groups::members::get_all_members(id, domain, &db, &None).await?;
+                let embedded = groups::members::get_all_members(id, domain, &db, None).await?;
 
                 direct_members_owned.extend(embedded)
             }
