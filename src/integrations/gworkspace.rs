@@ -259,7 +259,8 @@ async fn sync_to_directory(
             WHERE system_id = 'gworkspace'
                 AND tag_id = 'extra-subgroup'
                 AND group_id = $1
-                AND group_domain = $2",
+                AND group_domain = $2
+                AND content LIKE '%@%.%'",
         )
         .bind(&group.id)
         .bind(&group.domain)
@@ -305,7 +306,8 @@ async fn sync_to_directory(
             WHERE system_id = 'gworkspace'
                 AND tag_id = 'extra-member'
                 AND group_id = $1
-                AND group_domain = $2",
+                AND group_domain = $2
+                AND content LIKE '%@%.%'",
         )
         .bind(&group.id)
         .bind(&group.domain)
