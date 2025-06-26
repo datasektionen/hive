@@ -94,6 +94,19 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| super::Manifes
             supports_users: false,
         },
         super::Tag {
+            id: "embed-members",
+            // ^ this is generally unnecessary, but useful in cases where we
+            // cannot use "extra-subgroup": for example, if on Google group A
+            // should include the members of group B, but only those tracked by
+            // Hive and not any additional "extra-member"s of group B. in this
+            // case, we must express that group B's (Hive) members are embedded
+            // in group A's Google Group mirror
+            description: "Hive group from where to take additional Google-only members",
+            has_content: true,
+            supports_groups: true,
+            supports_users: false,
+        },
+        super::Tag {
             id: "personal-email",
             description: "Personal email address to be used when no Workspace user is found",
             has_content: true,
@@ -273,9 +286,31 @@ async fn sync_to_directory(
             .map(String::as_str)
             .collect();
 
-        let direct_members_owned =
+        let mut direct_members_owned =
             groups::members::get_direct_members(&group.id, &group.domain, false, &db, &None)
                 .await?;
+
+        let embeddings: Vec<String> = sqlx::query_scalar(
+            "SELECT content
+                    FROM all_tag_assignments
+                    WHERE system_id = 'gworkspace'
+                        AND tag_id = 'embed-members'
+                        AND group_id = $1
+                        AND group_domain = $2
+                        AND content LIKE '%@%.%'",
+        )
+        .bind(&group.id)
+        .bind(&group.domain)
+        .fetch_all(&db)
+        .await?;
+
+        for embedding in embeddings {
+            if let Some((id, domain)) = embedding.split_once('@') {
+                let embedded = groups::members::get_all_members(id, domain, &db, &None).await?;
+
+                direct_members_owned.extend(embedded)
+            }
+        }
 
         let mut direct_members = HashSet::new();
 
