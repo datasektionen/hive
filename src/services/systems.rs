@@ -116,6 +116,14 @@ where
         // shouldn't delete ourselves
         warn!("Disallowing self-deletion from {}", user.username());
         return Err(AppError::SelfPreservation);
+    } else if crate::integrations::integration_exists(id) {
+        // shouldn't delete integration systems
+        warn!(
+            "Disallowing integration system deletion of {} from {}",
+            id,
+            user.username()
+        );
+        return Err(AppError::SelfPreservation);
     }
 
     let mut txn = db.begin().await?;
@@ -150,6 +158,16 @@ pub async fn update<'v, 'x, X>(
 where
     X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
 {
+    if crate::integrations::integration_exists(id) {
+        // shouldn't change integration systems
+        warn!(
+            "Disallowing integration system update of {} from {}",
+            id,
+            user.username()
+        );
+        return Err(AppError::SelfPreservation);
+    }
+
     let mut txn = db.begin().await?;
 
     // subquery runs before update

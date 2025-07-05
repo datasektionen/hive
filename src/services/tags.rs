@@ -1,4 +1,5 @@
 use chrono::Local;
+use log::*;
 use serde_json::json;
 use uuid::Uuid;
 
@@ -197,6 +198,17 @@ where
     // managing HIVE_SYSTEM_ID tags is not a self-preservation error because
     // these are necessary for $hive:manage-groups:tag == #hive:tag
 
+    if crate::integrations::integration_exists(system_id) {
+        // shouldn't add tags for integration systems,
+        // since they're managed via manifest
+        warn!(
+            "Disallowing tag creation for integration system {} from {}",
+            system_id,
+            user.username()
+        );
+        return Err(AppError::SelfPreservation);
+    }
+
     let mut txn = db.begin().await?;
 
     let tag: Tag = sqlx::query_as(
@@ -243,6 +255,17 @@ where
 {
     // managing HIVE_SYSTEM_ID tags is not a self-preservation error because
     // these are necessary for $hive:manage-groups:tag == #hive:tag
+
+    if crate::integrations::integration_exists(system_id) {
+        // shouldn't add tags for integration systems,
+        // since they're managed via manifest
+        warn!(
+            "Disallowing tag deletion for integration system {} from {}",
+            system_id,
+            user.username()
+        );
+        return Err(AppError::SelfPreservation);
+    }
 
     let mut txn = db.begin().await?;
 

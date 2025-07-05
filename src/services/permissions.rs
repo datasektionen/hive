@@ -402,6 +402,14 @@ where
         // we manage our own permissions via database migrations
         warn!("Disallowing permissions tampering from {}", user.username());
         return Err(AppError::SelfPreservation);
+    } else if crate::integrations::integration_exists(system_id) {
+        // integration systems don't support permissions
+        warn!(
+            "Disallowing permission creation for integration system {} from {}",
+            system_id,
+            user.username()
+        );
+        return Err(AppError::SelfPreservation);
     }
 
     let mut txn = db.begin().await?;
