@@ -70,7 +70,7 @@ where
     let today = Local::now().date_naive();
 
     let assignments = sqlx::query_as(
-        "SELECT pa.system_id, pa.perm_id, pa.scope
+        "SELECT DISTINCT pa.system_id, pa.perm_id, pa.scope
         FROM permission_assignments pa
         JOIN all_groups_of($1, $2) ag
             ON ag.id = pa.group_id
@@ -96,7 +96,7 @@ where
     let today = Local::now().date_naive();
 
     let assignments = sqlx::query_as(
-        "SELECT pa.system_id, pa.perm_id, pa.scope
+        "SELECT DISTINCT pa.system_id, pa.perm_id, pa.scope
         FROM permission_assignments pa
         JOIN all_groups_of($1, $2) ag
             ON ag.id = pa.group_id
@@ -132,7 +132,7 @@ where
                 AND (expires_at IS NULL OR expires_at >= $1)
             RETURNING id
         )
-        SELECT pa.system_id, pa.perm_id, pa.scope
+        SELECT DISTINCT pa.system_id, pa.perm_id, pa.scope
         FROM permission_assignments pa
         JOIN updated u
             ON pa.api_token_id = u.id
@@ -160,7 +160,7 @@ where
     let today = Local::now().date_naive();
 
     let assignments = sqlx::query_scalar(
-        "SELECT pa.scope
+        "SELECT DISTINCT pa.scope
         FROM permission_assignments pa
         JOIN all_groups_of($1, $2) ag
             ON ag.id = pa.group_id
@@ -199,7 +199,7 @@ where
                 AND (expires_at IS NULL OR expires_at >= $1)
             RETURNING id
         )
-        SELECT pa.scope
+        SELECT DISTINCT pa.scope
         FROM permission_assignments pa
         JOIN updated u
             ON pa.api_token_id = u.id
