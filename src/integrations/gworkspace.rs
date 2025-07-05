@@ -421,11 +421,22 @@ async fn sync_group(
             mon.warn(format!("Could not update group `{key}` (no longer exists)"));
         }
     } else {
-        // create new group
+        // create new
 
-        mon.error("not yet implemented: creating group");
+        mon.info(format!("Creating group `{key}`"));
 
-        // truncate description at 4096 chars
+        if mode.should_insert() {
+            let mut truncated_description = group.description_sv.clone();
+            truncated_description.truncate(4096); // max supported by Google Groups
+
+            let new = google::NewGroup {
+                email: key.to_owned(),
+                name: group.name_sv.clone(),
+                description: truncated_description,
+            };
+
+            fallible!(mon, client.create_group(&new).await);
+        }
 
         // TODO: update group settings
         // https://developers.google.com/workspace/admin/groups-settings/v1/reference/groups

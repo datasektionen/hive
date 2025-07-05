@@ -258,6 +258,17 @@ impl DirectoryApiClient {
         .await
     }
 
+    pub async fn create_group(&self, group: &NewGroup) -> Result<Group, &'static str> {
+        self.exec_request(
+            reqwest::Method::POST,
+            "https://admin.googleapis.com/admin/directory/v1/groups",
+            Some(group),
+            "Failed to create group",
+        )
+        .await
+        .and_then(|op| op.ok_or("Failed to create group"))
+    }
+
     pub async fn get_group(&self, key: &str) -> Result<Option<Group>, &'static str> {
         self.exec_request(
             reqwest::Method::GET,
@@ -370,6 +381,13 @@ pub struct SimpleGroup {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Group {
+    pub name: String,
+    pub description: String,
+}
+
+#[derive(Serialize)]
+pub struct NewGroup {
+    pub email: String,
     pub name: String,
     pub description: String,
 }
