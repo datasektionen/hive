@@ -13,6 +13,36 @@ use crate::{
     services::audit_logs,
 };
 
+pub async fn is_direct_member<'x, X>(
+    username: &str,
+    group_id: &str,
+    group_domain: &str,
+    db: X,
+) -> AppResult<bool>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+{
+    let today = Local::now().date_naive();
+
+    let result = sqlx::query_scalar(
+        "SELECT COUNT(*) > 0
+        FROM direct_memberships
+        WHERE username = $1
+            AND group_id = $2
+            AND group_domain = $3
+            AND \"from\" <= $4
+            AND until >= $4",
+    )
+    .bind(username)
+    .bind(group_id)
+    .bind(group_domain)
+    .bind(today)
+    .fetch_one(db)
+    .await?;
+
+    Ok(result)
+}
+
 pub async fn get_direct_members<'x, X>(
     id: &str,
     domain: &str,

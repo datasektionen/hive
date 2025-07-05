@@ -1176,6 +1176,50 @@ tags.users.list.indicator.direct.tooltip:
 tags.users.list.indicator.indirect.tooltip:
   en: This tag is indirectly assigned to the user (via subtags)
   sv: Denna tagg är indirekt tilldelad till användaren (via subtaggar)
+user.profile.groups.col.key:
+  en: Group Key
+  sv: Gruppnyckel
+user.profile.groups.col.name:
+  en: Name
+  sv: Namn
+user.profile.groups.col.view:
+  en: View
+  sv: Visa
+user.profile.groups.empty.other:
+  en: This user is not a direct member of any groups that you may view.
+  sv: Den här användaren är inte en direkt medlem i några grupper som du kan se.
+user.profile.groups.empty.own:
+  en: You are not currently a member of any group.
+  sv: Du är för närvarande inte medlem i någon grupp.
+user.profile.groups.note.only-known:
+  en: Note that only groups you have permission to view are listed here.
+  sv: Observera att endast grupper du har tillåtelse att se är listade här.
+user.profile.groups.title:
+  en: Groups (Direct Membership)
+  sv: Grupper (direkt medlemskap)
+user.profile.own.indicator:
+  en: You!
+  sv: Du!
+user.profile.permissions.empty.other:
+  en: This user is not a member of any group with assigned permissions.
+  sv: Denna användare är inte medlem i någon grupp med tilldelade behörigheter.
+user.profile.permissions.empty.own:
+  en: >
+    You are not currently a member of any group with assigned permissions.
+  sv: >
+    Du är för närvarande inte medlem i någon grupp med tilldelade behörigheter.
+user.profile.permissions.scope.tooltip:
+  en: The permission assignment is limited to this scope
+  sv: Tillståndsuppdraget är begränsat till detta omfång
+user.profile.permissions.title:
+  en: Assigned Permissions
+  sv: Tilldelade behörigheter
+user.profile.subtitle:
+  en: User Profile
+  sv: Användarprofil
+user.profile.title:
+  en: "User Profile: %{x}"
+  sv: "Användarprofil: %{x}"
 user.settings.empty:
   en: No settings are available for you to manage.
   sv: Inga inställningar finns tillgängliga för dig att hantera.

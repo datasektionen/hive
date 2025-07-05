@@ -1,0 +1,94 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ ctx.t1("user.profile.title", display_name) }}{% endblock title %}
+
+{% block heading %}
+<hgroup>
+    <h1>
+        {{ display_name }}
+        {% if own %}
+        <button class="outline chip">
+            <span class="material-icons" style="--pico-font-size: initial">attribution</span>
+            {{ ctx.t("user.profile.own.indicator") }}
+        </button>
+        {% endif %}
+    </h1>
+    <h3>{{ ctx.t("user.profile.subtitle") }}</h3>
+</hgroup>
+{% endblock heading %}
+
+{% block content %}
+<article class="overflow-auto">
+    <h2>{{ ctx.t("user.profile.groups.title") }}</h2>
+    <table class="striped">
+        <thead>
+            <tr>
+                <th scope="col">{{ ctx.t("user.profile.groups.col.key") }}</th>
+                <th scope="col">{{ ctx.t("user.profile.groups.col.name") }}</th>
+                <th scope="col">{{ ctx.t("user.profile.groups.col.view") }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="if-table-empty">
+                <td colspan="3">
+                    <span class="material-icons">block</span>
+                    {% if own %}
+                    {{ ctx.t("user.profile.groups.empty.own") }}
+                    {% else %}
+                    {{ ctx.t("user.profile.groups.empty.other") }}
+                    {% endif %}
+                </td>
+            </tr>
+            {% for group in known_groups %}
+            <tr>
+                <td><samp>{{ group.key() }}</samp></td>
+                <td><strong>{{ group.localized_name(ctx.lang) }}</strong></td>
+                <td>
+                    <a href="/group/{{ group.domain }}/{{ group.id }}" role="button" class="secondary">
+                        <span class="material-icons">arrow_forward</span>
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if !own %}
+    <footer>
+        <p class="secondary">
+            <em>{{ ctx.t("user.profile.groups.note.only-known") }}</em>
+        </p>
+    </footer>
+    {% endif %}
+</article>
+
+<article class="overflow-auto">
+    <h2>{{ ctx.t("user.profile.permissions.title") }}</h2>
+    {% if permissions.len() > 0 %}
+    <ul>
+        {% for assignment in permissions %}
+        <li>
+            <samp>
+                <span style="font-size: 1.2em">$</span>
+                {{- assignment.system_id }}:<strong>{{ assignment.perm_id }}</strong>
+                {%- if let Some(scope) = assignment.scope -%}
+                {%- let tooltip = ctx.t("user.profile.permissions.scope.tooltip") -%}
+                :<span class="primary" data-tooltip="{{ tooltip }}">{{ scope }}</span>
+                {%- endif -%}
+            </samp>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="secondary">
+        <em>
+            {% if own %}
+            {{ ctx.t("user.profile.permissions.empty.own") }}
+            {% else %}
+            {{ ctx.t("user.profile.permissions.empty.other") }}
+            {% endif %}
+        </em>
+    </p>
+    {% endif %}
+</article>
+{% endblock content %}

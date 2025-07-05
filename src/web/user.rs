@@ -6,13 +6,26 @@ use sqlx::PgPool;
 
 use crate::{
     errors::AppResult,
-    guards::{context::PageContext, user::User},
+    guards::{context::PageContext, perms::PermsEvaluator, user::User},
+    models::{BasePermissionAssignment, SimpleGroup},
+    resolver::IdentityResolver,
     routing::RouteTree,
+    services::{groups, permissions},
     web::RenderedTemplate,
 };
 
 pub fn routes() -> RouteTree {
-    rocket::routes![show_settings, update_settings].into()
+    rocket::routes![show_profile, show_settings, update_settings].into()
+}
+
+#[derive(Template)]
+#[template(path = "user/profile.html.j2")]
+struct ProfileView {
+    ctx: PageContext,
+    own: bool,
+    display_name: String,
+    known_groups: Vec<SimpleGroup>,
+    permissions: Vec<BasePermissionAssignment>,
 }
 
 #[derive(Template)]
@@ -21,6 +34,61 @@ struct SettingsView {
     ctx: PageContext,
     settings: HashMap<String, Option<String>>,
     // ^ generated dynamically
+}
+
+#[rocket::get("/user/<username>")]
+async fn show_profile(
+    username: &str,
+    db: &State<PgPool>,
+    resolver: &State<Option<IdentityResolver>>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+    user: User,
+) -> AppResult<RenderedTemplate> {
+    let own = user.username() == username;
+
+    let display_name = if let Some(resolver) = resolver.inner() {
+        resolver.resolve_one(username).await?
+    } else {
+        None
+    };
+
+    let display_name = display_name.unwrap_or_else(|| {
+        if own {
+            user.display_name().to_owned()
+        } else {
+            "?".to_owned()
+        }
+    });
+
+    let mut known_groups = vec![];
+
+    for permissible in
+        groups::list::list_all_permissible_sorted(&ctx.lang, db.inner(), perms, &user).await?
+    {
+        if groups::members::is_direct_member(
+            username,
+            &permissible.id,
+            &permissible.domain,
+            db.inner(),
+        )
+        .await?
+        {
+            known_groups.push(permissible);
+        }
+    }
+
+    let permissions = permissions::list_all_assignments_for_user(username, db.inner()).await?;
+
+    let template = ProfileView {
+        ctx,
+        own,
+        display_name,
+        known_groups,
+        permissions,
+    };
+
+    Ok(RawHtml(template.render()?))
 }
 
 // technically this URL prevents viewing the profile of a user named `settings`,
