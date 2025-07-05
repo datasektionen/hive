@@ -122,7 +122,7 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| super::Manifes
     ],
     tasks: &[super::Task {
         id: "sync-to-directory",
-        schedule: "0 50 18 * * *",
+        schedule: "0 0 6,18 * * *",
         func: |mon, settings, db| Box::pin(sync_to_directory(mon, settings, db)),
     }],
 });
