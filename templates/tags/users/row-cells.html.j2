@@ -12,7 +12,10 @@
     {% endif %}
 </td>
 <td>
-    <samp>{{ assignment.username.as_deref().unwrap_or("?") }}</samp>
+    {% let username = assignment.username.as_deref().unwrap_or("?") %}
+    <a class="secondary reset-color" href="/user/{{ username }}">
+        <samp>{{ username }}</samp>
+    </a>
 </td>
 {% let label = assignment.label.as_deref().unwrap_or("?") %}
 <td>{{ label }}</td>

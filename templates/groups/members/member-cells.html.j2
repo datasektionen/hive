@@ -14,12 +14,18 @@
 </td>
 <td>
     {% if is_future_member %}
-    <s>{{ member.username }}</s>
+    <s>
+        <a class="secondary reset-color" href="/user/{{ member.username }}">
+            <samp>{{ member.username }}</samp></a>
+    </s>
     <span class="material-icons" data-tooltip='{{ ctx.t("groups.members.list.icon.future") }}'>
         schedule
     </span>
     {% else %}
-    <strong>{{ member.username }}</strong>
+    <strong>
+        <a class="secondary reset-color" href="/user/{{ member.username }}">
+            <samp>{{ member.username }}</samp></a>
+    </strong>
     {% endif %}
 
     {% if member.manager %}
