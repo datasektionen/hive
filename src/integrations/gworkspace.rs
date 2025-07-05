@@ -71,6 +71,7 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| super::Manifes
             has_content: false,
             supports_groups: true,
             supports_users: true,
+            self_service: false,
         },
         super::Tag {
             id: "allow-external",
@@ -78,6 +79,7 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| super::Manifes
             has_content: false,
             supports_groups: true,
             supports_users: false,
+            self_service: false,
         },
         super::Tag {
             id: "extra-member",
@@ -85,6 +87,7 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| super::Manifes
             has_content: true,
             supports_groups: true,
             supports_users: false,
+            self_service: false,
         },
         super::Tag {
             id: "extra-subgroup",
@@ -92,6 +95,7 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| super::Manifes
             has_content: true,
             supports_groups: true,
             supports_users: false,
+            self_service: false,
         },
         super::Tag {
             id: "embed-members",
@@ -105,6 +109,7 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| super::Manifes
             has_content: true,
             supports_groups: true,
             supports_users: false,
+            self_service: false,
         },
         super::Tag {
             id: "personal-email",
@@ -112,6 +117,7 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| super::Manifes
             has_content: true,
             supports_groups: false,
             supports_users: true,
+            self_service: true,
         },
     ],
     tasks: &[super::Task {

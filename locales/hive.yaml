@@ -665,6 +665,9 @@ nav.user.logout:
 nav.user.profile:
   en: My profile
   sv: Min profil
+nav.user.settings:
+  en: Settings
+  sv: Inställningar
 nav.theme.toggle:
   en: Toggle UI theme
   sv: Växla UI tema
@@ -1173,3 +1176,26 @@ tags.users.list.indicator.direct.tooltip:
 tags.users.list.indicator.indirect.tooltip:
   en: This tag is indirectly assigned to the user (via subtags)
   sv: Denna tagg är indirekt tilldelad till användaren (via subtaggar)
+user.settings.empty:
+  en: No settings are available for you to manage.
+  sv: Inga inställningar finns tillgängliga för dig att hantera.
+user.settings.field.integration_gworkspace_personal-email.label:
+  en: Personal Email Address
+  sv: Personlig e-postadress
+user.settings.field.integration_gworkspace_personal-email.placeholder:
+  en: e.g., john.doe@example.com
+  sv: t.ex. john.doe@example.com
+user.settings.field.integration_gworkspace_personal-email.tip:
+  en: >
+    If specified, this is the email address to be added to Google Groups if you
+    have no professional Google Workspace account within the organization's
+    primary domain. Note that this only applies for groups that allow external
+    members.
+  sv: >
+    Om angiven är detta den e-postadress som ska läggas till Google Grupper om
+    du inte har något professionellt Google Workspace-konto inom organisationens
+    primära domän. Observera att dettas endast gäller till grupper som tillåter
+    externa medlemmar.
+user.settings.title:
+  en: My Settings
+  sv: Mina inställningar

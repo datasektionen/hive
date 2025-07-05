@@ -55,6 +55,11 @@ pub struct Tag {
     pub has_content: bool,
     pub supports_groups: bool,
     pub supports_users: bool,
+    pub self_service: bool, /* whether to allow users to self-set this tag
+                             * ^ note: if true, this assumes i18n keys exist for
+                             * `user.settings.field.integration_`
+                             * + `{INT_ID}_{TAG_ID}.`
+                             * + `label`, `placeholder`, and `tip` */
 }
 
 // Rust really is very clunky sometimes...

@@ -1,0 +1,32 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ ctx.t("user.settings.title") }}{% endblock title %}
+
+{% block content %}
+<form method="post" hx-boost="true" hx-push-url="false" hx-indicator="button">
+
+    {% for (key, value) in settings %}
+    <p>
+        <label>
+            {{ ctx.t(format!("user.settings.field.{key}.label").as_str()) }}
+            <input name="{{ key }}" {% if let Some(value)=value -%} value="{{ value }}" {%- endif %}
+                placeholder='{{ ctx.t(format!("user.settings.field.{key}.placeholder").as_str()) }}' required
+                aria-describedby="field-{{ key }}-tip" />
+            <small id="field-{{ key }}-tip"> {{ ctx.t(format!("user.settings.field.{key}.tip").as_str()) }}</small>
+        </label>
+    </p>
+    {% endfor %}
+
+    {% if settings.is_empty() %}
+    <p class="secondary">
+        <em>
+            <span class="material-icons">block</span>
+            {{ ctx.t("user.settings.empty") }}
+        </em>
+    </p>
+    {% else %}
+    <button>{{ ctx.t("control.save") }}</button>
+    {% endif %}
+
+</form>
+{% endblock content %}
