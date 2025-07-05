@@ -436,6 +436,11 @@ async fn sync_group(
             };
 
             fallible!(mon, client.create_group(&new).await);
+
+            mon.warn(format!(
+                "Successfully created group `{key}`, but it will likely remain empty since Google \
+                 API will refuse to acknowledge it for a few minutes until stabilizing"
+            ));
         }
 
         // TODO: update group settings
