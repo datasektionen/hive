@@ -64,6 +64,7 @@ struct PartialCreateSystemView<'f, 'v> {
 struct SystemDetailsView<'f, 'v> {
     ctx: PageContext,
     system: System,
+    is_integration: bool,
     fully_authorized: bool,
     can_manage_permissions: bool,
     can_manage_tags: bool,
@@ -198,6 +199,8 @@ pub async fn system_details(
     // ^ note: there is no enumeration vulnerability in returning 404 here
     // because we already checked that the user has perms to see all systems
 
+    let is_integration = crate::integrations::integration_exists(id);
+
     let can_manage_permissions = perms
         .satisfies(HivePermission::ManagePerms(SystemsScope::Id(id.to_owned())))
         .await?;
@@ -210,6 +213,7 @@ pub async fn system_details(
     let template = SystemDetailsView {
         ctx,
         system,
+        is_integration,
         fully_authorized,
         can_manage_permissions,
         can_manage_tags,
@@ -307,6 +311,8 @@ pub async fn edit_system<'v>(
 
             Ok(EditSystemResponse::Invalid(RawHtml(template.render()?)))
         } else {
+            let is_integration = crate::integrations::integration_exists(id);
+
             let can_manage_permissions = perms
                 .satisfies(HivePermission::ManagePerms(SystemsScope::Id(id.to_owned())))
                 .await?;
@@ -319,6 +325,7 @@ pub async fn edit_system<'v>(
             let template = SystemDetailsView {
                 ctx,
                 system,
+                is_integration,
                 fully_authorized: true, // checked at the beginning of this fn
                 can_manage_permissions,
                 can_manage_tags,

@@ -10,7 +10,7 @@
 {% endblock heading %}
 
 {% block action_buttons %}
-{% if fully_authorized %}
+{% if fully_authorized && !is_integration %}
 <button class="secondary" onclick="openModal('edit-system')">
     <span class="material-icons">edit</span>
     {{ ctx.t("control.edit") }}
@@ -30,6 +30,11 @@
     <span class="material-icons">announcement</span>
     {{ ctx.t("systems.details.alert.self") }}
 </p>
+{% else if is_integration %}
+<p class="striped-alert">
+    <span class="material-icons">announcement</span>
+    {{ ctx.t("systems.details.alert.integration") }}
+</p>
 {% endif %}
 
 <article class="overflow-auto">
@@ -47,6 +52,7 @@
     </footer>
 </article>
 
+{% if !is_integration %}
 <article class="overflow-auto">
     <h2>{{ ctx.t("systems.details.permissions.title") }}</h2>
     <div hx-get="/system/{{ system.id }}/permissions" hx-trigger="load delay:100ms" hx-swap="outerHTML">
@@ -63,13 +69,14 @@
     </footer>
     {% endif %}
 </article>
+{% endif %}
 
 <article class="overflow-auto">
     <h2>{{ ctx.t("systems.details.tags.title") }}</h2>
     <div hx-get="/system/{{ system.id }}/tags" hx-trigger="load delay:100ms" hx-swap="outerHTML">
         {# delay is to give event listener time to be set, for aria-busy=true #}
     </div>
-    {% if can_manage_tags %}
+    {% if can_manage_tags && !is_integration %}
     <footer>
         <details>
             <summary role="button" class="secondary">
@@ -81,7 +88,7 @@
     {% endif %}
 </article>
 
-{% if fully_authorized %}
+{% if fully_authorized && !is_integration %}
 {% include "edit.html.j2" %}
 {% if system.id != crate::HIVE_SYSTEM_ID %}
 {% include "delete.html.j2" %}

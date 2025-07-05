@@ -865,6 +865,13 @@ systems.delete.description:
 systems.delete.title:
   en: Delete System
   sv: Radera system
+systems.details.alert.integration:
+  en: >
+    This system represents an integration and is therefore partially managed
+    directly by Hive
+  sv: >
+    Detta system representerar en integration och hanteras därför delvis direkt
+    av Hive
 systems.details.alert.self:
   en: This system controls Hive itself and is therefore partially self-managed
   sv: Detta system kontrollerar Hive själv och är därför delvis självstyrt

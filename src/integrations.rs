@@ -268,6 +268,16 @@ async fn dispatch_task_run(integration_id: &str, task: &Task, db: &PgPool) -> Ap
     result
 }
 
+pub fn integration_exists(id: &str) -> bool {
+    for manifest in &*MANIFESTS {
+        if manifest.id == id {
+            return true;
+        }
+    }
+
+    false
+}
+
 macro_rules! require_serde_setting {
     ($mon:expr, $settings:expr, $key:literal) => {
         if let Some(value) = $settings

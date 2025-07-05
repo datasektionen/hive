@@ -26,6 +26,8 @@
                 {{ system.id|e|highlight(q.unwrap_or("")) }}
                 {% if system.id == crate::HIVE_SYSTEM_ID %}
                 <span class="primary material-icons">stars</span>
+                {% else if crate::integrations::integration_exists(system.id) %}
+                <span class="primary material-icons">extension</span>
                 {% endif %}
             </h3>
             <a href="/system/{{ system.id }}" role="button" class="secondary">
