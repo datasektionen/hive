@@ -170,9 +170,9 @@ impl DirectoryApiClient {
             .json()
             .await
             .map_err(|e| {
-                error!("Directory API failed to decode request JSON ({url}): {e:?}");
+                error!("Directory API failed to decode response JSON ({url}): {e:?}");
 
-                "Failed to decode request JSON"
+                "Failed to decode response JSON"
             })?;
 
         Ok(Some(decoded))
@@ -206,9 +206,9 @@ impl DirectoryApiClient {
                 .json()
                 .await
                 .map_err(|e| {
-                    error!("Directory API failed to decode paginated request JSON: {e:?}");
+                    error!("Directory API failed to decode paginated response JSON: {e:?}");
 
-                    "Failed to decode paginated request JSON"
+                    "Failed to decode paginated response JSON"
                 })?;
 
             if let Some(obj) = response.as_object() {
@@ -220,6 +220,8 @@ impl DirectoryApiClient {
                             .filter_map(|v| serde_json::from_value(v).ok()),
                     );
                 } else {
+                    error!("Malformed paginated response: {obj:?}");
+
                     return Err("Pagination response did not contain specified key");
                 }
 
