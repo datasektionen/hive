@@ -8,6 +8,7 @@ use crate::{
     errors::AppResult,
     guards::{context::PageContext, perms::PermsEvaluator, user::User},
     models::{BasePermissionAssignment, SimpleGroup},
+    perms::HivePermission,
     resolver::IdentityResolver,
     routing::RouteTree,
     services::{groups, permissions},
@@ -20,9 +21,11 @@ pub fn routes() -> RouteTree {
 
 #[derive(Template)]
 #[template(path = "user/profile.html.j2")]
-struct ProfileView {
+struct ProfileView<'a> {
     ctx: PageContext,
     own: bool,
+    may_impersonate: bool,
+    username: &'a str,
     display_name: String,
     known_groups: Vec<SimpleGroup>,
     permissions: Vec<BasePermissionAssignment>,
@@ -46,6 +49,8 @@ async fn show_profile(
     user: User,
 ) -> AppResult<RenderedTemplate> {
     let own = user.username() == username;
+
+    let may_impersonate = perms.satisfies(HivePermission::ImpersonateUsers).await?;
 
     let display_name = if let Some(resolver) = resolver.inner() {
         resolver.resolve_one(username).await?
@@ -83,6 +88,8 @@ async fn show_profile(
     let template = ProfileView {
         ctx,
         own,
+        may_impersonate,
+        username,
         display_name,
         known_groups,
         permissions,

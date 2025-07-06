@@ -1,3 +1,4 @@
+use log::*;
 use rocket::{
     http::{
         uri::{Host, Origin},
@@ -14,13 +15,16 @@ use crate::{
         oidc::{OidcAuthenticationResult, OidcClient},
     },
     errors::AppResult,
-    guards::scheme::RequestScheme,
+    guards::{perms::PermsEvaluator, scheme::RequestScheme, user::User},
+    models::{ActionKind, TargetKind},
+    perms::HivePermission,
+    resolver::IdentityResolver,
     routing::RouteTree,
-    services::groups,
+    services::{audit_logs, groups},
 };
 
 pub fn routes() -> RouteTree {
-    rocket::routes![login, oidc_callback, logout].into()
+    rocket::routes![login, oidc_callback, logout, impersonate].into()
 }
 
 #[rocket::get("/auth/login?<next>")]
@@ -71,6 +75,48 @@ async fn oidc_callback(
 #[rocket::get("/auth/logout")]
 async fn logout(jar: &CookieJar<'_>) -> AppResult<Redirect> {
     auth::logout(jar);
+
+    Ok(Redirect::to("/"))
+}
+
+#[rocket::post("/auth/impersonate/<target>")]
+async fn impersonate(
+    target: &str,
+    db: &State<PgPool>,
+    resolver: &State<Option<IdentityResolver>>,
+    perms: &PermsEvaluator,
+    user: User,
+    jar: &CookieJar<'_>,
+) -> AppResult<Redirect> {
+    perms.require(HivePermission::ImpersonateUsers).await?;
+
+    warn!(
+        "User `{}` is now impersonating user `{}`",
+        user.username(),
+        target
+    );
+
+    audit_logs::add_entry(
+        ActionKind::Impersonate,
+        TargetKind::User,
+        target,
+        user.username(),
+        serde_json::Value::Null,
+        db.inner(),
+    )
+    .await?;
+
+    let display_name = if let Some(resolver) = resolver.inner() {
+        resolver.resolve_one(target).await?
+    } else {
+        None
+    };
+
+    auth::impersonate(
+        target.to_owned(),
+        display_name.unwrap_or_else(|| "John Doe".to_owned()),
+        jar,
+    )?;
 
     Ok(Redirect::to("/"))
 }

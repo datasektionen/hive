@@ -1176,6 +1176,18 @@ tags.users.list.indicator.direct.tooltip:
 tags.users.list.indicator.indirect.tooltip:
   en: This tag is indirectly assigned to the user (via subtags)
   sv: Denna tagg är indirekt tilldelad till användaren (via subtaggar)
+user.profile.control.impersonate:
+  en: Impersonate
+  sv: Agera som
+user.profile.control.impersonate.confirm:
+  en: >
+    Are you sure you wish to log into Hive as user `%{x}` and act on their
+    behalf? This should only be done in extreme circumstances. Detailed logs
+    will be kept for later audit.
+  sv: >
+    Är du säker på att du vill logga in i Hive som användaren `%{x}` och agera å
+    deras vägnar? Detta bör endast göras i extrema fall. Detaljerade loggar
+    kommer att sparas för senare granskning.
 user.profile.groups.col.key:
   en: Group Key
   sv: Gruppnyckel

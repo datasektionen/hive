@@ -18,6 +18,7 @@ pub enum HivePermission {
     ManageTags(SystemsScope),
     AssignTags(SystemsScope),
     LongTermAppointment(UpperBoundScope),
+    ImpersonateUsers,
     ApiCheckPermissions,
     ApiListTagged,
 }
@@ -36,6 +37,7 @@ impl HivePermission {
             Self::ManageTags(..) => "manage-tags",
             Self::AssignTags(..) => "assign-tags",
             Self::LongTermAppointment(..) => "long-term-appointment",
+            Self::ImpersonateUsers => "impersonate-users",
             Self::ApiCheckPermissions => "api-check-permissions",
             Self::ApiListTagged => "api-list-tagged",
         }
@@ -49,6 +51,7 @@ impl fmt::Display for HivePermission {
         match self {
             Self::ViewLogs
             | Self::ManageSystems
+            | Self::ImpersonateUsers
             | Self::ApiCheckPermissions
             | Self::ApiListTagged => write!(f, "$hive:{key}"),
             Self::ViewGroups(s) | Self::ManageGroups(s) | Self::ManageMembers(s) => {
@@ -150,6 +153,7 @@ impl TryFrom<BasePermissionAssignment> for HivePermission {
 
                 Ok(Self::LongTermAppointment(scope))
             }
+            ("impersonate-users", None) => Ok(Self::ImpersonateUsers),
             ("api-check-permissions", None) => Ok(Self::ApiCheckPermissions),
             ("api-list-tagged", None) => Ok(Self::ApiListTagged),
             _ => Err(InvalidHivePermissionError::Id),

@@ -17,6 +17,16 @@
 </hgroup>
 {% endblock heading %}
 
+{% block action_buttons %}
+{% if may_impersonate && !own %}
+<button class="btn-danger" hx-post="/auth/impersonate/{{ username }}" hx-target="body" hx-push-url="true"
+    hx-confirm='{{ ctx.t1("user.profile.control.impersonate.confirm", username) }}'>
+    <span class="material-icons">supervisor_account</span>
+    {{ ctx.t("user.profile.control.impersonate") }}
+</button>
+{% endif %}
+{% endblock action_buttons %}
+
 {% block content %}
 <article class="overflow-auto">
     <h2>{{ ctx.t("user.profile.groups.title") }}</h2>

@@ -343,6 +343,7 @@ pub enum ActionKind {
     Create,
     Update,
     Delete,
+    Impersonate,
 }
 
 #[derive(sqlx::Type)]
@@ -356,6 +357,7 @@ pub enum TargetKind {
     TagAssignment,
     Permission,
     PermissionAssignment,
+    User,
 }
 
 #[derive(FromRow)]

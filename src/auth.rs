@@ -94,3 +94,24 @@ pub fn get_current_session(jar: &CookieJar<'_>) -> Option<Session> {
 pub fn logout(jar: &CookieJar<'_>) {
     jar.remove_private(AUTH_COOKIE);
 }
+
+pub fn impersonate(
+    target_username: String,
+    target_display_name: String,
+    jar: &CookieJar<'_>,
+) -> AppResult<()> {
+    if let Some(mut session) = get_current_session(jar) {
+        session.username = target_username;
+        session.display_name = target_display_name;
+
+        let value = serde_json::to_string(&session).map_err(AppError::StateSerializationError)?;
+
+        if let Some(mut cookie) = jar.get_private(AUTH_COOKIE) {
+            cookie.set_value(value);
+
+            jar.add_private(cookie);
+        }
+    }
+
+    Ok(())
+}
