@@ -293,11 +293,11 @@ async fn sync_to_directory(
             groups::members::get_direct_subgroups(&group.id, &group.domain, &db)
                 .await?
                 .iter()
-                .map(|s| s.group.key())
+                .map(|s| s.group.key().to_lowercase())
                 .collect();
 
         let extra_subgroups: Vec<String> = sqlx::query_scalar(
-            "SELECT content
+            "SELECT LOWER(content)
             FROM all_tag_assignments
             WHERE system_id = 'gworkspace'
                 AND tag_id = 'extra-subgroup'
@@ -320,7 +320,7 @@ async fn sync_to_directory(
             groups::members::get_direct_members(&group.id, &group.domain, false, &db, None).await?;
 
         let embeddings: Vec<String> = sqlx::query_scalar(
-            "SELECT content
+            "SELECT LOWER(content)
                     FROM all_tag_assignments
                     WHERE system_id = 'gworkspace'
                         AND tag_id = 'embed-members'
@@ -365,7 +365,7 @@ async fn sync_to_directory(
         }
 
         let extra_members: Vec<UserWithEmail> = sqlx::query_scalar(
-            "SELECT content
+            "SELECT LOWER(content)
             FROM all_tag_assignments
             WHERE system_id = 'gworkspace'
                 AND tag_id = 'extra-member'
@@ -490,9 +490,11 @@ async fn sync_group_members(
 ) -> AppResult<()> {
     let direct_member_emails: Vec<_> = direct_members.iter().map(|m| m.email.as_ref()).collect();
 
-    let current = fallible!(mon, client.list_group_members(key).await);
+    let mut current = fallible!(mon, client.list_group_members(key).await);
 
-    for entry in &current {
+    for entry in &mut current {
+        entry.email = entry.email.to_lowercase();
+
         let present = match entry.r#type {
             google::GroupMemberType::Group => subgroup_emails.contains(&entry.email.as_str()),
             google::GroupMemberType::User => direct_member_emails.contains(&entry.email.as_str()),
@@ -585,7 +587,7 @@ async fn get_user_email(
         // user exists in domain!
         return Ok(Some(UserWithEmail {
             username: username.to_owned(),
-            email: user.primary_email,
+            email: user.primary_email.to_lowercase(),
         }));
     }
 
@@ -598,7 +600,7 @@ async fn get_user_email(
         return Ok(None);
     }
 
-    let personal = sqlx::query_scalar(
+    let personal: Option<String> = sqlx::query_scalar(
         "SELECT content
         FROM all_tag_assignments
         WHERE system_id = 'gworkspace'
@@ -619,7 +621,7 @@ async fn get_user_email(
 
         Ok(Some(UserWithEmail {
             username: username.to_owned(),
-            email,
+            email: email.to_lowercase(),
         }))
     } else {
         Ok(None)
@@ -637,7 +639,7 @@ impl UserWithEmail {
         if email.contains('@') {
             Some(UserWithEmail {
                 username: format!("extra#{email}"),
-                email,
+                email: email.to_lowercase(),
             })
         } else {
             None
