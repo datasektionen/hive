@@ -63,6 +63,13 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| super::Manifes
             description: "Email address of the domain admin to impersonate",
             r#type: super::SettingType::ShortText,
         },
+        super::Setting {
+            id: "group-whitelist",
+            secret: false,
+            name: "Group Whitelist",
+            description: "Comma-separated list of group email addresses to never delete",
+            r#type: super::SettingType::LongText,
+        },
     ],
     tags: &[
         super::Tag {
@@ -220,6 +227,14 @@ async fn sync_to_directory(
     // would expect, so the binary search below fails when it shouldn't
     groups.sort_unstable_by(|a, b| a.domain.cmp(&b.domain).then(a.id.cmp(&b.id)));
 
+    let mut whitelist = if let Some(serde_json::Value::String(s)) = settings.get("group-whitelist")
+    {
+        s.split(',').filter(|e| e.contains('@')).collect()
+    } else {
+        Vec::new()
+    };
+    whitelist.sort_unstable();
+
     // doing this before sync'ing groups to avoid listing newly-created;
     // means that we don't need to process groups that obviously should remain
     let listed = fallible!(mon, client.list_groups().await);
@@ -230,6 +245,15 @@ async fn sync_to_directory(
             .binary_search_by_key(&(domain, id), |g| (g.domain.as_str(), g.id.as_str()))
             .is_err()
         {
+            if whitelist.binary_search(&existing.email.as_str()).is_ok() {
+                mon.info(format!(
+                    "Not deleting whitelisted group `{}`",
+                    existing.email
+                ));
+
+                continue;
+            }
+
             mon.info(format!(
                 "Deleting group <{}>: `{}`",
                 existing.email, existing.name
