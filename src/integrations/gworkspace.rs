@@ -255,8 +255,14 @@ async fn sync_to_directory(
             }
 
             mon.info(format!(
-                "Deleting group <{}>: `{}`",
-                existing.email, existing.name
+                "Deleting group <{}>: `{}` --- {:?}",
+                existing.email, existing.name, existing
+            ));
+
+            let members = fallible!(mon, client.list_group_members(&existing.email).await);
+            mon.info(format!(
+                "Group `{}` had members: {:?}",
+                existing.email, members
             ));
 
             if mode.should_delete() {
