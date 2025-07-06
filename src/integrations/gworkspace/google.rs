@@ -133,7 +133,7 @@ impl DirectoryApiClient {
         &self,
         method: reqwest::Method,
         url: impl reqwest::IntoUrl + Copy + fmt::Display,
-        body: Option<impl Serialize>,
+        body: Option<impl Serialize + fmt::Debug>,
         error_message: &'static str,
     ) -> Result<Option<R>, &'static str> {
         let request = self
@@ -141,7 +141,7 @@ impl DirectoryApiClient {
             .request(method, url)
             .bearer_auth(&self.access_token);
 
-        let request = if let Some(body) = body {
+        let request = if let Some(ref body) = body {
             request.json(&body)
         } else {
             request
@@ -164,6 +164,7 @@ impl DirectoryApiClient {
             .and_then(reqwest::Response::error_for_status)
             .map_err(|e| {
                 error!("Directory API failed to execute request ({url}): {e:?}");
+                error!("Sent body: {body:?}");
 
                 error_message
             })?
@@ -386,14 +387,14 @@ pub struct Group {
     pub description: String,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct NewGroup {
     pub email: String,
     pub name: String,
     pub description: String,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct GroupPatch<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<&'a str>,
@@ -435,7 +436,7 @@ pub enum GroupMemberDeliverySettings {
     None,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct GroupMemberPatch {
     pub role: GroupMemberRole,
 }
