@@ -219,11 +219,10 @@ impl DirectoryApiClient {
                             .cloned()
                             .filter_map(|v| serde_json::from_value(v).ok()),
                     );
-                } else {
-                    error!("Malformed paginated response: {obj:?}");
-
-                    return Err("Pagination response did not contain specified key");
                 }
+
+                // apparently it's not an error if the object doesn't contain `key`,
+                // it's just equivalent to an empty array, so we do nothing...
 
                 if let Some(serde_json::Value::String(token)) = obj.get("nextPageToken") {
                     params.insert("pageToken", token.clone());
