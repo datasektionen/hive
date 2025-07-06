@@ -185,6 +185,7 @@ where
     let probes = [
         HivePermission::ManageGroups(GroupsScope::Any),
         HivePermission::ManageMembers(GroupsScope::Any),
+        HivePermission::ViewGroups(GroupsScope::Any),
     ];
     for probe in probes {
         if populate_from_permission(probe, &mut domains, &mut tags, domain_filter, perms).await? {
@@ -242,6 +243,7 @@ pub(super) async fn populate_from_permission(
         let scope = match perm {
             HivePermission::ManageGroups(scope) => scope,
             HivePermission::ManageMembers(scope) => scope,
+            HivePermission::ViewGroups(scope) => scope,
             _ => continue,
         };
 
@@ -469,6 +471,7 @@ where
     let probes = [
         HivePermission::ManageGroups(GroupsScope::Any),
         HivePermission::ManageMembers(GroupsScope::Any),
+        HivePermission::ViewGroups(GroupsScope::Any),
     ];
     for probe in probes {
         if populate_from_permission(probe, &mut domains, &mut tags, None, perms).await? {

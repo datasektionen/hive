@@ -102,6 +102,17 @@ where
     )
     .await?;
 
+    try_authority_from_permissions(
+        id,
+        domain,
+        HivePermission::ViewGroups(GroupsScope::Any),
+        AuthorityInGroup::View,
+        &mut authority,
+        db,
+        perms,
+    )
+    .await?;
+
     Ok(authority)
 }
 
@@ -126,7 +137,10 @@ where
     let mut tags = vec![];
 
     for perm in perms.fetch_all_related(probe).await? {
-        if let HivePermission::ManageGroups(scope) | HivePermission::ManageMembers(scope) = perm {
+        if let HivePermission::ManageGroups(scope)
+        | HivePermission::ManageMembers(scope)
+        | HivePermission::ViewGroups(scope) = perm
+        {
             match scope {
                 GroupsScope::Wildcard => {
                     *authority = potential_value;

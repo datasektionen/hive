@@ -8,6 +8,7 @@ use crate::{errors::AppResult, models::BasePermissionAssignment};
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum HivePermission {
     ViewLogs,
+    ViewGroups(GroupsScope),
     ManageGroups(GroupsScope),
     ManageMembers(GroupsScope),
     ManageSystems,
@@ -25,6 +26,7 @@ impl HivePermission {
     pub const fn key(&self) -> &'static str {
         match self {
             Self::ViewLogs => "view-logs",
+            Self::ViewGroups(..) => "view-groups",
             Self::ManageGroups(..) => "manage-groups",
             Self::ManageMembers(..) => "manage-members",
             Self::ManageSystems => "manage-systems",
@@ -49,7 +51,9 @@ impl fmt::Display for HivePermission {
             | Self::ManageSystems
             | Self::ApiCheckPermissions
             | Self::ApiListTagged => write!(f, "$hive:{key}"),
-            Self::ManageGroups(s) | Self::ManageMembers(s) => write!(f, "$hive:{key}:{s}"),
+            Self::ViewGroups(s) | Self::ManageGroups(s) | Self::ManageMembers(s) => {
+                write!(f, "$hive:{key}:{s}")
+            }
             Self::ManageSystem(s)
             | Self::ManagePerms(s)
             | Self::AssignPerms(s)
@@ -69,6 +73,7 @@ impl PartialOrd for HivePermission {
         }
 
         match (self, other) {
+            (Self::ViewGroups(a), Self::ViewGroups(b)) => a.partial_cmp(b),
             (Self::ManageGroups(a), Self::ManageGroups(b)) => a.partial_cmp(b),
             (Self::ManageMembers(a), Self::ManageMembers(b)) => a.partial_cmp(b),
             (Self::ManageSystem(a), Self::ManageSystem(b)) => a.partial_cmp(b),
@@ -99,6 +104,11 @@ impl TryFrom<BasePermissionAssignment> for HivePermission {
 
         match (perm.perm_id.as_str(), perm.scope.as_deref()) {
             ("view-logs", None) => Ok(Self::ViewLogs),
+            ("view-groups", Some(scope)) => {
+                let scope = GroupsScope::try_from(scope)?;
+
+                Ok(Self::ViewGroups(scope))
+            }
             ("manage-groups", Some(scope)) => {
                 let scope = GroupsScope::try_from(scope)?;
 
