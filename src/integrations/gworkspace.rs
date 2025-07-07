@@ -274,7 +274,7 @@ async fn sync_to_directory(
             ));
 
             if mode.should_delete() {
-                todo!("delete group");
+                fallible!(mon, client.delete_group(&existing.email).await);
             }
         }
     }

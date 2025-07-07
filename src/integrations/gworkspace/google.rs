@@ -281,6 +281,16 @@ impl DirectoryApiClient {
         .await
     }
 
+    pub async fn delete_group(&self, key: &str) -> Result<Option<()>, &'static str> {
+        self.exec_request(
+            reqwest::Method::DELETE,
+            &format!("https://admin.googleapis.com/admin/directory/v1/groups/{key}"),
+            None::<()>,
+            "Failed to delete group",
+        )
+        .await
+    }
+
     pub async fn patch_group(
         &self,
         key: &str,
