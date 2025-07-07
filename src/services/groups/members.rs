@@ -43,17 +43,25 @@ where
     Ok(result)
 }
 
-pub async fn get_direct_members<'x, X>(
+pub async fn get_direct_members<'x, X, D>(
     id: &str,
     domain: &str,
-    with_future_members: bool, // otherwise just current
+    with_future_members: bool,    // otherwise just current
+    with_grace_period: Option<D>, // tolerance after end date (for past members)
     db: X,
     resolver: Option<&IdentityResolver>,
 ) -> AppResult<Vec<GroupMember>>
 where
+    NaiveDate: std::ops::Add<D, Output = NaiveDate>,
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
     let today = Local::now().date_naive();
+
+    let until = if let Some(days) = with_grace_period {
+        today + days
+    } else {
+        today
+    };
 
     let mut query = sqlx::QueryBuilder::new(
         "SELECT *
@@ -64,9 +72,9 @@ where
     );
 
     if with_future_members {
-        query.push("ORDER BY (\"from\" <= $3) DESC, ");
+        query.push("ORDER BY (\"from\" <= $4) DESC, ");
     } else {
-        query.push("AND \"from\" <= $3 ORDER BY ");
+        query.push("AND \"from\" <= $4 ORDER BY ");
     }
 
     query.push("manager DESC, username, id");
@@ -76,6 +84,7 @@ where
         .build_query_as()
         .bind(id)
         .bind(domain)
+        .bind(until)
         .bind(today)
         .fetch_all(db)
         .await?;

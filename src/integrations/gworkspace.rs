@@ -89,6 +89,14 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| super::Manifes
             self_service: false,
         },
         super::Tag {
+            id: "grace-period",
+            description: "Keep old members until a month past their membership end date",
+            has_content: false,
+            supports_groups: true,
+            supports_users: false,
+            self_service: false,
+        },
+        super::Tag {
             id: "extra-member",
             description: "Additional email address to be added to the group",
             has_content: true,
@@ -322,8 +330,37 @@ async fn sync_to_directory(
             .map(String::as_str)
             .collect();
 
-        let mut direct_members_owned =
-            groups::members::get_direct_members(&group.id, &group.domain, false, &db, None).await?;
+        let has_grace_period = sqlx::query_scalar(
+            "SELECT EXISTS (
+                SELECT 1
+                FROM all_tag_assignments
+                WHERE system_id = 'gworkspace'
+                    AND tag_id = 'grace-period'
+                    AND group_id = $1
+                    AND group_domain = $2
+            )",
+        )
+        .bind(&group.id)
+        .bind(&group.domain)
+        .fetch_one(&db)
+        .await?;
+
+        let grace_period = if has_grace_period {
+            // 2025-02-01 becomes 2025-03-01, etc.
+            Some(chrono::Months::new(1))
+        } else {
+            None
+        };
+
+        let mut direct_members_owned = groups::members::get_direct_members(
+            &group.id,
+            &group.domain,
+            false,
+            grace_period,
+            &db,
+            None,
+        )
+        .await?;
 
         let embeddings: Vec<String> = sqlx::query_scalar(
             "SELECT LOWER(content)
