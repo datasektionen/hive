@@ -345,7 +345,8 @@ impl DirectoryApiClient {
     ) -> Result<Option<GroupSettings>, &'static str> {
         self.exec_request(
             reqwest::Method::GET,
-            &format!("https://www.googleapis.com/groups/v1/groups/{key}"),
+            &format!("https://www.googleapis.com/groups/v1/groups/{key}?alt=json"),
+            // ^ yes, of course the group settings API defaults to XML format...
             None::<()>,
             "Failed to get group settings",
         )
@@ -359,7 +360,7 @@ impl DirectoryApiClient {
     ) -> Result<Option<GroupSettings>, &'static str> {
         self.exec_request(
             reqwest::Method::PATCH,
-            &format!("https://www.googleapis.com/groups/v1/groups/{key}"),
+            &format!("https://www.googleapis.com/groups/v1/groups/{key}?alt=json"),
             Some(patch),
             "Failed to patch group settings",
         )
