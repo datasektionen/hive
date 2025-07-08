@@ -466,11 +466,11 @@ pub struct GroupSettings {
     pub who_can_moderate_members: GroupModerationPermission,
     pub who_can_moderate_content: GroupModerationPermission,
     pub who_can_assist_content: GroupModerationPermission,
-    pub allow_web_posting: bool,
-    pub allow_external_members: bool,
-    pub is_archived: bool, // message history is kept
-    pub members_can_post_as_the_group: bool,
-    pub enable_collaborative_inbox: bool,
+    pub allow_web_posting: PoorMansBoolean,
+    pub allow_external_members: PoorMansBoolean,
+    pub is_archived: PoorMansBoolean, // message history is kept
+    pub members_can_post_as_the_group: PoorMansBoolean,
+    pub enable_collaborative_inbox: PoorMansBoolean,
     pub message_moderation_level: GroupMessageModerationLevel,
     pub spam_moderation_level: GroupSpamModerationLevel,
     pub default_sender: GroupDefaultSender,
@@ -503,15 +503,15 @@ pub struct GroupSettingsPatch<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub who_can_assist_content: Option<GroupModerationPermission>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub allow_web_posting: Option<bool>,
+    pub allow_web_posting: Option<PoorMansBoolean>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub allow_external_members: Option<bool>,
+    pub allow_external_members: Option<PoorMansBoolean>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub is_archived: Option<bool>,
+    pub is_archived: Option<PoorMansBoolean>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub members_can_post_as_the_group: Option<bool>,
+    pub members_can_post_as_the_group: Option<PoorMansBoolean>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub enable_collaborative_inbox: Option<bool>,
+    pub enable_collaborative_inbox: Option<PoorMansBoolean>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message_moderation_level: Option<GroupMessageModerationLevel>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -685,4 +685,32 @@ pub enum GroupSpamModerationLevel {
 pub enum GroupDefaultSender {
     DefaultSelf,
     Group,
+}
+
+// of course Google Group Settings API doesn't use actual JSON booleans,
+// but rather string values that can be either "true" or "false"...
+// Serde doesn't seem to have a great way to deal with that conversion
+// on (de)serialization without a lot of extra complexity, so we just
+// use a custom enum
+#[derive(Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum PoorMansBoolean {
+    True,
+    False,
+}
+
+impl From<bool> for PoorMansBoolean {
+    fn from(value: bool) -> Self {
+        if value {
+            Self::True
+        } else {
+            Self::False
+        }
+    }
+}
+
+impl fmt::Debug for PoorMansBoolean {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        (*self == Self::True).fmt(f)
+    }
 }
