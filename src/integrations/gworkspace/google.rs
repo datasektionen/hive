@@ -6,9 +6,12 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 // space-separated list of permissions required
 // (options: https://developers.google.com/identity/protocols/oauth2/scopes)
+// Note: these must also be authorized under Domain-Wide Delegation from Google
+// Workspace admin panel at https://admin.google.com/ac/owl/domainwidedelegation
 const SCOPE: &str = concat!(
     "https://www.googleapis.com/auth/admin.directory.user",
-    " https://www.googleapis.com/auth/admin.directory.group"
+    " https://www.googleapis.com/auth/admin.directory.group",
+    " https://www.googleapis.com/auth/apps.groups.settings",
 );
 
 const REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
@@ -260,7 +263,7 @@ impl DirectoryApiClient {
         .await
     }
 
-    pub async fn create_group(&self, group: &NewGroup) -> Result<Group, &'static str> {
+    pub async fn create_group(&self, group: &NewGroup) -> Result<SimpleGroup, &'static str> {
         self.exec_request(
             reqwest::Method::POST,
             "https://admin.googleapis.com/admin/directory/v1/groups",
@@ -271,36 +274,12 @@ impl DirectoryApiClient {
         .and_then(|op| op.ok_or("Failed to create group"))
     }
 
-    pub async fn get_group(&self, key: &str) -> Result<Option<Group>, &'static str> {
-        self.exec_request(
-            reqwest::Method::GET,
-            &format!("https://admin.googleapis.com/admin/directory/v1/groups/{key}"),
-            None::<()>,
-            "Failed to get group",
-        )
-        .await
-    }
-
     pub async fn delete_group(&self, key: &str) -> Result<Option<()>, &'static str> {
         self.exec_request(
             reqwest::Method::DELETE,
             &format!("https://admin.googleapis.com/admin/directory/v1/groups/{key}"),
             None::<()>,
             "Failed to delete group",
-        )
-        .await
-    }
-
-    pub async fn patch_group(
-        &self,
-        key: &str,
-        patch: &GroupPatch<'_>,
-    ) -> Result<Option<Group>, &'static str> {
-        self.exec_request(
-            reqwest::Method::PATCH,
-            &format!("https://admin.googleapis.com/admin/directory/v1/groups/{key}"),
-            Some(patch),
-            "Failed to patch group",
         )
         .await
     }
@@ -359,6 +338,33 @@ impl DirectoryApiClient {
         )
         .await
     }
+
+    pub async fn get_group_settings(
+        &self,
+        key: &str,
+    ) -> Result<Option<GroupSettings>, &'static str> {
+        self.exec_request(
+            reqwest::Method::GET,
+            &format!("https://www.googleapis.com/groups/v1/groups/{key}"),
+            None::<()>,
+            "Failed to get group settings",
+        )
+        .await
+    }
+
+    pub async fn patch_group_settings(
+        &self,
+        key: &str,
+        patch: &GroupSettingsPatch<'_>,
+    ) -> Result<Option<GroupSettings>, &'static str> {
+        self.exec_request(
+            reqwest::Method::PATCH,
+            &format!("https://www.googleapis.com/groups/v1/groups/{key}"),
+            Some(patch),
+            "Failed to patch group settings",
+        )
+        .await
+    }
 }
 
 #[derive(Serialize)]
@@ -388,13 +394,6 @@ pub struct User {
 pub struct SimpleGroup {
     pub email: String,
     pub name: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Group {
-    pub name: String,
-    pub description: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -449,4 +448,240 @@ pub enum GroupMemberDeliverySettings {
 #[derive(Debug, Serialize)]
 pub struct GroupMemberPatch {
     pub role: GroupMemberRole,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GroupSettings {
+    pub name: String,
+    pub description: String,                      // max 4096 characters
+    pub who_can_view_group: GroupVisibility,      // view messages
+    pub who_can_view_membership: GroupVisibility, // view members list
+    pub who_can_discover_group: GroupDiscoverability,
+    pub who_can_join: GroupJoinPermission,
+    pub who_can_leave_group: GroupLeavePermission,
+    pub who_can_contact_owner: GroupContactOwnerPermission,
+    pub who_can_post_message: GroupPostPermission,
+    pub who_can_moderate_members: GroupModerationPermission,
+    pub who_can_moderate_content: GroupModerationPermission,
+    pub who_can_assist_content: GroupModerationPermission,
+    pub allow_web_posting: bool,
+    pub allow_external_members: bool,
+    pub is_archived: bool, // message history is kept
+    pub members_can_post_as_the_group: bool,
+    pub enable_collaborative_inbox: bool,
+    pub message_moderation_level: GroupMessageModerationLevel,
+    pub spam_moderation_level: GroupSpamModerationLevel,
+    pub default_sender: GroupDefaultSender,
+}
+
+#[derive(Debug, Serialize)]
+pub struct GroupSettingsPatch<'a> {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub who_can_view_group: Option<GroupVisibility>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub who_can_view_membership: Option<GroupVisibility>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub who_can_discover_group: Option<GroupDiscoverability>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub who_can_join: Option<GroupJoinPermission>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub who_can_leave_group: Option<GroupLeavePermission>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub who_can_contact_owner: Option<GroupContactOwnerPermission>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub who_can_post_message: Option<GroupPostPermission>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub who_can_moderate_members: Option<GroupModerationPermission>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub who_can_moderate_content: Option<GroupModerationPermission>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub who_can_assist_content: Option<GroupModerationPermission>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub allow_web_posting: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub allow_external_members: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_archived: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub members_can_post_as_the_group: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enable_collaborative_inbox: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message_moderation_level: Option<GroupMessageModerationLevel>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub spam_moderation_level: Option<GroupSpamModerationLevel>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default_sender: Option<GroupDefaultSender>,
+}
+
+impl<'a> GroupSettingsPatch<'a> {
+    pub fn new(
+        current: &GroupSettings,
+        target: &'a GroupSettings,
+        alt_name: &str,
+        alt_description: &str,
+    ) -> Option<Self> {
+        let name = (current.name != target.name && current.name != alt_name)
+            .then_some(target.name.as_str());
+
+        let description = (current.description != target.description
+            && current.description != alt_description)
+            .then_some(target.description.as_str());
+
+        // only works for Copy types, so not name/description
+        macro_rules! field_diff {
+            ($key:ident) => {
+                let $key = (current.$key != target.$key).then_some(target.$key);
+            };
+        }
+
+        field_diff!(who_can_view_group);
+        field_diff!(who_can_view_membership);
+        field_diff!(who_can_discover_group);
+        field_diff!(who_can_join);
+        field_diff!(who_can_leave_group);
+        field_diff!(who_can_contact_owner);
+        field_diff!(who_can_post_message);
+        field_diff!(who_can_moderate_members);
+        field_diff!(who_can_moderate_content);
+        field_diff!(who_can_assist_content);
+        field_diff!(allow_web_posting);
+        field_diff!(allow_external_members);
+        field_diff!(is_archived);
+        field_diff!(members_can_post_as_the_group);
+        field_diff!(enable_collaborative_inbox);
+        field_diff!(message_moderation_level);
+        field_diff!(spam_moderation_level);
+        field_diff!(default_sender);
+
+        let patch = Self {
+            name,
+            description,
+            who_can_view_group,
+            who_can_view_membership,
+            who_can_discover_group,
+            who_can_join,
+            who_can_leave_group,
+            who_can_contact_owner,
+            who_can_post_message,
+            who_can_moderate_members,
+            who_can_moderate_content,
+            who_can_assist_content,
+            allow_web_posting,
+            allow_external_members,
+            is_archived,
+            members_can_post_as_the_group,
+            enable_collaborative_inbox,
+            message_moderation_level,
+            spam_moderation_level,
+            default_sender,
+        };
+
+        if let Ok(serde_json::Value::Object(map)) = serde_json::to_value(&patch) {
+            if map.is_empty() {
+                return None;
+            }
+        }
+
+        Some(patch)
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[allow(clippy::enum_variant_names)]
+pub enum GroupVisibility {
+    AllInDomainCanView,
+    AllMembersCanView,
+    AllManagersCanView,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[allow(clippy::enum_variant_names)]
+pub enum GroupDiscoverability {
+    AnyoneCanDiscover,
+    AllInDomainCanDiscover,
+    AllMembersCanDiscover,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[allow(clippy::enum_variant_names)]
+pub enum GroupJoinPermission {
+    AnyoneCanJoin,
+    AllInDomainCanJoin,
+    InvitedCanJoin,
+    CanRequestToJoin,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[allow(clippy::enum_variant_names)]
+pub enum GroupLeavePermission {
+    AllManagersCanLeave,
+    AllMembersCanLeave,
+    NoneCanLeave,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[allow(clippy::enum_variant_names)]
+pub enum GroupContactOwnerPermission {
+    AllInDomainCanContact,
+    AllManagersCanContact,
+    AllMembersCanContact,
+    AnyoneCanContact,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[allow(clippy::enum_variant_names)]
+pub enum GroupPostPermission {
+    NoneCanPost,
+    AllManagersCanPost,
+    AllMembersCanPost,
+    AllOwnersCanPost,
+    AllInDomainCanPost,
+    AnyoneCanPost,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum GroupModerationPermission {
+    AllMembers,
+    OwnersAndManagers,
+    OwnersOnly,
+    None,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[allow(clippy::enum_variant_names)]
+pub enum GroupMessageModerationLevel {
+    ModerateAllMessages,
+    ModerateNonMembers,
+    ModerateNewMembers,
+    ModerateNone,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum GroupSpamModerationLevel {
+    Allow,
+    Moderate,
+    SilentlyModerate,
+    Reject,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum GroupDefaultSender {
+    DefaultSelf,
+    Group,
 }

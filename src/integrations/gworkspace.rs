@@ -246,7 +246,8 @@ async fn sync_to_directory(
     // doing this before sync'ing groups to avoid listing newly-created;
     // means that we don't need to process groups that obviously should remain
     let listed = fallible!(mon, client.list_groups().await);
-    for existing in listed {
+
+    for existing in &listed {
         let (id, domain) = existing.email.split_once('@').expect("valid email");
 
         if groups
@@ -279,8 +280,16 @@ async fn sync_to_directory(
         }
     }
 
+    let mut existing_emails: Vec<_> = listed
+        .iter()
+        .map(|existing| existing.email.to_lowercase())
+        .collect();
+    existing_emails.sort_unstable(); // to allow binary search
+
     for group in &groups {
         let key = format!("{}@{}", group.id, group.domain);
+
+        mon.info(format!("Synchronizing group `{key}`"));
 
         let allow_external = sqlx::query_scalar(
             "SELECT EXISTS (
@@ -301,7 +310,12 @@ async fn sync_to_directory(
             mon.info(format!("Group {key} allows external members"));
         }
 
-        sync_group(&key, group, &client, mode, mon).await?;
+        if existing_emails.binary_search(&key).is_err() {
+            // this group wasn't in the listing, so we need to create it
+            create_group(&key, group, &client, mode, mon).await?;
+        }
+
+        sync_group_settings(&key, group, &client, mode, mon).await?;
 
         let subgroup_emails_owned: Vec<_> =
             groups::members::get_direct_subgroups(&group.id, &group.domain, &db)
@@ -436,88 +450,90 @@ async fn sync_to_directory(
     Ok(())
 }
 
-async fn sync_group(
+async fn create_group(
     key: &str,
     group: &models::Group,
     client: &DirectoryApiClient,
     mode: Mode,
     mon: &mut super::TaskRunMonitor,
 ) -> AppResult<()> {
-    mon.info(format!("Synchronizing group `{key}`"));
+    mon.info(format!("Creating group `{key}`"));
 
-    if let Some(current) = fallible!(mon, client.get_group(key).await) {
-        // update existing
-
-        let name_patch = if current.name != group.name_sv && current.name != group.name_en {
-            mon.info(format!(
-                "Updating name from `{}` to `{}`",
-                current.name, group.name_sv
-            ));
-
-            Some(group.name_sv.as_str())
-        } else {
-            None
-        };
-
+    if mode.should_insert() {
         let mut truncated_description = group.description_sv.clone();
         truncated_description.truncate(4096); // max supported by Google Groups
 
-        let desc_patch = if current.description != truncated_description
-            && current.name != group.description_en
-        {
-            mon.info(format!(
-                "Updating description from `{}` to `{}`",
-                current.description, group.description_sv
-            ));
-
-            Some(group.description_sv.as_str())
-        } else {
-            None
+        let new = google::NewGroup {
+            email: key.to_owned(),
+            name: group.name_sv.clone(),
+            description: truncated_description,
         };
 
-        if !mode.should_update() || (name_patch.is_none() && desc_patch.is_none()) {
-            // nothing to do
-            return Ok(());
-        }
+        fallible!(mon, client.create_group(&new).await);
 
-        let patch = google::GroupPatch {
-            name: name_patch,
-            description: desc_patch,
-        };
+        mon.warn(format!(
+            "Successfully created group `{key}`, but it will likely remain empty since Google API \
+             will refuse to acknowledge it for a few minutes until stabilizing"
+        ));
+    }
 
-        if fallible!(mon, client.patch_group(key, &patch).await).is_some() {
-            mon.info(format!("Successfully updated group `{key}`"));
+    Ok(())
+}
 
-            // TODO: update group settings
-            // https://developers.google.com/workspace/admin/groups-settings/v1/reference/groups
-        } else {
-            mon.warn(format!("Could not update group `{key}` (no longer exists)"));
-        }
-    } else {
-        // create new
+async fn sync_group_settings(
+    key: &str,
+    group: &models::Group,
+    client: &DirectoryApiClient,
+    mode: Mode,
+    mon: &mut super::TaskRunMonitor,
+) -> AppResult<()> {
+    let Some(current) = fallible!(mon, client.get_group_settings(key).await) else {
+        mon.error(format!(
+            "Couldn't find group settings for `{key}`; skipping..."
+        ));
+        return Ok(());
+    };
 
-        mon.info(format!("Creating group `{key}`"));
+    let mut truncated_description = group.description_sv.clone();
+    truncated_description.truncate(4096); // max supported by Google Groups
 
-        if mode.should_insert() {
-            let mut truncated_description = group.description_sv.clone();
-            truncated_description.truncate(4096); // max supported by Google Groups
+    let mut alt_description = group.description_en.clone();
+    alt_description.truncate(4096);
 
-            let new = google::NewGroup {
-                email: key.to_owned(),
-                name: group.name_sv.clone(),
-                description: truncated_description,
-            };
+    let target = google::GroupSettings {
+        name: group.name_sv.clone(),
+        description: truncated_description,
+        who_can_view_group: google::GroupVisibility::AllMembersCanView,
+        who_can_view_membership: google::GroupVisibility::AllMembersCanView,
+        who_can_discover_group: google::GroupDiscoverability::AllInDomainCanDiscover,
+        who_can_join: google::GroupJoinPermission::InvitedCanJoin,
+        who_can_leave_group: google::GroupLeavePermission::NoneCanLeave,
+        who_can_contact_owner: google::GroupContactOwnerPermission::AllMembersCanContact,
+        who_can_post_message: google::GroupPostPermission::AnyoneCanPost,
+        who_can_moderate_members: google::GroupModerationPermission::None,
+        who_can_moderate_content: google::GroupModerationPermission::OwnersAndManagers,
+        who_can_assist_content: google::GroupModerationPermission::AllMembers,
+        allow_web_posting: true,
+        allow_external_members: false,
+        is_archived: true,
+        members_can_post_as_the_group: false,
+        enable_collaborative_inbox: true,
+        message_moderation_level: google::GroupMessageModerationLevel::ModerateNone,
+        spam_moderation_level: google::GroupSpamModerationLevel::Moderate,
+        default_sender: google::GroupDefaultSender::DefaultSelf,
+    };
 
-            fallible!(mon, client.create_group(&new).await);
+    let Some(patch) =
+        google::GroupSettingsPatch::new(&current, &target, &group.name_en, &alt_description)
+    else {
+        // nothing to update
+        return Ok(());
+    };
 
-            mon.warn(format!(
-                "Successfully created group `{key}`, but it will likely remain empty since Google \
-                 API will refuse to acknowledge it for a few minutes until stabilizing"
-            ));
-        }
+    mon.info(format!("Patching `{key}` group settings: {patch:?}"));
 
-        // TODO: update group settings
-        // https://developers.google.com/workspace/admin/groups-settings/v1/reference/groups
+    if mode.should_update() {
+        fallible!(mon, client.patch_group_settings(key, &patch).await);
     }
 
     Ok(())
