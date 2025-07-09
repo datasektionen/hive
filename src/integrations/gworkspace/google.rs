@@ -141,7 +141,7 @@ impl DirectoryApiClient {
     ) -> Result<Option<R>, &'static str> {
         let request = self
             .reqwest_client
-            .request(method, url)
+            .request(method.clone(), url)
             .bearer_auth(&self.access_token);
 
         let request = if let Some(ref body) = body {
@@ -163,21 +163,25 @@ impl DirectoryApiClient {
             }
         }
 
-        let decoded = response
+        let treated = response
             .and_then(reqwest::Response::error_for_status)
             .map_err(|e| {
                 error!("Directory API failed to execute request ({url}): {e:?}");
                 error!("Sent body: {body:?}");
 
                 error_message
-            })?
-            .json()
-            .await
-            .map_err(|e| {
-                error!("Directory API failed to decode response JSON ({url}): {e:?}");
-
-                "Failed to decode response JSON"
             })?;
+
+        if method == reqwest::Method::DELETE {
+            // no response to decode
+            return Ok(None);
+        }
+
+        let decoded = treated.json().await.map_err(|e| {
+            error!("Directory API failed to decode response JSON ({url}): {e:?}");
+
+            "Failed to decode response JSON"
+        })?;
 
         Ok(Some(decoded))
     }
