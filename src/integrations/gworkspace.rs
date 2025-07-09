@@ -360,7 +360,7 @@ async fn sync_to_directory(
         .await?;
 
         let grace_period = if has_grace_period {
-            // 2025-02-01 becomes 2025-03-01, etc.
+            // 2025-03-01 becomes 2025-02-01, etc.
             Some(chrono::Months::new(1))
         } else {
             None

@@ -52,13 +52,13 @@ pub async fn get_direct_members<'x, X, D>(
     resolver: Option<&IdentityResolver>,
 ) -> AppResult<Vec<GroupMember>>
 where
-    NaiveDate: std::ops::Add<D, Output = NaiveDate>,
+    NaiveDate: std::ops::Sub<D, Output = NaiveDate>,
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
     let today = Local::now().date_naive();
 
     let until = if let Some(days) = with_grace_period {
-        today + days
+        today - days
     } else {
         today
     };
