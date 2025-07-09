@@ -14,7 +14,7 @@ const SCOPE: &str = concat!(
     " https://www.googleapis.com/auth/apps.groups.settings",
 );
 
-const REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+const REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(15);
 const USER_AGENT: &str = "hive-gworkspace-integration";
 
 /// Note that after construction, the client expires after 1h.
