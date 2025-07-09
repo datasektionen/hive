@@ -153,13 +153,14 @@ impl DirectoryApiClient {
         let response = request.send().await;
 
         if let Ok(response) = &response {
-            if matches!(
-                response.status(),
-                reqwest::StatusCode::FORBIDDEN | reqwest::StatusCode::NOT_FOUND
-            ) {
-                // for groups (not users), API doesn't return 404, but 403
-                // (we assume we have sufficient permissions for anything)
-                return Ok(None);
+            if response.status() == reqwest::StatusCode::NOT_FOUND {
+                if method == reqwest::Method::DELETE {
+                    error!("Got 404 from DELETE {url}");
+
+                    return Err("Got 404 for DELETE request");
+                } else {
+                    return Ok(None);
+                }
             }
         }
 
