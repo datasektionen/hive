@@ -477,6 +477,7 @@ pub struct GroupSettings {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GroupSettingsPatch<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<&'a str>,
