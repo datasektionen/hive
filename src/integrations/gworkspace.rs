@@ -1,4 +1,4 @@
-use std::{collections::HashSet, sync::LazyLock};
+use std::{collections::HashSet, iter, sync::LazyLock};
 
 use serde::Deserialize;
 use sqlx::PgPool;
@@ -69,6 +69,13 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| super::Manifes
             name: "Group Whitelist",
             description: "Comma-separated list of group email addresses to never delete",
             r#type: super::SettingType::LongText,
+        },
+        super::Setting {
+            id: "alternative-domains",
+            secret: false,
+            name: "Alternative Domains",
+            description: "Comma-separated list of secondary domains where to lookup users",
+            r#type: super::SettingType::ShortText,
         },
     ],
     tags: &[
@@ -196,6 +203,7 @@ async fn sync_to_directory(
     let mode: Mode = super::require_serde_setting!(mon, settings, "mode");
 
     let primary_domain = super::require_string_setting!(mon, settings, "primary-domain", '.');
+    let alternative_domains = super::require_list_setting!(settings, "alternative-domains", '.');
 
     let service_account_email =
         super::require_string_setting!(mon, settings, "service-account-email", '@');
@@ -235,12 +243,7 @@ async fn sync_to_directory(
     // would expect, so the binary search below fails when it shouldn't
     groups.sort_unstable_by(|a, b| a.domain.cmp(&b.domain).then(a.id.cmp(&b.id)));
 
-    let mut whitelist = if let Some(serde_json::Value::String(s)) = settings.get("group-whitelist")
-    {
-        s.split(',').filter(|e| e.contains('@')).collect()
-    } else {
-        Vec::new()
-    };
+    let mut whitelist = super::require_list_setting!(settings, "group-whitelist", '@');
     whitelist.sort_unstable();
 
     // doing this before sync'ing groups to avoid listing newly-created;
@@ -404,6 +407,7 @@ async fn sync_to_directory(
             let with_email = get_user_email(
                 &member.username,
                 primary_domain,
+                &alternative_domains,
                 allow_external,
                 &client,
                 &db,
@@ -635,21 +639,26 @@ async fn sync_group_members(
 async fn get_user_email(
     username: &str,
     primary_domain: &str,
+    alternative_domains: &[&str],
     allow_external: bool,
     client: &DirectoryApiClient,
     db: &PgPool,
     mon: &mut super::TaskRunMonitor,
 ) -> AppResult<Option<UserWithEmail>> {
-    let lookup = format!("{username}@{primary_domain}");
+    // look for a user account in each domain, in order
+    for domain in iter::once(&primary_domain).chain(alternative_domains) {
+        let lookup = format!("{username}@{domain}");
 
-    if let Some(user) = fallible!(mon, client.get_user(&lookup).await, None) {
-        // user exists in domain!
-        return Ok(Some(UserWithEmail {
-            username: username.to_owned(),
-            email: user.primary_email.to_lowercase(),
-        }));
+        if let Some(user) = fallible!(mon, client.get_user(&lookup).await, None) {
+            // user exists in domain!
+            return Ok(Some(UserWithEmail {
+                username: username.to_owned(),
+                email: user.primary_email.to_lowercase(),
+            }));
+        }
     }
 
+    // nothing was found in any domain
     if !allow_external {
         mon.warn(format!(
             "Cannot use a personal email for `{username}` because group does not support external \

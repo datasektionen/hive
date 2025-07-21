@@ -283,6 +283,19 @@ pub fn integration_exists(id: &str) -> bool {
     false
 }
 
+macro_rules! require_list_setting {
+    ($settings:expr, $key:literal) => {
+        super::require_list_setting!($settings, $key, "")
+    };
+    ($settings:expr, $key:literal, $contained:expr) => {
+        if let Some(serde_json::Value::String(s)) = $settings.get($key) {
+            s.split(',').filter(|e| e.contains($contained)).collect()
+        } else {
+            Vec::new()
+        }
+    };
+}
+
 macro_rules! require_serde_setting {
     ($mon:expr, $settings:expr, $key:literal) => {
         if let Some(value) = $settings
@@ -325,4 +338,4 @@ macro_rules! require_string_setting {
 #[allow(clippy::useless_attribute)]
 // required for usage in this module's children
 #[allow(clippy::needless_pub_self)]
-pub(self) use {require_serde_setting, require_string_setting};
+pub(self) use {require_list_setting, require_serde_setting, require_string_setting};
