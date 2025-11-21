@@ -294,19 +294,13 @@ async fn sync_to_directory(
 
         mon.info(format!("Synchronizing group `{key}`"));
 
-        let allow_external = sqlx::query_scalar(
-            "SELECT EXISTS (
-                SELECT 1
-                FROM all_tag_assignments
-                WHERE system_id = 'gworkspace'
-                    AND tag_id = 'allow-external'
-                    AND group_id = $1
-                    AND group_domain = $2
-            )",
+        let allow_external = groups::tags::is_tagged_with(
+            &group.id,
+            &group.domain,
+            "gworkspace",
+            "allow-external",
+            &db,
         )
-        .bind(&group.id)
-        .bind(&group.domain)
-        .fetch_one(&db)
         .await?;
 
         if allow_external {
@@ -347,19 +341,13 @@ async fn sync_to_directory(
             .map(String::as_str)
             .collect();
 
-        let has_grace_period = sqlx::query_scalar(
-            "SELECT EXISTS (
-                SELECT 1
-                FROM all_tag_assignments
-                WHERE system_id = 'gworkspace'
-                    AND tag_id = 'grace-period'
-                    AND group_id = $1
-                    AND group_domain = $2
-            )",
+        let has_grace_period = groups::tags::is_tagged_with(
+            &group.id,
+            &group.domain,
+            "gworkspace",
+            "grace-period",
+            &db,
         )
-        .bind(&group.id)
-        .bind(&group.domain)
-        .fetch_one(&db)
         .await?;
 
         let grace_period = if has_grace_period {
