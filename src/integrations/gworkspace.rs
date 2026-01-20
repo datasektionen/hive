@@ -11,7 +11,8 @@ use crate::{
 mod google;
 
 // can't use const because it wouldn't support async fn pointers for tasks
-pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| super::Manifest {
+pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| {
+    super::Manifest {
     id: "gworkspace",
     description: "Sync users and groups to Google Workspace",
     settings: &[
@@ -104,6 +105,14 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| super::Manifes
             self_service: false,
         },
         super::Tag {
+            id: "sensitive",
+            description: "Groups that must abide stricter requirements, such as having any grace period policy overridden",
+            has_content: false,
+            supports_groups: true,
+            supports_users: false,
+            self_service: false,
+        },
+        super::Tag {
             id: "extra-member",
             description: "Additional email address to be added to the group",
             has_content: true,
@@ -147,6 +156,7 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| super::Manifes
         schedule: "0 0 * * * *", // every hour
         func: |mon, settings, db| Box::pin(sync_to_directory(mon, settings, db)),
     }],
+}
 });
 
 #[derive(Deserialize, Clone, Copy)]
@@ -350,7 +360,12 @@ async fn sync_to_directory(
         )
         .await?;
 
-        let grace_period = if has_grace_period {
+        // Mainly for roles that handle confidential information
+        let is_sensitive: bool =
+            groups::tags::is_tagged_with(&group.id, &group.domain, "gworkspace", "sensitive", &db)
+                .await?;
+
+        let grace_period = if has_grace_period && !is_sensitive {
             // 2025-03-01 becomes 2025-02-01, etc.
             Some(chrono::Months::new(1))
         } else {
