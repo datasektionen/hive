@@ -475,6 +475,9 @@ groups.members.list.action.delete.subgroup.confirm:
 groups.members.list.action.delete.tooltip:
   en: Revoke membership
   sv: Återkalla medlemskapet
+groups.members.list.action.edit.tooltip:
+  en: Edit membership
+  sv: Redigera medlemskap
 groups.members.list.col.details:
   en: Details
   sv: Detaljer
@@ -520,6 +523,9 @@ groups.members.list.icon.user:
 groups.members.list.tooltip.inclusive:
   en: (Inclusive)
   sv: (Inklusive)
+groups.members.edit.title:
+  en: Edit membership
+  sv: Redigera medlemskap
 groups.permissions.assign.field.perm.indicator.scoped:
   en: Scoped
   sv: Avgränsat

@@ -20,10 +20,11 @@ value='{{ value.unwrap_or(default) }}'
 {%- endmacro field %}
 
 
-{% macro checkbox(form, name) -%}
+{% macro checkbox_with_default(form, name, default) -%}
 type="checkbox"
 name="{{ name }}"
-{%- if form.field_value(name).is_some() -%}
+{%- let value = form.field_value(name) -%}
+{%- if value.is_some() || (value.is_none() && default) -%}
 checked{{ ' ' }}
 {%- endif -%}
 {%- if form.field_errors(name).next().is_some() -%}
@@ -31,6 +32,11 @@ aria-invalid="true"
 {%- else if form.errors().next().is_some() -%}
 aria-invalid="false"
 {%- endif -%}
+{%- endmacro checkbox_with_default %}
+
+
+{% macro checkbox(form, name) -%}
+{%- call checkbox_with_default(form, name, false) -%}
 {%- endmacro checkbox %}
 
 

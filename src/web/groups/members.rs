@@ -3,14 +3,15 @@ use log::*;
 use rinja::Template;
 use rocket::{
     form::{self, Contextual, Form},
+    http::Header,
     response::{content::RawHtml, Redirect},
-    uri, State,
+    uri, Responder, State,
 };
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::{
-    dto::groups::{AddMemberDto, AddSubgroupDto},
+    dto::groups::{AddMemberDto, AddSubgroupDto, EditMemberDto},
     errors::{AppError, AppResult},
     guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
     models::{GroupMember, GroupRef, SimpleGroup, Subgroup},
@@ -18,7 +19,7 @@ use crate::{
     resolver::IdentityResolver,
     routing::RouteTree,
     services::groups::{self, AuthorityInGroup},
-    web::{Either, RenderedTemplate},
+    web::{groups::GroupDetailsView, Either, RenderedTemplate},
 };
 
 pub fn routes() -> RouteTree {
@@ -26,6 +27,8 @@ pub fn routes() -> RouteTree {
         list_members,
         add_subgroup,
         add_member,
+        edit_member_form,
+        edit_member,
         remove_subgroup,
         remove_member,
         get_membership_details
@@ -78,6 +81,35 @@ struct PartialMembershipDetailsView<'r> {
     username: &'r str,
     paths: Vec<Vec<GroupRef>>, // empty => not indirect member (but not <=!)
     is_direct_member: bool,    // false doesn't mean indirect! might be none
+}
+
+#[derive(Template)]
+#[template(path = "groups/members/edit.html.j2")]
+struct MemberEditView<'r, 'f, 'v> {
+    ctx: PageContext,
+    member: GroupMember,
+    group_id: &'r str,
+    group_domain: &'r str,
+    member_edit_form: &'f form::Context<'v>,
+}
+
+#[derive(Template)]
+#[template(path = "groups/members/edited.html.j2")]
+struct MemberEditedView<'r> {
+    ctx: PageContext,
+    member: GroupMember,
+    group_id: &'r str,
+    group_domain: &'r str,
+    show_indirect: bool,
+    can_manage: bool,
+    is_future_member: bool,
+}
+
+#[derive(Responder)]
+pub enum EditMemberResponse {
+    SuccessPartial(RenderedTemplate, Header<'static>, Header<'static>),
+    SuccessFullPage(Redirect),
+    Invalid(RenderedTemplate),
 }
 
 #[rocket::get("/group/<domain>/<id>/members?<show_indirect>")]
@@ -356,6 +388,162 @@ async fn add_member<'v>(
 
             let target = uri!(super::group_details(id = id, domain = domain));
             Ok(Either::Right(Redirect::to(target)))
+        }
+    }
+}
+
+#[rocket::get("/group/<domain>/<id>/edit/<member>")]
+#[allow(clippy::too_many_arguments)]
+async fn edit_member_form<'v>(
+    id: &str,
+    domain: &str,
+    member: Uuid,
+    db: &State<PgPool>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<Either<RenderedTemplate, Redirect>> {
+    if partial.is_none() {
+        // we only know how to render a form, not a full page;
+        // redirect to group details
+
+        let target = uri!(super::group_details(id = id, domain = domain));
+        return Ok(Either::Right(Redirect::to(target)));
+    }
+
+    groups::details::require_authority(
+        AuthorityInGroup::ManageMembers,
+        id,
+        domain,
+        db.inner(),
+        perms,
+        &user,
+    )
+    .await?;
+
+    let member = groups::members::require_one(&member, db.inner()).await?;
+
+    let template = MemberEditView {
+        ctx,
+        member,
+        group_id: id,
+        group_domain: domain,
+        member_edit_form: &form::Context::default(),
+    };
+
+    Ok(Either::Left(RawHtml(template.render()?)))
+}
+
+#[rocket::patch("/group/<domain>/<id>/edit/<member>?<show_indirect>", data = "<form>")]
+#[allow(clippy::too_many_arguments)]
+async fn edit_member<'v>(
+    id: &str,
+    domain: &str,
+    member: Uuid,
+    show_indirect: bool,
+    form: Form<Contextual<'v, EditMemberDto>>,
+    db: &State<PgPool>,
+    resolver: &State<Option<IdentityResolver>>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<EditMemberResponse> {
+    let authority = groups::details::require_authority(
+        AuthorityInGroup::ManageMembers,
+        id,
+        domain,
+        db.inner(),
+        perms,
+        &user,
+    )
+    .await?;
+
+    if let Some(dto) = &form.value {
+        groups::members::update(&member, dto, id, domain, db.inner(), &user).await?;
+
+        let mut changed = groups::members::require_one(&member, db.inner()).await?;
+
+        if partial.is_some() {
+            if let Some(resolver) = resolver.as_ref() {
+                changed.display_name = resolver.resolve_one(&changed.username).await?;
+            }
+
+            let is_future_member = changed.from > Local::now().date_naive();
+
+            let template = MemberEditedView {
+                ctx,
+                group_id: id,
+                group_domain: domain,
+                member: changed,
+                show_indirect,
+                is_future_member,
+                can_manage: authority >= AuthorityInGroup::ManageMembers,
+            };
+
+            Ok(EditMemberResponse::SuccessPartial(
+                RawHtml(template.render()?),
+                Header::new("HX-Retarget", format!("#member-{}", member)),
+                Header::new("HX-Reswap", "outerHTML"),
+            ))
+        } else {
+            let target = uri!(super::group_details(id = id, domain = domain));
+            return Ok(EditMemberResponse::SuccessFullPage(Redirect::to(target)));
+        }
+    } else {
+        debug!("Edit member form errors: {:?}", &form.context);
+
+        if partial.is_some() {
+            let member = groups::members::require_one(&member, db.inner()).await?;
+
+            // Find a way to not reset the form on error
+            let template = MemberEditView {
+                ctx,
+                member,
+                group_id: id,
+                group_domain: domain,
+                member_edit_form: &form.context,
+            };
+
+            return Ok(EditMemberResponse::Invalid(RawHtml(template.render()?)));
+        } else {
+            let group = groups::details::require_one(id, domain, db.inner()).await?;
+
+            let relevance = groups::details::get_relevance(id, domain, db.inner(), perms, &user)
+                .await?
+                .ok_or_else(|| AppError::NoSuchGroup(id.to_owned(), domain.to_owned()))?;
+
+            let permissible_groups =
+                groups::list::list_all_permissible_sorted(&ctx.lang, db.inner(), perms, &user)
+                    .await?;
+
+            let assignable_permissions =
+                groups::permissions::get_all_assignable(perms, db.inner()).await?;
+            let assignable_tags = groups::tags::get_all_assignable(perms, db.inner()).await?;
+
+            let empty_form = form::Context::default();
+
+            let template = GroupDetailsView {
+                ctx,
+                group,
+                relevance,
+                add_subgroup_form: &empty_form,
+                add_subgroup_success: None,
+                add_member_form: &empty_form,
+                add_member_success: None,
+                assign_permission_form: &empty_form,
+                assign_permission_success: None,
+                assign_tag_form: &empty_form,
+                assign_tag_success: None,
+                edit_form: &empty_form,
+                edit_modal_open: true,
+                permissible_groups,
+                assignable_permissions,
+                assignable_tags,
+            };
+
+            return Ok(EditMemberResponse::Invalid(RawHtml(template.render()?)));
         }
     }
 }

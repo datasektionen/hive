@@ -42,7 +42,7 @@ impl<'f> form::FromFormField<'f> for BrowserDateTimeDto {
     }
 }
 
-#[derive(sqlx::Type, Serialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(sqlx::Type, Serialize, PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Copy)]
 #[sqlx(transparent)]
 #[serde(transparent)]
 pub struct BrowserDateDto(pub NaiveDate);
@@ -61,5 +61,17 @@ impl<'f> form::FromFormField<'f> for BrowserDateDto {
         } else {
             Err(form::Error::validation("invalid date format").into())
         }
+    }
+}
+
+impl PartialEq<NaiveDate> for BrowserDateDto {
+    fn eq(&self, other: &NaiveDate) -> bool {
+        self.0 == *other
+    }
+}
+
+impl From<BrowserDateDto> for serde_json::Value {
+    fn from(value: BrowserDateDto) -> Self {
+        serde_json::Value::from(value.to_string())
     }
 }

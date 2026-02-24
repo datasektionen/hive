@@ -67,6 +67,18 @@ impl form::validate::Len<usize> for TrimmedStr<'_> {
     }
 }
 
+impl PartialEq<String> for TrimmedStr<'_> {
+    fn eq(&self, other: &String) -> bool {
+         (self.0) == *other
+    }
+}
+
+impl PartialEq<TrimmedStr<'_>> for String {
+    fn eq(&self, other: &TrimmedStr) -> bool {
+        *other == *self
+    }
+}
+
 fn valid_slug<'v, T: Into<&'v str>>(s: T) -> form::Result<'v, ()> {
     let re = Regex::new("^[a-z0-9]+(-[a-z0-9]+)*$").unwrap();
 
