@@ -70,3 +70,10 @@ pub struct AddMemberDto<'v> {
     pub until: BrowserDateDto,
     pub manager: bool,
 }
+
+#[derive(FromForm)]
+pub struct EditMemberDto {
+    pub from: BrowserDateDto,
+    #[field(validate = with(|until| until >= &self.from, "invalid until before from"))]
+    pub until: BrowserDateDto,
+}

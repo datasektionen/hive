@@ -1,0 +1,31 @@
+{%- import "utils.html.j2" as utils -%}
+
+<article>
+    <h2>{{ ctx.t("groups.members.edit.title") }}</h2>
+    {% if let Some(id) = member.id %}
+    <form id="edit-member-form" onsubmit="event.preventDefault()" hx-patch="/group/{{ group_domain }}/{{ group_id }}/edit/{{ id }}" hx-target="#edit-member">
+        <div class="grid">
+            <label>
+                {{ ctx.t("groups.members.add.member.field.from.label") }}
+                <input type="date" value="{{ member.from }}" {% call utils::field(member_edit_form, "from") %}
+                    required />
+                <small id="member-from-tip">{{ ctx.t("groups.members.add.member.field.from.tip") }}</small>
+            </label>
+            <label>
+                {{ ctx.t("groups.members.add.member.field.until.label") }}
+                <input type="date" value="{{ member.until }}" {% call utils::field(member_edit_form, "until") %}
+                    required />
+                <small id="member-until-tip">{{ ctx.t("groups.members.add.member.field.until.tip") }}</small>
+            </label>
+        </div>
+    </form>
+    {% endif %}
+    <footer>
+        <button form="edit-member-form" type="reset" class="secondary" onclick="closeModal('edit-member')">
+            {{ ctx.t("control.cancel") }}
+        </button>
+        <button form="edit-member-form" id="edit-member-submit">
+            {{ ctx.t("control.save") }}
+        </button>
+    </footer>
+</article>

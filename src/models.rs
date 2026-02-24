@@ -111,7 +111,7 @@ pub trait GroupModel: for<'r> sqlx::FromRow<'r, sqlx::postgres::PgRow> + Send + 
 impl GroupModel for Group {}
 impl GroupModel for SimpleGroup {}
 
-#[derive(FromRow)]
+#[derive(FromRow, Debug)]
 pub struct GroupMember {
     #[sqlx(default)]
     pub id: Option<Uuid>, // only exists for direct memberships

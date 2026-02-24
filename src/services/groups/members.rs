@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use chrono::{Local, NaiveDate};
 use log::*;
 use serde_json::json;
@@ -5,13 +7,37 @@ use sqlx::Row;
 use uuid::Uuid;
 
 use crate::{
-    dto::groups::{AddMemberDto, AddSubgroupDto},
+    dto::{
+        datetime::BrowserDateDto,
+        groups::{AddMemberDto, AddSubgroupDto, EditMemberDto},
+    },
     errors::{AppError, AppResult},
     guards::user::User,
     models::{ActionKind, GroupMember, Subgroup, TargetKind},
     resolver::IdentityResolver,
-    services::audit_logs,
+    services::{audit_log_details_for_update, audit_logs, update_if_changed},
 };
+
+pub async fn get_one<'x, X>(membership_id: &Uuid, db: X) -> AppResult<Option<GroupMember>>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+{
+    let group = sqlx::query_as("SELECT * FROM direct_memberships WHERE id = $1")
+        .bind(membership_id)
+        .fetch_optional(db)
+        .await?;
+
+    Ok(group)
+}
+
+pub async fn require_one<'x, X>(membership_id: &Uuid, db: X) -> AppResult<GroupMember>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+{
+    get_one(membership_id, db)
+        .await?
+        .ok_or_else(|| AppError::NoSuchMember(membership_id.to_string()))
+}
 
 pub async fn is_direct_member<'x, X>(
     username: &str,
@@ -395,6 +421,60 @@ where
     }
 
     Ok(added)
+}
+
+pub async fn update<'x, X>(
+    membership_id: &Uuid,
+    dto: &EditMemberDto,
+    group_id: &str,
+    group_domain: &str,
+    db: X,
+    user: &User,
+) -> AppResult<()>
+where
+    X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
+{
+    let mut txn = db.begin().await?;
+
+    let old = require_one(membership_id, &mut *txn).await?;
+    let old = EditMemberDto {
+        from: BrowserDateDto(old.from),
+        until: BrowserDateDto(old.until),
+    };
+
+    let mut query = sqlx::QueryBuilder::new("UPDATE direct_memberships SET");
+    let mut changed = HashMap::new();
+
+    update_if_changed!(changed, query, from, old, dto);
+    update_if_changed!(changed, query, until, old, dto);
+
+    if !changed.is_empty() {
+        query
+            .push(" WHERE id = ")
+            .push_bind(membership_id)
+            .push(" AND group_id  = ")
+            .push_bind(group_id)
+            .push(" AND group_domain = ")
+            .push_bind(group_domain)
+            .build()
+            .execute(&mut *txn)
+            .await?;
+
+        audit_logs::add_entry(
+            ActionKind::Update,
+            TargetKind::Membership,
+            // FIXME: consider using membership_id as target_id
+            format!("{}@{}", group_id, group_domain),
+            user.username(),
+            audit_log_details_for_update!(changed),
+            &mut *txn,
+        )
+        .await?;
+
+        txn.commit().await?;
+    }
+
+    Ok(())
 }
 
 // membership_id is enough, but group id/domain is good just to double-check

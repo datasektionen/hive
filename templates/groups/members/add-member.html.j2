@@ -13,11 +13,20 @@
     <template>
         {% let is_future_member = member.from > chrono::Local::now().date_naive() %}
         <tbody hx-swap-oob="beforeend:#group-members-table[data-with-indirect=false] tbody">
-            {% if is_future_member %}
+            {% if let Some(id) = member.id %}
+                {% if is_future_member %}
+            <tr id=member-{{ id }} class="secondary">
+                {% else %}
+            <tr id=member-{{ id }}>
+                {% endif %}
+            {% else %}
+                {% if is_future_member %}
             <tr class="secondary">
                 {% else %}
             <tr>
                 {% endif %}
+            {% endif %}
+
 
                 {% let show_indirect = false %}
                 {% let can_manage = true %}
