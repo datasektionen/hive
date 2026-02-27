@@ -318,6 +318,8 @@ pub struct AffiliatedTagAssignment {
     #[sqlx(default)]
     pub label: Option<String>, // group name or user display name
     #[sqlx(default)]
+    pub description: Option<String>, // description of group
+    #[sqlx(default)]
     pub can_manage: Option<bool>, // whether current user can e.g. unassign
 }
 
