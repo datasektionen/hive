@@ -19,7 +19,7 @@ pub fn routes() -> RouteTree {
         tagged_groups,
         tagged_users,
         tagged_user_memberships,
-        tagged_group_members
+        tagged_group_members,
     ]
     .into()
 }
@@ -27,6 +27,8 @@ pub fn routes() -> RouteTree {
 #[derive(Serialize, PartialEq, Eq, PartialOrd, Ord)]
 struct TaggedGroup {
     group_name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    group_description: Option<String>,
     group_domain: String, // should be ordered first since it's shown separately
     group_id: String,
     tag_content: Option<String>,
@@ -39,6 +41,7 @@ impl From<AffiliatedTagAssignment> for TaggedGroup {
             group_id: assignment.group_id.unwrap_or_default(),
             tag_content: assignment.content,
             group_name: assignment.label.unwrap_or_default(),
+            group_description: assignment.description,
         }
     }
 }
@@ -58,10 +61,11 @@ impl From<AffiliatedTagAssignment> for TaggedUser {
     }
 }
 
-#[rocket::get("/tagged/<tag_id>/groups?<lang>")]
+#[rocket::get("/tagged/<tag_id>/groups?<lang>&<description>")]
 async fn tagged_groups(
     tag_id: &str,
     lang: Option<Language>,
+    description: Option<bool>,
     consumer: ApiConsumer,
     db: &State<PgPool>,
 ) -> AppResult<Json<BTreeSet<TaggedGroup>>> {
@@ -78,6 +82,7 @@ async fn tagged_groups(
         None,
         db.inner(),
         None,
+        description.unwrap_or_default(),
     )
     .await?
     .into_iter()
@@ -107,11 +112,12 @@ async fn tagged_users(
     Ok(Json(assignments))
 }
 
-#[rocket::get("/tagged/<tag_id>/memberships/<username>?<lang>")]
+#[rocket::get("/tagged/<tag_id>/memberships/<username>?<lang>&<description>")]
 async fn tagged_user_memberships(
     tag_id: &str,
     username: &str,
     lang: Option<Language>,
+    description: Option<bool>,
     consumer: ApiConsumer,
     db: &State<PgPool>,
 ) -> AppResult<Json<BTreeSet<TaggedGroup>>> {
@@ -128,6 +134,7 @@ async fn tagged_user_memberships(
         Some(username),
         db.inner(),
         None,
+        description.unwrap_or_default(),
     )
     .await?
     .into_iter()

@@ -342,7 +342,7 @@ list_tag_assignments!(
     list_tag_groups,
     PartialListTagGroupsView,
     |system_id, tag_id, lang, db, _resolver, perms| {
-        tags::list_group_assignments(system_id, tag_id, Some(lang), None, db, Some(perms))
+        tags::list_group_assignments(system_id, tag_id, Some(lang), None, db, Some(perms), false)
     }
 );
 

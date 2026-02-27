@@ -510,6 +510,13 @@ paths:
             type: string
             enum: [en, sv]
             default: sv
+        - name: description
+          in: query
+          description: If the response should include the group description
+          required: false
+          schema:
+            type: boolean
+            default: false
       security:
         - bearer: [$hive:api-list-tagged]
       responses:
@@ -562,6 +569,13 @@ paths:
             type: string
             enum: [en, sv]
             default: sv
+        - name: description
+          in: query
+          description: If the response should include the group description
+          required: false
+          schema:
+            type: boolean
+            default: false
       security:
         - bearer: [$hive:api-list-tagged]
       responses:
@@ -779,6 +793,10 @@ components:
                   description: Group name in specified language
                   type: string
                   minLength: 1
+                group_description:
+                  description: Group description in specified language
+                  type: string
+                  minLength: 1
                 group_id:
                   $ref: "#/components/schemas/GroupId"
                 group_domain:
@@ -820,6 +838,19 @@ components:
                   group_id: int
                   group_domain: example.com
                   tag_content: null
+            some-with-content-and-description:
+              summary: Tag with content and description
+              value:
+                - group_name: Systemansvarig
+                  group_description: Ansvarig för utveckling och drift av sektionens system. Leder systemgruppen.
+                  group_id: d-sys
+                  group_domain: example.com
+                  tag_content: D-Sys
+                - group_name: Internationella Nämnden
+                  group_description: Ansvarig för alla internationella aktiviteter på Datasektionen och är delad med Sektionen för Medieteknik.
+                  group_id: in
+                  group_domain: example.com
+                  tag_content: Int. Nämnden
             none:
               summary: No groups with tag
               value: []
