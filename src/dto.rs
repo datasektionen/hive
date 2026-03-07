@@ -14,6 +14,7 @@ pub mod groups;
 pub mod permissions;
 pub mod systems;
 pub mod tags;
+pub mod logs;
 
 #[derive(sqlx::Type, Serialize, Clone, Copy)]
 #[sqlx(transparent)]
