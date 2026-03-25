@@ -480,10 +480,6 @@ where
         query
             .push(" WHERE id = ")
             .push_bind(membership_id)
-            .push(" AND group_id  = ")
-            .push_bind(group_id)
-            .push(" AND group_domain = ")
-            .push_bind(group_domain)
             .build()
             .execute(&mut *txn)
             .await?;
