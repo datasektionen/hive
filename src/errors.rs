@@ -99,8 +99,8 @@ pub enum AppError {
     #[error("user `{0}` is already a member of this group within the specified period")]
     RedundantMembership(String),
 
-    #[error("could not find member with id `{0}`")]
-    NoSuchMember(String),
+    #[error("could not find any group membership with id `{0}`")]
+    NoSuchMembership(String),
 }
 
 impl AppError {
@@ -154,7 +154,7 @@ impl AppError {
             AppError::InvalidSubgroup(..) => Status::BadRequest,
             AppError::DuplicateSubgroup(..) => Status::Conflict,
             AppError::RedundantMembership(..) => Status::Conflict,
-            AppError::NoSuchMember(..) => Status::NotFound,
+            AppError::NoSuchMembership(..) => Status::NotFound,
         }
     }
 }

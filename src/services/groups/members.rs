@@ -36,7 +36,7 @@ where
 {
     get_one(membership_id, db)
         .await?
-        .ok_or_else(|| AppError::NoSuchMember(membership_id.to_string()))
+        .ok_or_else(|| AppError::NoSuchMembership(membership_id.to_string()))
 }
 
 pub async fn is_direct_member<'x, X>(
