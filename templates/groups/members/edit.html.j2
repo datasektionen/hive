@@ -3,7 +3,7 @@
 <article>
     <h2>{{ ctx.t("groups.members.edit.title") }}</h2>
     {% if let Some(id) = member.id %}
-    <form id="edit-member-form" onsubmit="event.preventDefault()" hx-patch="/group/{{ group_domain }}/{{ group_id }}/edit/{{ id }}" hx-target="#edit-member">
+    <form id="edit-member-form" onsubmit="event.preventDefault()" hx-patch="/group-membership/{{ id }}" hx-target="#edit-member">
         <div class="grid">
             <label>
                 {{ ctx.t("groups.members.add.member.field.from.label") }}

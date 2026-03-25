@@ -392,162 +392,6 @@ async fn add_member<'v>(
     }
 }
 
-#[rocket::get("/group/<domain>/<id>/edit/<member>")]
-#[allow(clippy::too_many_arguments)]
-async fn edit_member_form<'v>(
-    id: &str,
-    domain: &str,
-    member: Uuid,
-    db: &State<PgPool>,
-    ctx: PageContext,
-    perms: &PermsEvaluator,
-    user: User,
-    partial: Option<HxRequest<'_>>,
-) -> AppResult<Either<RenderedTemplate, Redirect>> {
-    if partial.is_none() {
-        // we only know how to render a form, not a full page;
-        // redirect to group details
-
-        let target = uri!(super::group_details(id = id, domain = domain));
-        return Ok(Either::Right(Redirect::to(target)));
-    }
-
-    groups::details::require_authority(
-        AuthorityInGroup::ManageMembers,
-        id,
-        domain,
-        db.inner(),
-        perms,
-        &user,
-    )
-    .await?;
-
-    let member = groups::members::require_one(&member, db.inner()).await?;
-
-    let template = MemberEditView {
-        ctx,
-        member,
-        group_id: id,
-        group_domain: domain,
-        member_edit_form: &form::Context::default(),
-    };
-
-    Ok(Either::Left(RawHtml(template.render()?)))
-}
-
-#[rocket::patch("/group/<domain>/<id>/edit/<member>?<show_indirect>", data = "<form>")]
-#[allow(clippy::too_many_arguments)]
-async fn edit_member<'v>(
-    id: &str,
-    domain: &str,
-    member: Uuid,
-    show_indirect: bool,
-    form: Form<Contextual<'v, EditMemberDto>>,
-    db: &State<PgPool>,
-    resolver: &State<Option<IdentityResolver>>,
-    ctx: PageContext,
-    perms: &PermsEvaluator,
-    user: User,
-    partial: Option<HxRequest<'_>>,
-) -> AppResult<EditMemberResponse> {
-    let authority = groups::details::require_authority(
-        AuthorityInGroup::ManageMembers,
-        id,
-        domain,
-        db.inner(),
-        perms,
-        &user,
-    )
-    .await?;
-
-    if let Some(dto) = &form.value {
-        groups::members::update(&member, dto, id, domain, db.inner(), &user).await?;
-
-        let mut changed = groups::members::require_one(&member, db.inner()).await?;
-
-        if partial.is_some() {
-            if let Some(resolver) = resolver.as_ref() {
-                changed.display_name = resolver.resolve_one(&changed.username).await?;
-            }
-
-            let is_future_member = changed.from > Local::now().date_naive();
-
-            let template = MemberEditedView {
-                ctx,
-                group_id: id,
-                group_domain: domain,
-                member: changed,
-                show_indirect,
-                is_future_member,
-                can_manage: authority >= AuthorityInGroup::ManageMembers,
-            };
-
-            Ok(EditMemberResponse::SuccessPartial(
-                RawHtml(template.render()?),
-                Header::new("HX-Retarget", format!("#member-{}", member)),
-                Header::new("HX-Reswap", "outerHTML"),
-            ))
-        } else {
-            let target = uri!(super::group_details(id = id, domain = domain));
-            return Ok(EditMemberResponse::SuccessFullPage(Redirect::to(target)));
-        }
-    } else {
-        debug!("Edit member form errors: {:?}", &form.context);
-
-        if partial.is_some() {
-            let member = groups::members::require_one(&member, db.inner()).await?;
-
-            // Find a way to not reset the form on error
-            let template = MemberEditView {
-                ctx,
-                member,
-                group_id: id,
-                group_domain: domain,
-                member_edit_form: &form.context,
-            };
-
-            return Ok(EditMemberResponse::Invalid(RawHtml(template.render()?)));
-        } else {
-            let group = groups::details::require_one(id, domain, db.inner()).await?;
-
-            let relevance = groups::details::get_relevance(id, domain, db.inner(), perms, &user)
-                .await?
-                .ok_or_else(|| AppError::NoSuchGroup(id.to_owned(), domain.to_owned()))?;
-
-            let permissible_groups =
-                groups::list::list_all_permissible_sorted(&ctx.lang, db.inner(), perms, &user)
-                    .await?;
-
-            let assignable_permissions =
-                groups::permissions::get_all_assignable(perms, db.inner()).await?;
-            let assignable_tags = groups::tags::get_all_assignable(perms, db.inner()).await?;
-
-            let empty_form = form::Context::default();
-
-            let template = GroupDetailsView {
-                ctx,
-                group,
-                relevance,
-                add_subgroup_form: &empty_form,
-                add_subgroup_success: None,
-                add_member_form: &empty_form,
-                add_member_success: None,
-                assign_permission_form: &empty_form,
-                assign_permission_success: None,
-                assign_tag_form: &empty_form,
-                assign_tag_success: None,
-                edit_form: &empty_form,
-                edit_modal_open: true,
-                permissible_groups,
-                assignable_permissions,
-                assignable_tags,
-            };
-
-            return Ok(EditMemberResponse::Invalid(RawHtml(template.render()?)));
-        }
-    }
-}
-
 #[rocket::delete("/group/<parent_domain>/<parent_id>/subgroup/<child_domain>/<child_id>")]
 #[allow(clippy::too_many_arguments)]
 async fn remove_subgroup<'v>(
@@ -589,6 +433,168 @@ async fn remove_subgroup<'v>(
         Ok(Either::Right(Redirect::to(target)))
     }
 }
+
+#[rocket::get("/group-membership/<id>/edit")]
+#[allow(clippy::too_many_arguments)]
+async fn edit_member_form<'v>(
+    id: Uuid,
+    db: &State<PgPool>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<Either<RenderedTemplate, Redirect>> {
+    let (group_id, group_domain) = groups::members::get_membership_group(&id, db.inner())
+        .await?
+        .ok_or(AppError::NoSuchMembership(id.to_string()))?;
+
+    if partial.is_none() {
+        // we only know how to render a form, not a full page;
+        // redirect to group details
+
+        let target = uri!(super::group_details(id = group_id, domain = group_domain));
+        return Ok(Either::Right(Redirect::to(target)));
+    }
+
+    groups::details::require_authority(
+        AuthorityInGroup::ManageMembers,
+        &group_id,
+        &group_domain,
+        db.inner(),
+        perms,
+        &user,
+    )
+    .await?;
+
+    let member = groups::members::require_one(&id, db.inner()).await?;
+
+    let template = MemberEditView {
+        ctx,
+        member,
+        group_id: &group_id,
+        group_domain: &group_domain,
+        member_edit_form: &form::Context::default(),
+    };
+
+    Ok(Either::Left(RawHtml(template.render()?)))
+}
+
+#[rocket::patch("/group-membership/<id>?<show_indirect>", data = "<form>")]
+#[allow(clippy::too_many_arguments)]
+async fn edit_member<'v>(
+    id: Uuid,
+    show_indirect: bool,
+    form: Form<Contextual<'v, EditMemberDto>>,
+    db: &State<PgPool>,
+    resolver: &State<Option<IdentityResolver>>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+    user: User,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<EditMemberResponse> {
+    let (group_id, group_domain) = groups::members::get_membership_group(&id, db.inner())
+        .await?
+        .ok_or(AppError::NoSuchMembership(id.to_string()))?;
+
+    let authority = groups::details::require_authority(
+        AuthorityInGroup::ManageMembers,
+        &group_id,
+        &group_domain,
+        db.inner(),
+        perms,
+        &user,
+    )
+    .await?;
+
+    if let Some(dto) = &form.value {
+        groups::members::update(&id, dto, &group_id, &group_domain, db.inner(), &user).await?;
+
+        let mut changed = groups::members::require_one(&id, db.inner()).await?;
+
+        if partial.is_some() {
+            if let Some(resolver) = resolver.as_ref() {
+                changed.display_name = resolver.resolve_one(&changed.username).await?;
+            }
+
+            let is_future_member = changed.from > Local::now().date_naive();
+
+            let template = MemberEditedView {
+                ctx,
+                group_id: &group_id,
+                group_domain: &group_domain,
+                member: changed,
+                show_indirect,
+                is_future_member,
+                can_manage: authority >= AuthorityInGroup::ManageMembers,
+            };
+
+            Ok(EditMemberResponse::SuccessPartial(
+                RawHtml(template.render()?),
+                Header::new("HX-Retarget", format!("#member-{}", id)),
+                Header::new("HX-Reswap", "outerHTML"),
+            ))
+        } else {
+            let target = uri!(super::group_details(id = group_id, domain = group_domain));
+            return Ok(EditMemberResponse::SuccessFullPage(Redirect::to(target)));
+        }
+    } else {
+        debug!("Edit member form errors: {:?}", &form.context);
+
+        if partial.is_some() {
+            let member = groups::members::require_one(&id, db.inner()).await?;
+
+            // Find a way to not reset the form on error
+            let template = MemberEditView {
+                ctx,
+                member,
+                group_id: &group_id,
+                group_domain: &group_domain,
+                member_edit_form: &form.context,
+            };
+
+            return Ok(EditMemberResponse::Invalid(RawHtml(template.render()?)));
+        } else {
+            let group = groups::details::require_one(&group_id, &group_domain, db.inner()).await?;
+
+            let relevance = groups::details::get_relevance(&group_id, &group_domain, db.inner(), perms, &user)
+                .await?
+                .ok_or_else(|| AppError::NoSuchGroup(group_id, group_domain))?;
+
+            let permissible_groups =
+                groups::list::list_all_permissible_sorted(&ctx.lang, db.inner(), perms, &user)
+                    .await?;
+
+            let assignable_permissions =
+                groups::permissions::get_all_assignable(perms, db.inner()).await?;
+            let assignable_tags = groups::tags::get_all_assignable(perms, db.inner()).await?;
+
+            let empty_form = form::Context::default();
+
+            let template = GroupDetailsView {
+                ctx,
+                group,
+                relevance,
+                add_subgroup_form: &empty_form,
+                add_subgroup_success: None,
+                add_member_form: &empty_form,
+                add_member_success: None,
+                assign_permission_form: &empty_form,
+                assign_permission_success: None,
+                assign_tag_form: &empty_form,
+                assign_tag_success: None,
+                edit_form: &empty_form,
+                edit_modal_open: true,
+                permissible_groups,
+                assignable_permissions,
+                assignable_tags,
+            };
+
+            return Ok(EditMemberResponse::Invalid(RawHtml(template.render()?)));
+        }
+    }
+}
+
+
 
 #[rocket::delete("/group-membership/<id>")]
 async fn remove_member<'v>(
