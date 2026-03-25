@@ -51,7 +51,7 @@
 {% if can_manage && !show_indirect %}
 <td>
     {% if let Some(id) = member.id %}
-    <button class="secondary" hx-get="/group/{{ group_domain }}/{{ group_id }}/edit/{{ id }}" hx-target="#edit-member" hx-swap="innerHTML" onclick="openModal('edit-member')"
+    <button class="secondary" hx-get="/group-membership/{{ id }}/edit" hx-target="#edit-member" hx-swap="innerHTML" onclick="openModal('edit-member')"
         data-tooltip='{{ ctx.t("groups.members.list.action.edit.tooltip") }}' data-placement="left">
         <span class="material-icons">edit</span>
     </button>
