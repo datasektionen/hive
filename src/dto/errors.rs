@@ -89,8 +89,8 @@ enum InnerAppErrorDto {
     #[serde(rename = "group.add.membership.redundant")]
     RedundantMembership { username: String },
 
-    #[serde(rename = "member.unknown")]
-    NoSuchMember { id: String },
+    #[serde(rename = "membership.unknown")]
+    NoSuchMembership { id: String },
 }
 
 impl From<AppError> for InnerAppErrorDto {
@@ -169,7 +169,7 @@ impl From<AppError> for InnerAppErrorDto {
             },
             AppError::RedundantMembership(username) => Self::RedundantMembership { username },
 
-            AppError::NoSuchMember(id) => Self::NoSuchMember { id }
+            AppError::NoSuchMembership(id) => Self::NoSuchMembership { id }
         }
     }
 }
@@ -260,8 +260,8 @@ impl InnerAppErrorDto {
             (Self::DuplicateSubgroup { .. }, Language::Swedish) => "Duplicerat undergrupp",
             (Self::RedundantMembership { .. }, Language::English) => "Redundant Membership",
             (Self::RedundantMembership { .. }, Language::Swedish) => "Överflödigt medlemskap",
-            (Self::NoSuchMember { .. }, Language::English) => "Unknown Member",
-            (Self::NoSuchMember { .. }, Language::Swedish) => "Okänd medlem",
+            (Self::NoSuchMembership { .. }, Language::English) => "Unknown Membership",
+            (Self::NoSuchMembership { .. }, Language::Swedish) => "Okänt medlemskap",
         }
     }
 
@@ -628,11 +628,11 @@ impl InnerAppErrorDto {
                      perioden med motsvarande åtkomsträttigheter."
                 )
             }
-            (Self::NoSuchMember { id }, Language::English) => {
-                format!("Could not find any member with key \"{id}\".")
+            (Self::NoSuchMembership { id }, Language::English) => {
+                format!("Could not find any group membership with key \"{id}\".")
             }
-            (Self::NoSuchMember { id }, Language::Swedish) => {
-                format!("Kunde inte hitta någon medlem med nyckel \"{id}\".")
+            (Self::NoSuchMembership { id }, Language::Swedish) => {
+                format!("Kunde inte hitta något gruppmedlemskap med nyckel \"{id}\".")
             }
         }
     }
