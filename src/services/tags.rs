@@ -63,7 +63,7 @@ pub async fn list_group_assignments<'x, X>(
     username: Option<&str>,
     db: X,
     perms: Option<&PermsEvaluator>,
-    description: bool
+    description: bool,
 ) -> AppResult<Vec<AffiliatedTagAssignment>>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
@@ -82,16 +82,15 @@ where
     }
 
     if description {
-    match label_lang {
-        Some(Language::Swedish) => {
-            query.push(", gs.description_sv AS description");
+        match label_lang {
+            Some(Language::Swedish) => {
+                query.push(", gs.description_sv AS description");
+            }
+            Some(Language::English) => {
+                query.push(", gs.description_en AS description");
+            }
+            None => {}
         }
-        Some(Language::English) => {
-            query.push(", gs.description_en AS description");
-        }
-        None => {}
-    }
-
     }
 
     query.push(" FROM all_tag_assignments ta");
