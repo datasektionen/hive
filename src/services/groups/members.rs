@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
-use chrono::{Local, NaiveDate};
+use chrono::{Date, Datelike, Local, NaiveDate};
 use log::*;
+use rocket::form::Contextual;
 use serde_json::json;
 use sqlx::Row;
 use uuid::Uuid;
@@ -12,10 +13,11 @@ use crate::{
         groups::{AddMemberDto, AddSubgroupDto, EditMemberDto},
     },
     errors::{AppError, AppResult},
-    guards::user::User,
+    guards::{perms::PermsEvaluator, user::User},
     models::{ActionKind, GroupMember, Subgroup, TargetKind},
+    perms::{HivePermission, UpperBoundScope},
     resolver::IdentityResolver,
-    services::{audit_log_details_for_update, audit_logs, update_if_changed},
+    services::{audit_log_details_for_update, audit_logs, groups, update_if_changed},
 };
 
 pub async fn get_one<'x, X>(membership_id: &Uuid, db: X) -> AppResult<Option<GroupMember>>
@@ -437,6 +439,32 @@ where
     let mut txn = db.begin().await?;
 
     let old = require_one(membership_id, &mut *txn).await?;
+
+    let redundant = sqlx::query_scalar(
+        "SELECT COUNT(*) > 0
+        FROM direct_memberships
+        WHERE username = $1
+            AND group_id = $2
+            AND group_domain = $3
+            AND \"from\" <= $4
+            AND \"until\" >= $5
+            AND manager >= $6
+            AND id <> $7",
+    )
+    .bind(&old.username)
+    .bind(group_id)
+    .bind(group_domain)
+    .bind(&dto.from)
+    .bind(&dto.until)
+    .bind(old.manager)
+    .bind(membership_id)
+    .fetch_one(&mut *txn)
+    .await?;
+
+    if redundant {
+        return Err(AppError::RedundantMembership(old.username.to_string()));
+    }
+
     let old = EditMemberDto {
         from: BrowserDateDto(old.from),
         until: BrowserDateDto(old.until),
@@ -558,6 +586,62 @@ where
     txn.commit().await?;
 
     Ok(())
+}
+
+// Returns true if is until time is allowed based on the appointment-bounds constraints
+pub async fn check_appointment_bounds<'x, X>(
+    until: &NaiveDate,
+    id: &str,
+    domain: &str,
+    perms: &PermsEvaluator,
+    db: X,
+) -> AppResult<bool>
+where
+    X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
+{
+    let mut txn = db.begin().await?;
+
+    let exempt = groups::tags::is_tagged_with(
+        id,
+        domain,
+        crate::HIVE_SYSTEM_ID,
+        "appointment-bounds-exemption",
+        &mut *txn,
+    )
+    .await?;
+
+    txn.commit().await?;
+
+    if exempt {
+        return Ok(true);
+    }
+
+    // the default limit for membership upper bound is either 31/Dec of the current
+    // year or 30/Jun of the following year, whichever is closer but more
+    // than 6 months away
+    let today = Local::now().date_naive();
+    let limit = if today < NaiveDate::from_ymd_opt(today.year(), 6, 30).unwrap() {
+        NaiveDate::from_ymd_opt(today.year(), 12, 31).unwrap()
+    } else {
+        NaiveDate::from_ymd_opt(today.year() + 1, 6, 30).unwrap()
+    };
+
+    if *until <= limit {
+        return Ok(true);
+    }
+
+    // outside of base case, so need special permission
+
+    let years_diff = until.year() - today.year();
+    let months_diff = until.month() as i32 - today.month() as i32;
+    let mut total_months = years_diff * 12 + months_diff;
+    if until.day() > today.day() {
+        total_months += 1; // adjust rounding up
+    }
+    let total_months = total_months.clamp(0, u8::MAX as _) as u8;
+
+    let min = HivePermission::LongTermAppointment(UpperBoundScope::UpTo(total_months));
+    perms.satisfies(min).await
 }
 
 pub async fn conditional_bootstrap<'x, X>(username: &str, db: X) -> AppResult<bool>

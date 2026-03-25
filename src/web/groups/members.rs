@@ -302,45 +302,12 @@ async fn add_member<'v>(
     // TODO: anti-CSRF
 
     if let Some(until) = form.value.as_ref().map(|dto| dto.until.0) {
-        let exempt = groups::tags::is_tagged_with(
-            id,
-            domain,
-            crate::HIVE_SYSTEM_ID,
-            "appointment-bounds-exemption",
-            db.inner(),
-        )
-        .await?;
-
-        if !exempt {
-            // the default limit for membership upper bound is either 31/Dec of the current
-            // year or 30/Jun of the following year, whichever is closer but more
-            // than 6 months away
-            let today = Local::now().date_naive();
-            let limit = if today < NaiveDate::from_ymd_opt(today.year(), 6, 30).unwrap() {
-                NaiveDate::from_ymd_opt(today.year(), 12, 31).unwrap()
-            } else {
-                NaiveDate::from_ymd_opt(today.year() + 1, 6, 30).unwrap()
-            };
-
-            if until > limit {
-                // outside of base case, so need special permission
-
-                let years_diff = until.year() - today.year();
-                let months_diff = until.month() as i32 - today.month() as i32;
-                let mut total_months = years_diff * 12 + months_diff;
-                if until.day() > today.day() {
-                    total_months += 1; // adjust rounding up
-                }
-                let total_months = total_months.clamp(0, u8::MAX as _) as u8;
-
-                let min = HivePermission::LongTermAppointment(UpperBoundScope::UpTo(total_months));
-                if !perms.satisfies(min).await? {
-                    // ok, not authorized (but 403 would be confusing, so we forge a form error)
-                    let error = form::Error::validation("Too far in the future").with_name("until");
-                    form.context.push_error(error);
-                    form.value = None;
-                }
-            }
+        if !groups::members::check_appointment_bounds(&until, id, domain, perms, db.inner()).await?
+        {
+            // ok, not authorized (but 403 would be confusing, so we forge a form error)
+            let error = form::Error::validation("Too far in the future").with_name("until");
+            form.context.push_error(error);
+            form.value = None;
         }
     }
 
@@ -484,7 +451,7 @@ async fn edit_member_form<'v>(
 async fn edit_member<'v>(
     id: Uuid,
     show_indirect: bool,
-    form: Form<Contextual<'v, EditMemberDto>>,
+    mut form: Form<Contextual<'v, EditMemberDto>>,
     db: &State<PgPool>,
     resolver: &State<Option<IdentityResolver>>,
     ctx: PageContext,
@@ -505,6 +472,23 @@ async fn edit_member<'v>(
         &user,
     )
     .await?;
+
+    if let Some(until) = form.value.as_ref().map(|dto| dto.until.0) {
+        if !groups::members::check_appointment_bounds(
+            &until,
+            &group_id,
+            &group_domain,
+            perms,
+            db.inner(),
+        )
+        .await?
+        {
+            // ok, not authorized (but 403 would be confusing, so we forge a form error)
+            let error = form::Error::validation("Too far in the future").with_name("until");
+            form.context.push_error(error);
+            form.value = None;
+        }
+    }
 
     if let Some(dto) = &form.value {
         groups::members::update(&id, dto, &group_id, &group_domain, db.inner(), &user).await?;
@@ -556,9 +540,10 @@ async fn edit_member<'v>(
         } else {
             let group = groups::details::require_one(&group_id, &group_domain, db.inner()).await?;
 
-            let relevance = groups::details::get_relevance(&group_id, &group_domain, db.inner(), perms, &user)
-                .await?
-                .ok_or_else(|| AppError::NoSuchGroup(group_id, group_domain))?;
+            let relevance =
+                groups::details::get_relevance(&group_id, &group_domain, db.inner(), perms, &user)
+                    .await?
+                    .ok_or_else(|| AppError::NoSuchGroup(group_id, group_domain))?;
 
             let permissible_groups =
                 groups::list::list_all_permissible_sorted(&ctx.lang, db.inner(), perms, &user)
@@ -593,8 +578,6 @@ async fn edit_member<'v>(
         }
     }
 }
-
-
 
 #[rocket::delete("/group-membership/<id>")]
 async fn remove_member<'v>(
