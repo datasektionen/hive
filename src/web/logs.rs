@@ -21,7 +21,7 @@ pub fn routes() -> RouteTree {
 
 #[derive(Template)]
 #[template(path = "logs/details.html.j2")]
-struct LogsDetailsView<'r> {
+struct ListLogsView<'r> {
     ctx: PageContext,
     actor_filter: Option<&'r str>,
     actors: Vec<String>,
@@ -68,7 +68,7 @@ async fn get_audit_logs<'r>(
 ) -> AppResult<RenderedTemplate> {
     perms.require(HivePermission::ViewLogs).await?;
 
-    let filters = LogsFilterDto {
+    let filter = LogsFilterDto {
         actor,
         action: action.clone(),
         target: target.clone(),
@@ -78,13 +78,13 @@ async fn get_audit_logs<'r>(
         order,
     };
 
-    let actors = audit_logs::get_actors(db.inner()).await?;
-    let ids = audit_logs::get_ids(db.inner()).await?;
+    let actors = audit_logs::list_actors(db.inner()).await?;
+    let ids = audit_logs::list_target_ids(db.inner()).await?;
 
     if let Some(page) = page {
         if partial.is_some() {
             let logs =
-                audit_logs::get_logs_paged(db.inner(), &filters, page * PAGE_SIZE, PAGE_SIZE)
+                audit_logs::get_logs_paged(db.inner(), &filter, page * PAGE_SIZE, PAGE_SIZE)
                     .await?;
 
             let template = LogsPartial {
@@ -103,10 +103,10 @@ async fn get_audit_logs<'r>(
             Ok(RawHtml(template.render()?))
         } else {
             let logs =
-                audit_logs::get_logs_paged(db.inner(), &filters, page * PAGE_SIZE, PAGE_SIZE)
+                audit_logs::get_logs_paged(db.inner(), &filter, page * PAGE_SIZE, PAGE_SIZE)
                     .await?;
 
-            let template = LogsDetailsView {
+            let template = ListLogsView {
                 ctx,
                 logs,
                 next_page: page + 1,
@@ -124,9 +124,9 @@ async fn get_audit_logs<'r>(
             Ok(RawHtml(template.render()?))
         }
     } else {
-        let logs = audit_logs::get_logs_paged(db.inner(), &filters, 0, PAGE_SIZE).await?;
+        let logs = audit_logs::get_logs_paged(db.inner(), &filter, 0, PAGE_SIZE).await?;
 
-        let template = LogsDetailsView {
+        let template = ListLogsView {
             ctx,
             logs,
             next_page: 1,

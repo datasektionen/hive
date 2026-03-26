@@ -49,13 +49,8 @@ where
         FROM audit_logs",
     );
 
-    filter.query(&mut query);
+    filter.apply(&mut query);
 
-    if filter.order {
-        query.push(" ORDER BY stamp ASC");
-    } else {
-        query.push(" ORDER BY stamp DESC");
-    }
     query.push(" OFFSET ").push_bind(offset);
     query.push(" LIMIT ").push_bind(limit);
 
@@ -64,7 +59,7 @@ where
     Ok(logs)
 }
 
-pub async fn get_actors<'a, X>(db: X) -> AppResult<Vec<String>>
+pub async fn list_actors<'a, X>(db: X) -> AppResult<Vec<String>>
 where
     X: sqlx::Executor<'a, Database = sqlx::Postgres>,
 {
@@ -79,7 +74,7 @@ where
     Ok(actors.into_iter().map(|actor| actor.0).collect())
 }
 
-pub async fn get_ids<'a, X>(db: X) -> AppResult<Vec<String>>
+pub async fn list_target_ids<'a, X>(db: X) -> AppResult<Vec<String>>
 where
     X: sqlx::Executor<'a, Database = sqlx::Postgres>,
 {

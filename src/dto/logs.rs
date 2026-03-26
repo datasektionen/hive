@@ -1,7 +1,9 @@
 use sqlx::QueryBuilder;
 
 use crate::{
-    dto::datetime::BrowserDateTimeDto, models::{ActionKind, TargetKind}, sanitizers::SearchTerm
+    dto::datetime::BrowserDateTimeDto,
+    models::{ActionKind, TargetKind},
+    sanitizers::SearchTerm,
 };
 
 #[derive(Debug)]
@@ -12,7 +14,7 @@ pub struct LogsFilterDto<'r> {
     pub id: Option<&'r str>,
     pub from: Option<BrowserDateTimeDto>,
     pub until: Option<BrowserDateTimeDto>,
-    pub order: bool
+    pub order: bool,
 }
 
 impl LogsFilterDto<'_> {
@@ -25,12 +27,11 @@ impl LogsFilterDto<'_> {
             || self.until.is_some()
     }
 
-    pub fn query<'a>(&self, query: &mut QueryBuilder<'a, sqlx::Postgres>) {
+    pub fn apply<'a>(&self, query: &mut QueryBuilder<'a, sqlx::Postgres>) {
         let mut added = false;
         if self.any() {
             query.push(" WHERE");
         }
-
 
         if let Some(action) = &self.action {
             query.push(" action_kind = ");
@@ -84,6 +85,13 @@ impl LogsFilterDto<'_> {
             }
             query.push(" target_id LIKE ");
             query.push_bind(term);
+        }
+
+        query.push(" ORDER BY stamp ");
+        if self.order {
+            query.push("ASC");
+        } else {
+            query.push("DESC");
         }
     }
 }
