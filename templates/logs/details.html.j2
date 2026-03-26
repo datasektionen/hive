@@ -14,19 +14,19 @@
     <input type="hidden" name="page" value="0" />
     <div class="grid">
         <label>
-            {{ ctx.t("logs.details.control.from.label") }}
+            {{ ctx.t("logs.list.control.from.label") }}
             <input type="datetime-local" name="from" value={% call utils::stringify_option(from_filter) %} />
         </label>
 
         <label>
-            {{ ctx.t("logs.details.control.until.label") }}
+            {{ ctx.t("logs.list.control.until.label") }}
             <input type="datetime-local" name="until" value={% call utils::stringify_option(until_filter) %} />
         </label>
 
         <label>
-            {{ ctx.t("logs.details.control.actor.label") }}
+            {{ ctx.t("logs.list.control.actor.label") }}
             <input list="actors" name="actor" 
-                placeholder="{{ ctx.t("logs.details.control.actor.option.any") }}"
+                placeholder="{{ ctx.t("logs.list.control.actor.option.any") }}"
                 value="{{ actor_filter.unwrap_or("") }}" />
         </label>
 
@@ -39,66 +39,66 @@
 
     <div class="grid">
         <label>
-            {{ ctx.t("logs.details.control.action.label") }}
+            {{ ctx.t("logs.list.control.action.label") }}
             <select name="action">
                 <option value="" {%- if action_filter.is_none() %} selected {%- endif -%}>
-                    {{ ctx.t("logs.details.control.action.option.any") }}
+                    {{ ctx.t("logs.list.control.action.option.any") }}
                 </option>
                 <option {% call utils::optional_option(ActionKind::Create, action_filter) %}>
-                    {{ ctx.t("logs.details.control.action.option.create") }}
+                    {{ ctx.t("logs.list.control.action.option.create") }}
                 </option>
                 <option {% call utils::optional_option(ActionKind::Update, action_filter) %}>
-                    {{ ctx.t("logs.details.control.action.option.update") }}
+                    {{ ctx.t("logs.list.control.action.option.update") }}
                 </option>
                 <option {% call utils::optional_option(ActionKind::Delete, action_filter) %}>
-                    {{ ctx.t("logs.details.control.action.option.delete") }}
+                    {{ ctx.t("logs.list.control.action.option.delete") }}
                 </option>
                 <option {% call utils::optional_option(ActionKind::Impersonate, action_filter) %}>
-                    {{ ctx.t("logs.details.control.action.option.impersonate") }}
+                    {{ ctx.t("logs.list.control.action.option.impersonate") }}
                 </option>
             </select>
         </label>
 
         <label>
-            {{ ctx.t("logs.details.control.target.label") }}
+            {{ ctx.t("logs.list.control.target.label") }}
             <select name="target">
                 <option value="" {%- if action_filter.is_none() %} selected {%- endif -%}>
-                    {{ ctx.t("logs.details.control.target.option.any") }}
+                    {{ ctx.t("logs.list.control.target.option.any") }}
                 </option>
                 <option {% call utils::optional_option(TargetKind::Group, target_filter) %}>
-                    {{ ctx.t("logs.details.control.target.option.group") }}
+                    {{ ctx.t("logs.list.control.target.option.group") }}
                 </option>
                 <option {% call utils::optional_option(TargetKind::Membership, target_filter) %}>
-                    {{ ctx.t("logs.details.control.target.option.membership") }}
+                    {{ ctx.t("logs.list.control.target.option.membership") }}
                 </option>
                 <option {% call utils::optional_option(TargetKind::System, target_filter) %}>
-                    {{ ctx.t("logs.details.control.target.option.system") }}
+                    {{ ctx.t("logs.list.control.target.option.system") }}
                 </option>
                 <option {% call utils::optional_option(TargetKind::ApiToken, target_filter) %}>
-                    {{ ctx.t("logs.details.control.target.option.apitoken") }}
+                    {{ ctx.t("logs.list.control.target.option.api-token") }}
                 </option>
                 <option {% call utils::optional_option(TargetKind::Tag, target_filter) %}>
-                    {{ ctx.t("logs.details.control.target.option.tag") }}
+                    {{ ctx.t("logs.list.control.target.option.tag") }}
                 </option>
                 <option {% call utils::optional_option(TargetKind::TagAssignment, target_filter) %}>
-                    {{ ctx.t("logs.details.control.target.option.tagassignment") }}
+                    {{ ctx.t("logs.list.control.target.option.tag-assignment") }}
                 </option>
                 <option {% call utils::optional_option(TargetKind::Permission, target_filter) %}>
-                    {{ ctx.t("logs.details.control.target.option.permission") }}
+                    {{ ctx.t("logs.list.control.target.option.permission") }}
                 </option>
                 <option {% call utils::optional_option(TargetKind::PermissionAssignment, target_filter) %}>
-                    {{ ctx.t("logs.details.control.target.option.permissionassignment") }}
+                    {{ ctx.t("logs.list.control.target.option.permission-assignment") }}
                 </option>
                 <option {% call utils::optional_option(TargetKind::User, target_filter) %}>
-                    {{ ctx.t("logs.details.control.target.option.user") }}
+                    {{ ctx.t("logs.list.control.target.option.user") }}
                 </option>
             </select>
         </label>
 
         <label>
-            {{ ctx.t("logs.details.control.id.label") }}
+            {{ ctx.t("logs.list.control.id.label") }}
             <input list="ids" name="id"
-                placeholder="{{ ctx.t("logs.details.control.id.option.any") }}"
+                placeholder="{{ ctx.t("logs.list.control.id.option.any") }}"
                 value="{{ id_filter.unwrap_or("") }}" />
         </label>
 
@@ -111,7 +111,7 @@
 
     <label>
         <input type="checkbox" role="switch" name="order" />
-        {{ ctx.t("logs.details.control.order.label") }}
+        {{ ctx.t("logs.list.control.order.label") }}
     </label>
 </form>
 

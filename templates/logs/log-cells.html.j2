@@ -14,58 +14,58 @@
 
         {% match log.action_kind %}
             {% when ActionKind::Create %}
-        <td class="center" data-tooltip="{{ ctx.t("logs.details.control.action.option.create") }}">
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.action.option.create") }}">
             <span class="material-icons">add</span>
         </td>
             {% when ActionKind::Delete %}
-        <td class="center" data-tooltip="{{ ctx.t("logs.details.control.action.option.delete") }}">
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.action.option.delete") }}">
             <span class="material-icons">delete</span>
         </td>
             {% when ActionKind::Update %}
-        <td class="center" data-tooltip="{{ ctx.t("logs.details.control.action.option.update") }}">
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.action.option.update") }}">
             <span class="material-icons">update</span>
         </td>
             {% when ActionKind::Impersonate %}
-        <td class="center" data-tooltip="{{ ctx.t("logs.details.control.action.option.impersonate") }}">
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.action.option.impersonate") }}">
             <span class="material-icons">person</span>
         </td>
         {% endmatch %}
 
         {% match log.target_kind %}
             {% when TargetKind::Group %}
-        <td class="center" data-tooltip="{{ ctx.t("logs.details.control.target.option.group") }}">
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.target.option.group") }}">
             <span class="material-icons">group</span>
         </td>
             {% when TargetKind::Membership %}
-        <td class="center" data-tooltip="{{ ctx.t("logs.details.control.target.option.membership") }}">
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.target.option.membership") }}">
             <span class="material-icons">person</span>
         </td>
             {% when TargetKind::System %}
-        <td class="center" data-tooltip="{{ ctx.t("logs.details.control.target.option.system") }}">
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.target.option.system") }}">
             <span class="material-icons">build</span>
         </td>
             {% when TargetKind::ApiToken %}
-        <td class="center" data-tooltip="{{ ctx.t("logs.details.control.target.option.apitoken") }}">
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.target.option.api-token") }}">
             <span class="material-icons">badge</span>
         </td>
             {% when TargetKind::Tag %}
-        <td class="center" data-tooltip="{{ ctx.t("logs.details.control.target.option.tag") }}">
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.target.option.tag") }}">
             <span class="material-icons">label</span>
         </td>
             {% when TargetKind::TagAssignment %}
-        <td class="center" data-tooltip="{{ ctx.t("logs.details.control.target.option.tagassignment") }}">
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.target.option.tag-assignment") }}">
             <span class="material-icons">new_label</span>
         </td>
             {% when TargetKind::Permission %}
-        <td class="center" data-tooltip="{{ ctx.t("logs.details.control.target.option.permission") }}">
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.target.option.permission") }}">
             <span class="material-icons">shield</span>
         </td>
             {% when TargetKind::PermissionAssignment %}
-        <td class="center" data-tooltip="{{ ctx.t("logs.details.control.target.option.permissionassignment") }}">
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.target.option.permission-assignment") }}">
             <span class="material-icons">add_moderator</span>
         </td>
             {% when TargetKind::User %}
-        <td class="center" data-tooltip="{{ ctx.t("logs.details.control.target.option.user") }}">
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.target.option.user") }}">
             <span class="material-icons">person_outline</span>
         </td>
         {% endmatch %}
