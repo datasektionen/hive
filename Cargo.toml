@@ -7,7 +7,7 @@ description = "Group and permissions management system"
 repository = "https://github.com/datasektionen/hive"
 license = "GPL-3.0-or-later"
 publish = false
-rust-version = "1.82"
+rust-version = "1.88"
 
 [features]
 default = ["api-docs", "default-integrations"]

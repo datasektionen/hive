@@ -1,5 +1,5 @@
-ARG RUST_VERSION=1.82
-ARG DEBIAN_LTS=bookworm
+ARG RUST_VERSION=1.88
+ARG DEBIAN_LTS=trixie
 
 ########## COMPILE PHASE ##########
 FROM rust:${RUST_VERSION}-slim-${DEBIAN_LTS} AS build
