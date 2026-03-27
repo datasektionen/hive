@@ -136,5 +136,5 @@ where
 pub fn hash_secret(secret: Uuid) -> String {
     let hash = sha2::Sha256::new_with_prefix(secret).finalize();
 
-    format!("{hash:x}") // hex string
+    hex::encode(hash)
 }
