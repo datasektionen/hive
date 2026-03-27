@@ -36,11 +36,10 @@ ARG UID=10080
 ARG USER=hive
 ARG LOG_FILE=/var/log/hive.log
 
-RUN adduser \
-    --disabled-password \
+RUN useradd \
     --no-create-home \
-    --gecos "" \
-    --home "/non-existent" \
+    --comment "" \
+    --home-dir "/non-existent" \
     --shell "/sbin/nologin" \
     --uid "${UID}" \
     ${USER}
