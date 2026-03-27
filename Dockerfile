@@ -36,6 +36,11 @@ ARG UID=10080
 ARG USER=hive
 ARG LOG_FILE=/var/log/hive.log
 
+# system must trust some CA certificates, otherwise reqwest will not work
+RUN apt-get update \
+    && apt-get install -y ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN useradd \
     --no-create-home \
     --comment "" \
