@@ -1,12 +1,12 @@
 use std::{borrow::Cow, fmt};
 
 use rocket::{
+    FromFormField, Request,
     http::CookieJar,
     request::{FromRequest, Outcome},
-    FromFormField, Request,
 };
 
-use super::{headers::AcceptLanguage, Infallible};
+use super::{Infallible, headers::AcceptLanguage};
 
 const DEFAULT_LANG: Language = Language::Swedish;
 const LANG_COOKIE_NAME: &str = "Hive-Lang"; // set by frontend on lang change

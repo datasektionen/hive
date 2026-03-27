@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use rinja::Template;
-use rocket::{form::Form, response::content::RawHtml, State};
+use rocket::{State, form::Form, response::content::RawHtml};
 use sqlx::PgPool;
 
 use crate::{

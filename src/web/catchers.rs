@@ -1,8 +1,8 @@
 use rocket::{
-    catchers,
+    Request, Responder, catchers,
     http::{Header, Method, Status},
-    response::{content::RawHtml, Redirect},
-    uri, Request, Responder,
+    response::{Redirect, content::RawHtml},
+    uri,
 };
 
 use super::RenderedTemplate;

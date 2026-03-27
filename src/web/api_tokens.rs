@@ -1,14 +1,15 @@
 use log::*;
 use rinja::Template;
 use rocket::{
+    State,
     form::{self, Contextual, Form},
-    response::{content::RawHtml, Redirect},
-    uri, State,
+    response::{Redirect, content::RawHtml},
+    uri,
 };
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use super::{filters, Either, RenderedTemplate};
+use super::{Either, RenderedTemplate, filters};
 use crate::{
     dto::api_tokens::CreateApiTokenDto,
     errors::AppResult,

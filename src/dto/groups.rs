@@ -1,9 +1,9 @@
 use rocket::{
-    form::{self, FromFormField},
     FromForm,
+    form::{self, FromFormField},
 };
 
-use super::{datetime::BrowserDateDto, TrimmedStr};
+use super::{TrimmedStr, datetime::BrowserDateDto};
 
 #[derive(FromForm)]
 pub struct CreateGroupDto<'v> {

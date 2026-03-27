@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use rocket::{serde::json::Json, State};
+use rocket::{State, serde::json::Json};
 use sqlx::PgPool;
 
 use super::PermKey;

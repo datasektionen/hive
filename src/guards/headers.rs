@@ -1,7 +1,7 @@
 use rocket::{
+    Request,
     http::Status,
     request::{FromRequest, Outcome},
-    Request,
 };
 
 // hack: this is cursed, but I can't use

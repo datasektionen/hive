@@ -1,9 +1,10 @@
 use log::*;
 use rinja::Template;
 use rocket::{
+    State,
     form::{self, Contextual, Form},
-    response::{content::RawHtml, Redirect},
-    uri, State,
+    response::{Redirect, content::RawHtml},
+    uri,
 };
 use sqlx::PgPool;
 use uuid::Uuid;

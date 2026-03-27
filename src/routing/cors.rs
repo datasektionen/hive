@@ -1,10 +1,11 @@
 use std::path::PathBuf;
 
 use rocket::{
+    Build, Request, Response, Rocket,
     fairing::{self, Fairing},
     http::{Header, Method},
     response::{self, Responder},
-    routes, Build, Request, Response, Rocket,
+    routes,
 };
 
 use crate::guards::cors::PreflightRequestHeaders;

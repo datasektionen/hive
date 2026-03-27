@@ -3,12 +3,12 @@ use std::io::Cursor;
 use log::*;
 use rinja::Template;
 use rocket::{
+    Request, Response,
     fairing::{self, Fairing},
     http::{ContentType, Status},
     request::Outcome,
     response::{self, Responder},
     serde::json::Json,
-    Request, Response,
 };
 use uuid::Uuid;
 

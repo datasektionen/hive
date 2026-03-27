@@ -1,10 +1,10 @@
 use chrono::Local;
 use rocket::{
+    Request, State,
     http::Status,
     request::{FromRequest, Outcome},
-    Request, State,
 };
-use sqlx::{prelude::FromRow, PgPool};
+use sqlx::{PgPool, prelude::FromRow};
 use uuid::Uuid;
 
 use super::token::BearerToken;

@@ -1,11 +1,11 @@
 use log::*;
 use rocket::{
+    State,
     http::{
-        uri::{Host, Origin},
         CookieJar,
+        uri::{Host, Origin},
     },
     response::Redirect,
-    State,
 };
 use sqlx::PgPool;
 

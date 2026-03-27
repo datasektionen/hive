@@ -1,7 +1,7 @@
 use rocket::{
+    Request,
     http::uri::Path,
     request::{FromRequest, Outcome},
-    Request,
 };
 
 use super::perms::PermsEvaluator;

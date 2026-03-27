@@ -1,9 +1,10 @@
 pub use catchers::catchers;
 use rinja::Template;
 use rocket::{
-    http::{uri::Reference, Header},
-    response::{content::RawHtml, Redirect},
-    uri, Responder,
+    Responder,
+    http::{Header, uri::Reference},
+    response::{Redirect, content::RawHtml},
+    uri,
 };
 
 use crate::{

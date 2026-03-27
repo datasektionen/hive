@@ -2,9 +2,9 @@ use std::borrow::Cow;
 
 use log::*;
 use openidconnect::{
-    core::{CoreClient, CoreProviderMetadata, CoreResponseType},
     AsyncHttpClient, AuthenticationFlow, AuthorizationCode, ClientId, ClientSecret, CsrfToken,
     EndpointMaybeSet, EndpointNotSet, EndpointSet, IssuerUrl, Nonce, RedirectUrl, Scope,
+    core::{CoreClient, CoreProviderMetadata, CoreResponseType},
 };
 use rocket::http::uri::Origin;
 use serde::{Deserialize, Serialize};

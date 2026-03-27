@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt};
 
 use chrono::{Duration, Utc};
 use log::*;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 // space-separated list of permissions required
 // (options: https://developers.google.com/identity/protocols/oauth2/scopes)
@@ -707,11 +707,7 @@ pub enum PoorMansBoolean {
 
 impl From<bool> for PoorMansBoolean {
     fn from(value: bool) -> Self {
-        if value {
-            Self::True
-        } else {
-            Self::False
-        }
+        if value { Self::True } else { Self::False }
     }
 }
 

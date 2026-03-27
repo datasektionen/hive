@@ -2,7 +2,7 @@ use std::{collections::HashMap, future::Future, pin::Pin, sync::LazyLock};
 
 use chrono::Local;
 use log::*;
-use sqlx::{error::DatabaseError, PgPool};
+use sqlx::{PgPool, error::DatabaseError};
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
 
 use crate::{

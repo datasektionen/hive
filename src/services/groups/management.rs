@@ -4,12 +4,12 @@ use log::*;
 use serde_json::json;
 
 use crate::{
+    HIVE_INTERNAL_DOMAIN,
     dto::groups::{CreateGroupDto, EditGroupDto},
     errors::{AppError, AppResult},
     guards::user::User,
     models::{ActionKind, Group, TargetKind},
     services::{audit_log_details_for_update, audit_logs, update_if_changed},
-    HIVE_INTERNAL_DOMAIN,
 };
 
 pub async fn create<'v, 'x, X>(dto: &CreateGroupDto<'v>, db: X, user: &User) -> AppResult<()>

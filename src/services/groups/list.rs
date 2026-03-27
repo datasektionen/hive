@@ -1,6 +1,6 @@
 use std::{
     cmp::Ordering,
-    collections::{hash_map::Entry, HashMap, HashSet},
+    collections::{HashMap, HashSet, hash_map::Entry},
 };
 
 use chrono::{Local, NaiveDate};
@@ -9,13 +9,13 @@ use sqlx::{FromRow, Row};
 
 use super::{GroupMembershipKind, RoleInGroup};
 use crate::{
+    HIVE_SYSTEM_ID,
     errors::AppResult,
     guards::{lang::Language, perms::PermsEvaluator, user::User},
     models::{Group, GroupRef, SimpleGroup},
     perms::{GroupsScope, HivePermission, TagContent},
     sanitizers::SearchTerm,
     services::pg_args,
-    HIVE_SYSTEM_ID,
 };
 
 pub struct GroupOverviewSummary {

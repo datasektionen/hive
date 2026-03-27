@@ -1,7 +1,7 @@
 use chrono::{DateTime, Local};
 use log::*;
 use oidc::{OidcAuthenticationResult, OidcClient};
-use rocket::http::{uri::Origin, Cookie, CookieJar, SameSite};
+use rocket::http::{Cookie, CookieJar, SameSite, uri::Origin};
 use serde::{Deserialize, Serialize};
 
 use crate::errors::{AppError, AppResult};

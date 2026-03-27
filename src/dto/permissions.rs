@@ -1,10 +1,10 @@
 use rocket::{
-    form::{self, FromFormField},
     FromForm,
+    form::{self, FromFormField},
 };
 use uuid::Uuid;
 
-use super::{groups::GroupRefDto, TrimmedStr};
+use super::{TrimmedStr, groups::GroupRefDto};
 
 #[derive(FromForm)]
 pub struct CreatePermissionDto<'v> {

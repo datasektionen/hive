@@ -2,8 +2,8 @@ use std::{net::IpAddr, path::PathBuf};
 
 use clap::Parser;
 use figment::{
-    providers::{Env, Format, Serialized, Toml},
     Figment,
+    providers::{Env, Format, Serialized, Toml},
 };
 use serde::{Deserialize, Serialize};
 

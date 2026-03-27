@@ -4,12 +4,12 @@ use sqlx::Row;
 
 use super::{GroupRelevance, RoleInGroup};
 use crate::{
+    HIVE_SYSTEM_ID,
     errors::{AppError, AppResult},
     guards::{perms::PermsEvaluator, user::User},
     models::{GroupModel, GroupRef},
     perms::{GroupsScope, HivePermission, TagContent},
     services::{groups::AuthorityInGroup, pg_args},
-    HIVE_SYSTEM_ID,
 };
 
 pub async fn get_one<'x, X, G: GroupModel>(id: &str, domain: &str, db: X) -> AppResult<Option<G>>

@@ -1,9 +1,10 @@
 use log::*;
 use rinja::Template;
 use rocket::{
+    State,
     form::{self, Contextual, Form},
-    response::{content::RawHtml, Redirect},
-    uri, State,
+    response::{Redirect, content::RawHtml},
+    uri,
 };
 use sqlx::PgPool;
 
@@ -16,9 +17,8 @@ use crate::{
     routing::RouteTree,
     services::groups::{self, AuthorityInGroup},
     web::{
-        self,
+        self, Either, RenderedTemplate,
         groups::{ListGroupsLayout, ListGroupsSort},
-        Either, RenderedTemplate,
     },
 };
 

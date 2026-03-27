@@ -1,7 +1,7 @@
 use chrono::Local;
 use rocket::FromForm;
 
-use super::{datetime::BrowserDateTimeDto, TrimmedStr};
+use super::{TrimmedStr, datetime::BrowserDateTimeDto};
 
 #[derive(FromForm)]
 pub struct CreateApiTokenDto<'v> {

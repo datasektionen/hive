@@ -6,14 +6,15 @@ use std::{
 use log::*;
 use rinja::Template;
 use rocket::{
+    Responder, State, UriDisplayQuery,
     form::{self, Contextual, Form, FromFormField},
     http::Header,
-    response::{content::RawHtml, Redirect},
-    uri, Responder, State, UriDisplayQuery,
+    response::{Redirect, content::RawHtml},
+    uri,
 };
 use sqlx::PgPool;
 
-use super::{filters, Either, GracefulRedirect, RenderedTemplate};
+use super::{Either, GracefulRedirect, RenderedTemplate, filters};
 use crate::{
     dto::groups::{CreateGroupDto, EditGroupDto},
     errors::{AppError, AppResult},
@@ -27,8 +28,8 @@ use crate::{
     perms::{GroupsScope, HivePermission},
     routing::RouteTree,
     services::groups::{
-        self, list::GroupOverviewSummary, AuthorityInGroup, GroupMembershipKind, GroupRelevance,
-        RoleInGroup,
+        self, AuthorityInGroup, GroupMembershipKind, GroupRelevance, RoleInGroup,
+        list::GroupOverviewSummary,
     },
 };
 

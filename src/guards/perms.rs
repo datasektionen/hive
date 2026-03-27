@@ -2,18 +2,18 @@ use std::collections::{HashMap, HashSet};
 
 use log::*;
 use rocket::{
+    Request, State,
     futures::lock::{Mutex, MutexGuard},
     http::Status,
     request::{FromRequest, Outcome},
-    Request, State,
 };
 use sqlx::PgPool;
 
-use super::{user::User, Infallible};
+use super::{Infallible, user::User};
 use crate::{
+    HIVE_SYSTEM_ID,
     errors::{AppError, AppResult},
     perms::{self, HivePermission},
-    HIVE_SYSTEM_ID,
 };
 
 pub struct PermsEvaluator {

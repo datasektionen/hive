@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use rocket::{
+    Request,
     http::Status,
     request::{FromRequest, Outcome},
-    Request,
 };
 
 use super::Infallible;

@@ -1,9 +1,9 @@
 use rocket::{
-    form::{self, FromFormField},
     FromForm,
+    form::{self, FromFormField},
 };
 
-use super::{groups::GroupRefDto, TrimmedStr};
+use super::{TrimmedStr, groups::GroupRefDto};
 
 #[derive(FromForm)]
 pub struct CreateTagDto<'v> {

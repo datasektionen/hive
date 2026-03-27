@@ -2,8 +2,8 @@ use std::fmt;
 
 use log::*;
 use rocket::{
-    request::{FromRequest, Outcome},
     Request,
+    request::{FromRequest, Outcome},
 };
 
 use super::Infallible;

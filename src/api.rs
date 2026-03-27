@@ -55,7 +55,7 @@ macro_rules! with_api_docs {
     ($key:literal, $routes:expr) => {{
         use rocket::{
             http::ContentType,
-            response::{content::RawHtml, Redirect},
+            response::{Redirect, content::RawHtml},
             routes,
         };
 

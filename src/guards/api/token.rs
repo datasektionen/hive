@@ -1,7 +1,7 @@
 use rocket::{
+    Request,
     http::Status,
     request::{FromRequest, Outcome},
-    Request,
 };
 
 pub struct BearerToken<'t>(pub &'t str);

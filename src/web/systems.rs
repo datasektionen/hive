@@ -1,14 +1,15 @@
 use log::*;
 use rinja::Template;
 use rocket::{
+    Responder, State,
     form::{self, Contextual, Form},
     http::Header,
-    response::{content::RawHtml, Redirect},
-    uri, Responder, State,
+    response::{Redirect, content::RawHtml},
+    uri,
 };
 use sqlx::PgPool;
 
-use super::{filters, Either, GracefulRedirect, RenderedTemplate};
+use super::{Either, GracefulRedirect, RenderedTemplate, filters};
 use crate::{
     dto::systems::{CreateSystemDto, EditSystemDto},
     errors::{AppError, AppResult},

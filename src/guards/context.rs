@@ -1,11 +1,11 @@
 use std::{borrow::Cow, fmt};
 
 use rocket::{
-    request::{FromRequest, Outcome},
     Request,
+    request::{FromRequest, Outcome},
 };
 
-use super::{lang::Language, nav::Nav, user::User, Infallible};
+use super::{Infallible, lang::Language, nav::Nav, user::User};
 
 pub struct PageContext {
     pub lang: Language,

@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use rocket::{serde::json::Json, State};
+use rocket::{State, serde::json::Json};
 use serde::Serialize;
 use sqlx::PgPool;
 
