@@ -1255,3 +1255,75 @@ user.settings.field.integration_gworkspace_personal-email.tip:
 user.settings.title:
   en: My Settings
   sv: Mina inställningar
+logs.details.control.action.label:
+  en: Action
+  sv: Handling
+logs.details.control.action.option.any:
+  en: All Actions
+  sv: Alla Handlingar
+logs.details.control.action.option.create:
+  en: Create
+  sv: Skapa
+logs.details.control.action.option.update:
+  en: Update
+  sv: Updatera
+logs.details.control.action.option.delete:
+  en: Delete
+  sv: Radera
+logs.details.control.action.option.impersonate:
+  en: Impersonate
+  sv: Imitera
+logs.details.control.target.label:
+  en: Target
+  sv: Mål
+logs.details.control.target.option.any:
+  en: All Targets
+  sv: Alla Mål
+logs.details.control.target.option.group:
+  en: Group
+  sv: Grupp
+logs.details.control.target.option.membership:
+  en: Membership
+  sv: Medlemskap
+logs.details.control.target.option.system:
+  en: System
+  sv: System
+logs.details.control.target.option.apitoken:
+  en: ApiToken
+  sv: ApiToken
+logs.details.control.target.option.tag:
+  en: Tag
+  sv: Tag
+logs.details.control.target.option.tagassignment:
+  en: TagAssignment
+  sv: TagTilldelning
+logs.details.control.target.option.permission:
+  en: Permission
+  sv: Rättighet
+logs.details.control.target.option.permissionassignment:
+  en: PermissionAssignment
+  sv: RättighetsTilldelning
+logs.details.control.target.option.user:
+  en: User
+  sv: Användare
+logs.details.control.actor.label:
+  en: Actor
+  sv: Aktör
+logs.details.control.actor.option.any:
+  en: All Actors
+  sv: Alla Aktör
+logs.details.control.id.label:
+  en: ID
+  sv: ID
+logs.details.control.id.option.any:
+  en: All IDs
+  sv: Alla IDn
+logs.details.control.from.label:
+  en: From
+  sv: Från
+logs.details.control.until.label:
+  en: Until
+  sv: Fram till
+logs.details.control.order.label:
+  en: Chronological
+  sv: Kronologisk

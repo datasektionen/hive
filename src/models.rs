@@ -1,6 +1,8 @@
 use std::{fmt, hash};
 
 use chrono::{DateTime, Local, NaiveDate};
+use rocket::{Either, FromFormField, UriDisplayQuery};
+use sqlx::types::JsonValue;
 use sqlx::FromRow;
 use uuid::Uuid;
 
@@ -339,7 +341,74 @@ impl AffiliatedTagAssignment {
     }
 }
 
-#[derive(sqlx::Type)]
+#[derive(FromRow)]
+pub struct AuditLog {
+    pub action_kind: ActionKind,
+    pub target_kind: TargetKind,
+    pub target_id: String,
+    pub actor: String,
+    pub details: serde_json::Value,
+    pub stamp: DateTime<Local>,
+}
+
+impl AuditLog {
+    pub fn format_details(&self) -> Either<Vec<String>, JsonValue> {
+        match self.action_kind {
+            ActionKind::Create => self
+                .details
+                .as_object()
+                .and_then(|map| map.get("new"))
+                .and_then(|new| new.as_object())
+                .and_then(|map| {
+                    Some(
+                        map.iter()
+                            .map(|(key, value)| format!("{}: {}", key, value))
+                            .collect::<Vec<String>>(),
+                    )
+                })
+                .and_then(|list| Some(Either::Left(list)))
+                .unwrap_or(Either::Right(self.details.clone())),
+            ActionKind::Delete => self
+                .details
+                .as_object()
+                .and_then(|map| map.get("old"))
+                .and_then(|new| new.as_object())
+                .and_then(|map| {
+                    Some(
+                        map.iter()
+                            .map(|(key, value)| format!("{}: {}", key, value))
+                            .collect::<Vec<String>>(),
+                    )
+                })
+                .and_then(|list| Some(Either::Left(list)))
+                .unwrap_or(Either::Right(self.details.clone())),
+
+            ActionKind::Update => self
+                .details
+                .as_object()
+                .and_then(|map| map.get("new").zip(map.get("old")))
+                .and_then(|(new, old)| new.as_object().zip(old.as_object()))
+                .and_then(|(new, old)| {
+                    Some(
+                        new.iter()
+                            .filter_map(|(key, value)| {
+                                old.get(key)
+                                    .and_then(|old| Some((key, (old, value))))
+                                    .and_then(|(key, (old, new))| {
+                                        Some(format!("{}: {} => {}", key, old, new))
+                                    })
+                            })
+                            .collect::<Vec<String>>(),
+                    )
+                })
+                .and_then(|list| Some(Either::Left(list)))
+                .unwrap_or(Either::Right(self.details.clone())),
+            ActionKind::Impersonate => Either::Right(self.details.clone()),
+        }
+    }
+}
+
+#[derive(sqlx::Type, UriDisplayQuery, FromFormField, PartialEq, Clone, Debug)]
 #[sqlx(type_name = "action_kind", rename_all = "snake_case")]
 pub enum ActionKind {
     Create,
@@ -348,7 +417,18 @@ pub enum ActionKind {
     Impersonate,
 }
 
-#[derive(sqlx::Type)]
+impl fmt::Display for ActionKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ActionKind::Create => write!(f, "Create"),
+            ActionKind::Update => write!(f, "Update"),
+            ActionKind::Delete => write!(f, "Delete"),
+            ActionKind::Impersonate => write!(f, "Impersonate"),
+        }
+    }
+}
+
+#[derive(sqlx::Type, UriDisplayQuery, FromFormField, PartialEq, Clone, Debug)]
 #[sqlx(type_name = "target_kind", rename_all = "snake_case")]
 pub enum TargetKind {
     Group,
@@ -360,6 +440,22 @@ pub enum TargetKind {
     Permission,
     PermissionAssignment,
     User,
+}
+
+impl fmt::Display for TargetKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TargetKind::Group => write!(f, "Group"),
+            TargetKind::Membership => write!(f, "Membership"),
+            TargetKind::System => write!(f, "System"),
+            TargetKind::ApiToken => write!(f, "ApiToken"),
+            TargetKind::Tag => write!(f, "Tag"),
+            TargetKind::TagAssignment => write!(f, "TagAssignment"),
+            TargetKind::Permission => write!(f, "Permission"),
+            TargetKind::PermissionAssignment => write!(f, "PermissionAssignment"),
+            TargetKind::User => write!(f, "User"),
+        }
+    }
 }
 
 #[derive(FromRow)]

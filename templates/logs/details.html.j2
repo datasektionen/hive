@@ -1,0 +1,139 @@
+{% extends "base.html.j2" %}
+
+{%- import "utils.html.j2" as utils -%}
+
+{% block title %} Logs {% endblock title %}
+
+{% block heading %}
+    <h1>Logs</h1>
+{% endblock heading %}
+
+{% block content %}
+<form method="get" hx-boost="true" hx-target="#logs-list" hx-indicator="#logs-list"
+    hx-trigger="submit, change, search, input changed delay:500ms">
+    <input type="hidden" name="page" value="0" />
+    <div class="grid">
+        <label>
+            {{ ctx.t("logs.details.control.from.label") }}
+            <input type="datetime-local" name="from" value={% call utils::stringify_option(from_filter) %} />
+        </label>
+
+        <label>
+            {{ ctx.t("logs.details.control.until.label") }}
+            <input type="datetime-local" name="until" value={% call utils::stringify_option(until_filter) %} />
+        </label>
+
+        <label>
+            {{ ctx.t("logs.details.control.actor.label") }}
+            <input list="actors" name="actor" 
+                placeholder="{{ ctx.t("logs.details.control.actor.option.any") }}"
+                value="{{ actor_filter.unwrap_or("") }}" />
+        </label>
+
+        <datalist id="actors">
+            {% for actor in actors %}
+            <option value={{actor}}>
+            {% endfor %}
+        </datalist>
+    </div>
+
+    <div class="grid">
+        <label>
+            {{ ctx.t("logs.details.control.action.label") }}
+            <select name="action">
+                <option value="" {%- if action_filter.is_none() %} selected {%- endif -%}>
+                    {{ ctx.t("logs.details.control.action.option.any") }}
+                </option>
+                <option {% call utils::optional_option(ActionKind::Create, action_filter) %}>
+                    {{ ctx.t("logs.details.control.action.option.create") }}
+                </option>
+                <option {% call utils::optional_option(ActionKind::Update, action_filter) %}>
+                    {{ ctx.t("logs.details.control.action.option.update") }}
+                </option>
+                <option {% call utils::optional_option(ActionKind::Delete, action_filter) %}>
+                    {{ ctx.t("logs.details.control.action.option.delete") }}
+                </option>
+                <option {% call utils::optional_option(ActionKind::Impersonate, action_filter) %}>
+                    {{ ctx.t("logs.details.control.action.option.impersonate") }}
+                </option>
+            </select>
+        </label>
+
+        <label>
+            {{ ctx.t("logs.details.control.target.label") }}
+            <select name="target">
+                <option value="" {%- if action_filter.is_none() %} selected {%- endif -%}>
+                    {{ ctx.t("logs.details.control.target.option.any") }}
+                </option>
+                <option {% call utils::optional_option(TargetKind::Group, target_filter) %}>
+                    {{ ctx.t("logs.details.control.target.option.group") }}
+                </option>
+                <option {% call utils::optional_option(TargetKind::Membership, target_filter) %}>
+                    {{ ctx.t("logs.details.control.target.option.membership") }}
+                </option>
+                <option {% call utils::optional_option(TargetKind::System, target_filter) %}>
+                    {{ ctx.t("logs.details.control.target.option.system") }}
+                </option>
+                <option {% call utils::optional_option(TargetKind::ApiToken, target_filter) %}>
+                    {{ ctx.t("logs.details.control.target.option.apitoken") }}
+                </option>
+                <option {% call utils::optional_option(TargetKind::Tag, target_filter) %}>
+                    {{ ctx.t("logs.details.control.target.option.tag") }}
+                </option>
+                <option {% call utils::optional_option(TargetKind::TagAssignment, target_filter) %}>
+                    {{ ctx.t("logs.details.control.target.option.tagassignment") }}
+                </option>
+                <option {% call utils::optional_option(TargetKind::Permission, target_filter) %}>
+                    {{ ctx.t("logs.details.control.target.option.permission") }}
+                </option>
+                <option {% call utils::optional_option(TargetKind::PermissionAssignment, target_filter) %}>
+                    {{ ctx.t("logs.details.control.target.option.permissionassignment") }}
+                </option>
+                <option {% call utils::optional_option(TargetKind::User, target_filter) %}>
+                    {{ ctx.t("logs.details.control.target.option.user") }}
+                </option>
+            </select>
+        </label>
+
+        <label>
+            {{ ctx.t("logs.details.control.id.label") }}
+            <input list="ids" name="id"
+                placeholder="{{ ctx.t("logs.details.control.id.option.any") }}"
+                value="{{ id_filter.unwrap_or("") }}" />
+        </label>
+
+        <datalist id="ids">
+            {% for id in ids %}
+            <option value={{id}}>
+            {% endfor %}
+        </datalist>
+    </div>
+
+    <label>
+        <input type="checkbox" role="switch" name="order" />
+        {{ ctx.t("logs.details.control.order.label") }}
+    </label>
+</form>
+
+<main class="overflow-auto">
+    <table class="striped">
+        <thead>
+            <th scope="col">Time</th>
+            <th scope="col">Actor</th>
+            <th scope="col" class="center">Action</th>
+            <th scope="col" class="center">Target</th>
+            <th scope="col">ID</th>
+            <th scope="col">Details</th>
+        </thead>
+        <tbody id="logs-list">
+            <tr class="if-table-empty">
+                <td colspan="5">
+                    <span class="material-icons">block</span>
+                    {{ ctx.t("logs.list.empty") }}
+                </td>
+            </tr>
+            {% include "log-cells.html.j2" %}
+        </tbody>
+    </table>
+</main>
+{% endblock content %}
