@@ -2,7 +2,7 @@
 
 {% for log in logs %}
     {% if loop.last %}
-    <tr hx-get="/logs?page={{ next_page }}&actor={{ actor_filter.unwrap_or("") }}&action={%- call utils::stringify_option(action_filter) -%}&target={%- call utils::stringify_option(target_filter) -%}&id={%- call utils::stringify_option(id_filter) -%}&from={%- call utils::stringify_option(from_filter) -%}&until={%- call utils::stringify_option(until_filter) -%}&order={{ order }}"
+    <tr hx-get="/logs?page={{ next_page }}&actor={{ filter.actor.unwrap_or("") }}&action={%- call utils::stringify_option(filter.action) -%}&target={%- call utils::stringify_option(filter.target) -%}&id={%- call utils::stringify_option(filter.id) -%}&from={%- call utils::stringify_option(filter.from) -%}&until={%- call utils::stringify_option(filter.until) -%}&order={{ filter.order }}"
         hx-trigger="revealed"
         hx-swap="afterend">
     {% else %}

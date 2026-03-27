@@ -13,7 +13,7 @@ use rocket::Either;
 use rocket::{response::content::RawHtml, State};
 use sqlx::PgPool;
 
-const PAGE_SIZE: i32 = 50;
+const PAGE_SIZE: u32 = 50;
 
 pub fn routes() -> RouteTree {
     rocket::routes![get_audit_logs].into()
@@ -23,32 +23,20 @@ pub fn routes() -> RouteTree {
 #[template(path = "logs/details.html.j2")]
 struct ListLogsView<'r> {
     ctx: PageContext,
-    actor_filter: Option<&'r str>,
+    filter: LogsFilterDto<'r>,
     actors: Vec<String>,
-    action_filter: Option<ActionKind>,
-    target_filter: Option<TargetKind>,
-    id_filter: Option<&'r str>,
-    from_filter: Option<BrowserDateTimeDto>,
-    until_filter: Option<BrowserDateTimeDto>,
-    order: bool,
     ids: Vec<String>,
     logs: Vec<AuditLog>,
-    next_page: i32
+    next_page: u32,
 }
 
 #[derive(Template)]
 #[template(path = "logs/log-cells.html.j2")]
-struct LogsPartial<'r> {
+struct ListLogsPartial<'r> {
     ctx: PageContext,
     logs: Vec<AuditLog>,
-    next_page: i32,
-    actor_filter: Option<&'r str>,
-    action_filter: Option<ActionKind>,
-    target_filter: Option<TargetKind>,
-    id_filter: Option<&'r str>,
-    from_filter: Option<BrowserDateTimeDto>,
-    until_filter: Option<BrowserDateTimeDto>,
-    order: bool,
+    filter: LogsFilterDto<'r>,
+    next_page: u32,
 }
 
 #[rocket::get("/logs?<page>&<actor>&<id>&<action>&<target>&<from>&<until>&<order>")]
@@ -57,7 +45,7 @@ async fn get_audit_logs<'r>(
     ctx: PageContext,
     perms: &PermsEvaluator,
     partial: Option<HxRequest<'_>>,
-    page: Option<i32>,
+    page: Option<u32>,
     actor: Option<&'r str>,
     id: Option<&'r str>,
     action: Option<ActionKind>,
@@ -67,6 +55,8 @@ async fn get_audit_logs<'r>(
     order: bool,
 ) -> AppResult<RenderedTemplate> {
     perms.require(HivePermission::ViewLogs).await?;
+
+    let page = page.unwrap_or(1);
 
     let filter = LogsFilterDto {
         actor,
@@ -81,64 +71,31 @@ async fn get_audit_logs<'r>(
     let actors = audit_logs::list_actors(db.inner()).await?;
     let ids = audit_logs::list_target_ids(db.inner()).await?;
 
-    if let Some(page) = page {
-        if partial.is_some() {
-            let logs =
-                audit_logs::get_logs_paged(db.inner(), &filter, page * PAGE_SIZE, PAGE_SIZE)
-                    .await?;
+    let logs = audit_logs::get_logs_paged(
+        db.inner(),
+        &filter,
+        page.saturating_sub(1) * PAGE_SIZE,
+        PAGE_SIZE,
+    )
+    .await?;
 
-            let template = LogsPartial {
-                ctx,
-                logs,
-                next_page: page + 1,
-                actor_filter: actor,
-                id_filter: id,
-                action_filter: action,
-                target_filter: target,
-                from_filter: from,
-                until_filter: until,
-                order,
-            };
+    if partial.is_some() {
+        let template = ListLogsPartial {
+            ctx,
+            logs,
+            filter,
+            next_page: page + 1,
+        };
 
-            Ok(RawHtml(template.render()?))
-        } else {
-            let logs =
-                audit_logs::get_logs_paged(db.inner(), &filter, page * PAGE_SIZE, PAGE_SIZE)
-                    .await?;
-
-            let template = ListLogsView {
-                ctx,
-                logs,
-                next_page: page + 1,
-                actors,
-                ids,
-                actor_filter: actor,
-                id_filter: id,
-                action_filter: action,
-                target_filter: target,
-                from_filter: from,
-                until_filter: until,
-                order,
-            };
-
-            Ok(RawHtml(template.render()?))
-        }
+        Ok(RawHtml(template.render()?))
     } else {
-        let logs = audit_logs::get_logs_paged(db.inner(), &filter, 0, PAGE_SIZE).await?;
-
         let template = ListLogsView {
             ctx,
             logs,
-            next_page: 1,
+            filter,
+            next_page: page + 1,
             actors,
             ids,
-            actor_filter: actor,
-            id_filter: id,
-            action_filter: action,
-            target_filter: target,
-            from_filter: from,
-            until_filter: until,
-            order,
         };
 
         Ok(RawHtml(template.render()?))

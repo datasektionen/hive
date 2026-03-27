@@ -33,8 +33,8 @@ where
 pub async fn get_logs_paged<'a, X>(
     db: X,
     filter: &LogsFilterDto<'_>,
-    offset: i32,
-    limit: i32,
+    offset: u32,
+    limit: u32,
 ) -> AppResult<Vec<AuditLog>>
 where
     X: sqlx::Executor<'a, Database = sqlx::Postgres>,
@@ -51,8 +51,12 @@ where
 
     filter.apply(&mut query);
 
-    query.push(" OFFSET ").push_bind(offset);
-    query.push(" LIMIT ").push_bind(limit);
+    query
+        .push(" OFFSET ")
+        .push_bind(i32::try_from(offset).unwrap_or(0));
+    query
+        .push(" LIMIT ")
+        .push_bind(i32::try_from(limit).unwrap_or(50));
 
     let logs = query.build_query_as().fetch_all(db).await?;
 
