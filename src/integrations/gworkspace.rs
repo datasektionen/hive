@@ -13,150 +13,152 @@ mod google;
 // can't use const because it wouldn't support async fn pointers for tasks
 pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| {
     super::Manifest {
-    id: "gworkspace",
-    description: "Sync users and groups to Google Workspace",
-    settings: &[
-        super::Setting {
-            id: "mode",
-            secret: false,
-            name: "Mode",
-            description: "Level of structural mirroring to enforce",
-            r#type: super::SettingType::Select(&[
-                super::SelectSettingOption {
-                    value: "dry-run",
-                    display_name: "Dry run",
-                },
-                super::SelectSettingOption {
-                    value: "no-deletion",
-                    display_name: "Sync without removing existing entities",
-                },
-                super::SelectSettingOption {
-                    value: "full",
-                    display_name: "Complete push from Hive to Google directory",
-                },
-            ]),
-        },
-        super::Setting {
-            id: "primary-domain",
-            secret: false,
-            name: "Primary Domain",
-            description: "Where user accounts will be looked up & created",
-            r#type: super::SettingType::ShortText,
-        },
-        super::Setting {
-            id: "service-account-email",
-            secret: false,
-            name: "Service Account Email",
-            description: "Google Cloud service account with 'Service Account Token Creator' role",
-            r#type: super::SettingType::ShortText,
-        },
-        super::Setting {
-            id: "service-account-key",
-            secret: true,
-            name: "Service Account Private Key",
-            description: "Service account PEM-formatted private key (with header & footer)",
-            r#type: super::SettingType::LongText,
-        },
-        super::Setting {
-            id: "impersonate-user",
-            secret: false,
-            name: "Impersonate User",
-            description: "Email address of the domain admin to impersonate",
-            r#type: super::SettingType::ShortText,
-        },
-        super::Setting {
-            id: "group-whitelist",
-            secret: false,
-            name: "Group Whitelist",
-            description: "Comma-separated list of group email addresses to never delete",
-            r#type: super::SettingType::LongText,
-        },
-        super::Setting {
-            id: "alternative-domains",
-            secret: false,
-            name: "Alternative Domains",
-            description: "Comma-separated list of secondary domains where to lookup users",
-            r#type: super::SettingType::ShortText,
-        },
-    ],
-    tags: &[
-        super::Tag {
-            id: "sync",
-            description: "Entity that should be sync'd to Google Workspace",
-            has_content: false,
-            supports_groups: true,
-            supports_users: true,
-            self_service: false,
-        },
-        super::Tag {
-            id: "allow-external",
-            description: "Allow non-Workspace users to be added to the group",
-            has_content: false,
-            supports_groups: true,
-            supports_users: false,
-            self_service: false,
-        },
-        super::Tag {
-            id: "grace-period",
-            description: "Keep old members until a month past their membership end date",
-            has_content: false,
-            supports_groups: true,
-            supports_users: false,
-            self_service: false,
-        },
-        super::Tag {
-            id: "sensitive",
-            description: "Groups that must abide stricter requirements, such as having any grace period policy overridden",
-            has_content: false,
-            supports_groups: true,
-            supports_users: false,
-            self_service: false,
-        },
-        super::Tag {
-            id: "extra-member",
-            description: "Additional email address to be added to the group",
-            has_content: true,
-            supports_groups: true,
-            supports_users: false,
-            self_service: false,
-        },
-        super::Tag {
-            id: "extra-subgroup",
-            description: "Additional Google-only subgroup email address",
-            has_content: true,
-            supports_groups: true,
-            supports_users: false,
-            self_service: false,
-        },
-        super::Tag {
-            id: "embed-members",
-            // ^ this is generally unnecessary, but useful in cases where we
-            // cannot use "extra-subgroup": for example, if on Google group A
-            // should include the members of group B, but only those tracked by
-            // Hive and not any additional "extra-member"s of group B. in this
-            // case, we must express that group B's (Hive) members are embedded
-            // in group A's Google Group mirror
-            description: "Hive group from where to take additional Google-only members",
-            has_content: true,
-            supports_groups: true,
-            supports_users: false,
-            self_service: false,
-        },
-        super::Tag {
-            id: "personal-email",
-            description: "Personal email address to be used when no Workspace user is found",
-            has_content: true,
-            supports_groups: false,
-            supports_users: true,
-            self_service: true,
-        },
-    ],
-    tasks: &[super::Task {
-        id: "sync-to-directory",
-        schedule: "0 0 * * * *", // every hour
-        func: |mon, settings, db| Box::pin(sync_to_directory(mon, settings, db)),
-    }],
-}
+        id: "gworkspace",
+        description: "Sync users and groups to Google Workspace",
+        settings: &[
+            super::Setting {
+                id: "mode",
+                secret: false,
+                name: "Mode",
+                description: "Level of structural mirroring to enforce",
+                r#type: super::SettingType::Select(&[
+                    super::SelectSettingOption {
+                        value: "dry-run",
+                        display_name: "Dry run",
+                    },
+                    super::SelectSettingOption {
+                        value: "no-deletion",
+                        display_name: "Sync without removing existing entities",
+                    },
+                    super::SelectSettingOption {
+                        value: "full",
+                        display_name: "Complete push from Hive to Google directory",
+                    },
+                ]),
+            },
+            super::Setting {
+                id: "primary-domain",
+                secret: false,
+                name: "Primary Domain",
+                description: "Where user accounts will be looked up & created",
+                r#type: super::SettingType::ShortText,
+            },
+            super::Setting {
+                id: "service-account-email",
+                secret: false,
+                name: "Service Account Email",
+                description: "Google Cloud service account with 'Service Account Token Creator' \
+                              role",
+                r#type: super::SettingType::ShortText,
+            },
+            super::Setting {
+                id: "service-account-key",
+                secret: true,
+                name: "Service Account Private Key",
+                description: "Service account PEM-formatted private key (with header & footer)",
+                r#type: super::SettingType::LongText,
+            },
+            super::Setting {
+                id: "impersonate-user",
+                secret: false,
+                name: "Impersonate User",
+                description: "Email address of the domain admin to impersonate",
+                r#type: super::SettingType::ShortText,
+            },
+            super::Setting {
+                id: "group-whitelist",
+                secret: false,
+                name: "Group Whitelist",
+                description: "Comma-separated list of group email addresses to never delete",
+                r#type: super::SettingType::LongText,
+            },
+            super::Setting {
+                id: "alternative-domains",
+                secret: false,
+                name: "Alternative Domains",
+                description: "Comma-separated list of secondary domains where to lookup users",
+                r#type: super::SettingType::ShortText,
+            },
+        ],
+        tags: &[
+            super::Tag {
+                id: "sync",
+                description: "Entity that should be sync'd to Google Workspace",
+                has_content: false,
+                supports_groups: true,
+                supports_users: true,
+                self_service: false,
+            },
+            super::Tag {
+                id: "allow-external",
+                description: "Allow non-Workspace users to be added to the group",
+                has_content: false,
+                supports_groups: true,
+                supports_users: false,
+                self_service: false,
+            },
+            super::Tag {
+                id: "grace-period",
+                description: "Keep old members until a month past their membership end date",
+                has_content: false,
+                supports_groups: true,
+                supports_users: false,
+                self_service: false,
+            },
+            super::Tag {
+                id: "sensitive",
+                description: "Groups that must abide stricter requirements, such as having any \
+                              grace period policy overridden",
+                has_content: false,
+                supports_groups: true,
+                supports_users: false,
+                self_service: false,
+            },
+            super::Tag {
+                id: "extra-member",
+                description: "Additional email address to be added to the group",
+                has_content: true,
+                supports_groups: true,
+                supports_users: false,
+                self_service: false,
+            },
+            super::Tag {
+                id: "extra-subgroup",
+                description: "Additional Google-only subgroup email address",
+                has_content: true,
+                supports_groups: true,
+                supports_users: false,
+                self_service: false,
+            },
+            super::Tag {
+                id: "embed-members",
+                // ^ this is generally unnecessary, but useful in cases where we
+                // cannot use "extra-subgroup": for example, if on Google group A
+                // should include the members of group B, but only those tracked by
+                // Hive and not any additional "extra-member"s of group B. in this
+                // case, we must express that group B's (Hive) members are embedded
+                // in group A's Google Group mirror
+                description: "Hive group from where to take additional Google-only members",
+                has_content: true,
+                supports_groups: true,
+                supports_users: false,
+                self_service: false,
+            },
+            super::Tag {
+                id: "personal-email",
+                description: "Personal email address to be used when no Workspace user is found",
+                has_content: true,
+                supports_groups: false,
+                supports_users: true,
+                self_service: true,
+            },
+        ],
+        tasks: &[super::Task {
+            id: "sync-to-directory",
+            schedule: "0 0 * * * *", // every hour
+            func: |mon, settings, db| Box::pin(sync_to_directory(mon, settings, db)),
+        }],
+    }
 });
 
 #[derive(Deserialize, Clone, Copy)]
