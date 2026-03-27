@@ -1,0 +1,9 @@
+{% if let Some(id) = member.id %}
+<tr id="member-{{ id }}">
+    {% include "member-cells.html.j2" %}
+</tr>
+{% endif %}
+
+<div hx-swap-oob="innerHTML:#edit-member">
+    <script>closeModal('edit-member')</script>
+</div>
