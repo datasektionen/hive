@@ -700,7 +700,7 @@ logs.list.control.target.option.permission:
   sv: Rättighet
 logs.list.control.target.option.permission-assignment:
   en: Permission Assignment
-  sv: Rättighets Tilldelning
+  sv: Rättighetstilldelning
 logs.list.control.target.option.system:
   en: System
   sv: System
@@ -709,7 +709,7 @@ logs.list.control.target.option.tag:
   sv: Tagg
 logs.list.control.target.option.tag-assignment:
   en: Tag Assignment
-  sv: Tagg Tilldelning
+  sv: Taggtilldelning
 logs.list.control.target.option.user:
   en: User
   sv: Användare
