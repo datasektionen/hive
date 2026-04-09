@@ -8,7 +8,7 @@
     {% else %}
     <tr>
     {% endif %}
-        {% let time = BrowserDateTimeDto(log.stamp.clone()) %}
+        {% let time = log.stamp.format("%Y-%m-%d %H:%M:%S") %}
         <td>{{ time }}</td>
         <td>{{ log.actor }}</td>
 
