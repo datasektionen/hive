@@ -584,7 +584,7 @@ where
     Ok(())
 }
 
-// Returns true if is until time is allowed based on the appointment-bounds
+// Returns true if `until` time is allowed based on the appointment bounds
 // constraints
 pub async fn check_appointment_bounds<'x, X>(
     until: &NaiveDate,
@@ -638,6 +638,7 @@ where
     let total_months = total_months.clamp(0, u8::MAX as _) as u8;
 
     let min = HivePermission::LongTermAppointment(UpperBoundScope::UpTo(total_months));
+
     perms.satisfies(min).await
 }
 
