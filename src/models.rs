@@ -350,60 +350,64 @@ pub struct AuditLog {
 }
 
 impl AuditLog {
-    pub fn format_details(&self) -> Either<Vec<String>, JsonValue> {
-        match self.action_kind {
+    // Formats the details field see `object_to_list` and `object_to_change`.
+    // If it's not in the expected format default to `to_json_pretty`
+    pub fn format_details(&self) -> Either<Vec<String>, String> {
+        let formated = match self.action_kind {
             ActionKind::Create => self
                 .details
                 .as_object()
                 .and_then(|map| map.get("new"))
-                .and_then(|new| new.as_object())
-                .and_then(|map| {
-                    Some(
-                        map.iter()
-                            .map(|(key, value)| format!("{}: {}", key, value))
-                            .collect::<Vec<String>>(),
-                    )
-                })
-                .and_then(|list| Some(Either::Left(list)))
-                .unwrap_or(Either::Right(self.details.clone())),
+                .and_then(|new| object_to_list(new)),
             ActionKind::Delete => self
                 .details
                 .as_object()
                 .and_then(|map| map.get("old"))
-                .and_then(|new| new.as_object())
-                .and_then(|map| {
-                    Some(
-                        map.iter()
-                            .map(|(key, value)| format!("{}: {}", key, value))
-                            .collect::<Vec<String>>(),
-                    )
-                })
-                .and_then(|list| Some(Either::Left(list)))
-                .unwrap_or(Either::Right(self.details.clone())),
+                .and_then(|old| object_to_list(old)),
 
             ActionKind::Update => self
                 .details
                 .as_object()
                 .and_then(|map| map.get("new").zip(map.get("old")))
-                .and_then(|(new, old)| new.as_object().zip(old.as_object()))
-                .and_then(|(new, old)| {
-                    Some(
-                        new.iter()
-                            .filter_map(|(key, value)| {
-                                old.get(key)
-                                    .and_then(|old| Some((key, (old, value))))
-                                    .and_then(|(key, (old, new))| {
-                                        Some(format!("{}: {} => {}", key, old, new))
-                                    })
-                            })
-                            .collect::<Vec<String>>(),
-                    )
-                })
-                .and_then(|list| Some(Either::Left(list)))
-                .unwrap_or(Either::Right(self.details.clone())),
-            ActionKind::Impersonate => Either::Right(self.details.clone()),
+                .and_then(|(new, old)| object_to_change(new, old)),
+            ActionKind::Impersonate => None,
+        };
+
+        if let Some(formated) = formated {
+            Either::Left(formated)
+        } else {
+            Either::Right(
+                serde_json::to_string_pretty(&self.details)
+                    .unwrap_or(self.details.clone().to_string()),
+            )
         }
     }
+}
+
+// Convert json object to list of string with format `key: value`
+fn object_to_list(value: &serde_json::Value) -> Option<Vec<String>> {
+    value.as_object().and_then(|map| {
+        Some(
+            map.iter()
+                .map(|(key, value)| format!("{}: {}", key, value))
+                .collect::<Vec<String>>(),
+        )
+    })
+}
+
+// Convert json object to list of strings with format `key: old -> new`
+fn object_to_change(new: &serde_json::Value, old: &serde_json::Value) -> Option<Vec<String>> {
+    new.as_object().zip(old.as_object()).and_then(|(new, old)| {
+        Some(
+            new.iter()
+                .filter_map(|(key, value)| {
+                    old.get(key)
+                        .and_then(|old| Some((key, (old, value))))
+                        .and_then(|(key, (old, new))| Some(format!("{}: {} => {}", key, old, new)))
+                })
+                .collect::<Vec<String>>(),
+        )
+    })
 }
 
 #[derive(sqlx::Type, UriDisplayQuery, FromFormField, PartialEq, Clone, Debug)]
