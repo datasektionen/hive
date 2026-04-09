@@ -303,8 +303,11 @@ async fn add_member<'v>(
     // TODO: anti-CSRF
 
     if let Some(until) = form.value.as_ref().map(|dto| dto.until.0) {
-        if !groups::members::check_appointment_bounds(&until, id, domain, perms, db.inner()).await?
-        {
+        let is_within_appointment_bounds =
+            groups::members::check_appointment_bounds(&until, id, domain, perms, db.inner())
+                .await?;
+
+        if !is_within_appointment_bounds {
             // ok, not authorized (but 403 would be confusing, so we forge a form error)
             let error = form::Error::validation("Too far in the future").with_name("until");
             form.context.push_error(error);
@@ -475,15 +478,16 @@ async fn edit_member<'v>(
     .await?;
 
     if let Some(until) = form.value.as_ref().map(|dto| dto.until.0) {
-        if !groups::members::check_appointment_bounds(
+        let is_within_appointment_bounds = groups::members::check_appointment_bounds(
             &until,
             &group_id,
             &group_domain,
             perms,
             db.inner(),
         )
-        .await?
-        {
+        .await?;
+
+        if !is_within_appointment_bounds {
             // ok, not authorized (but 403 would be confusing, so we forge a form error)
             let error = form::Error::validation("Too far in the future").with_name("until");
             form.context.push_error(error);
