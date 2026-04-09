@@ -39,34 +39,18 @@ struct ListLogsPartial<'r> {
     next_page: u32,
 }
 
-#[rocket::get("/logs?<page>&<actor>&<id>&<action>&<target>&<from>&<until>&<order>")]
+#[rocket::get("/logs?<page>&<filter..>")]
 async fn get_audit_logs<'r>(
     db: &State<PgPool>,
     ctx: PageContext,
     perms: &PermsEvaluator,
     partial: Option<HxRequest<'_>>,
+    filter: LogsFilterDto<'_>,
     page: Option<u32>,
-    actor: Option<&'r str>,
-    id: Option<&'r str>,
-    action: Option<ActionKind>,
-    target: Option<TargetKind>,
-    from: Option<BrowserDateTimeDto>,
-    until: Option<BrowserDateTimeDto>,
-    order: bool,
 ) -> AppResult<RenderedTemplate> {
     perms.require(HivePermission::ViewLogs).await?;
 
     let page = page.unwrap_or(1);
-
-    let filter = LogsFilterDto {
-        actor,
-        action: action.clone(),
-        target: target.clone(),
-        id,
-        until: until.clone(),
-        from: from.clone(),
-        order,
-    };
 
     let actors = audit_logs::list_actors(db.inner()).await?;
     let ids = audit_logs::list_target_ids(db.inner()).await?;

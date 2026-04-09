@@ -1,3 +1,4 @@
+use rocket::FromForm;
 use sqlx::QueryBuilder;
 
 use crate::{
@@ -6,7 +7,7 @@ use crate::{
     sanitizers::SearchTerm,
 };
 
-#[derive(Debug)]
+#[derive(FromForm, Debug)]
 pub struct LogsFilterDto<'r> {
     pub actor: Option<&'r str>,
     pub action: Option<ActionKind>,
