@@ -69,7 +69,7 @@ impl form::validate::Len<usize> for TrimmedStr<'_> {
 
 impl PartialEq<String> for TrimmedStr<'_> {
     fn eq(&self, other: &String) -> bool {
-         (self.0) == *other
+        (self.0) == *other
     }
 }
 

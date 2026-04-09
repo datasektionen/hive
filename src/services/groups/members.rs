@@ -584,7 +584,8 @@ where
     Ok(())
 }
 
-// Returns true if is until time is allowed based on the appointment-bounds constraints
+// Returns true if is until time is allowed based on the appointment-bounds
+// constraints
 pub async fn check_appointment_bounds<'x, X>(
     until: &NaiveDate,
     id: &str,

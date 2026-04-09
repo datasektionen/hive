@@ -169,7 +169,7 @@ impl From<AppError> for InnerAppErrorDto {
             },
             AppError::RedundantMembership(username) => Self::RedundantMembership { username },
 
-            AppError::NoSuchMembership(id) => Self::NoSuchMembership { id }
+            AppError::NoSuchMembership(id) => Self::NoSuchMembership { id },
         }
     }
 }
