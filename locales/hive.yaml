@@ -458,6 +458,9 @@ groups.members.add.subgroup.field.manager.tip:
 groups.members.add.subgroup.success:
   en: Successfully added "%{x}" as a subgroup!
   sv: Lade till "%{x}" som en undergrupp!
+groups.members.edit.title:
+  en: Edit membership
+  sv: Redigera medlemskap
 groups.members.list.action.delete.direct-member.confirm:
   en: >
     Are you sure you want to revoke "%{x}"'s membership in this group?
@@ -475,6 +478,9 @@ groups.members.list.action.delete.subgroup.confirm:
 groups.members.list.action.delete.tooltip:
   en: Revoke membership
   sv: Återkalla medlemskapet
+groups.members.list.action.edit.tooltip:
+  en: Edit membership
+  sv: Redigera medlemskap
 groups.members.list.col.details:
   en: Details
   sv: Detaljer
