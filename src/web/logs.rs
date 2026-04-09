@@ -1,3 +1,7 @@
+use rinja::Template;
+use rocket::{response::content::RawHtml, Either, State};
+use sqlx::PgPool;
+
 use crate::{
     dto::{datetime::BrowserDateTimeDto, logs::LogsFilterDto},
     errors::AppResult,
@@ -8,10 +12,6 @@ use crate::{
     services::audit_logs,
     web::RenderedTemplate,
 };
-use rinja::Template;
-use rocket::Either;
-use rocket::{response::content::RawHtml, State};
-use sqlx::PgPool;
 
 const PAGE_SIZE: u32 = 50;
 

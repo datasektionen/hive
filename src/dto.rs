@@ -11,10 +11,10 @@ pub mod api_tokens;
 pub mod datetime;
 pub mod errors;
 pub mod groups;
+pub mod logs;
 pub mod permissions;
 pub mod systems;
 pub mod tags;
-pub mod logs;
 
 #[derive(sqlx::Type, Serialize, Clone, Copy)]
 #[sqlx(transparent)]

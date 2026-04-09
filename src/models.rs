@@ -2,8 +2,7 @@ use std::{fmt, hash};
 
 use chrono::{DateTime, Local, NaiveDate};
 use rocket::{Either, FromFormField, UriDisplayQuery};
-use sqlx::types::JsonValue;
-use sqlx::FromRow;
+use sqlx::{types::JsonValue, FromRow};
 use uuid::Uuid;
 
 use crate::{

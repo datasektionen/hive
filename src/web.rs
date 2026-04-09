@@ -17,11 +17,11 @@ mod api_tokens;
 mod auth;
 mod catchers;
 mod groups;
+mod logs;
 mod permissions;
 mod systems;
 mod tags;
 mod user;
-mod logs;
 
 type RenderedTemplate = RawHtml<String>;
 
