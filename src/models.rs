@@ -1,7 +1,8 @@
 use std::{fmt, hash};
 
 use chrono::{DateTime, Local, NaiveDate};
-use sqlx::FromRow;
+use rocket::{Either, FromFormField, UriDisplayQuery};
+use sqlx::{types::JsonValue, FromRow};
 use uuid::Uuid;
 
 use crate::{
@@ -339,7 +340,78 @@ impl AffiliatedTagAssignment {
     }
 }
 
-#[derive(sqlx::Type)]
+#[derive(FromRow)]
+pub struct AuditLog {
+    pub action_kind: ActionKind,
+    pub target_kind: TargetKind,
+    pub target_id: String,
+    pub actor: String,
+    pub details: serde_json::Value,
+    pub stamp: DateTime<Local>,
+}
+
+impl AuditLog {
+    // Formats the details field see `object_to_list` and `object_to_change`.
+    // If it's not in the expected format default to `to_json_pretty`
+    pub fn format_details(&self) -> Either<Vec<String>, String> {
+        let formated = match self.action_kind {
+            ActionKind::Create => self
+                .details
+                .as_object()
+                .and_then(|map| map.get("new"))
+                .and_then(|new| object_to_list(new)),
+            ActionKind::Delete => self
+                .details
+                .as_object()
+                .and_then(|map| map.get("old"))
+                .and_then(|old| object_to_list(old)),
+
+            ActionKind::Update => self
+                .details
+                .as_object()
+                .and_then(|map| map.get("new").zip(map.get("old")))
+                .and_then(|(new, old)| object_to_change(new, old)),
+            ActionKind::Impersonate => None,
+        };
+
+        if let Some(formated) = formated {
+            Either::Left(formated)
+        } else {
+            Either::Right(
+                serde_json::to_string_pretty(&self.details)
+                    .unwrap_or(self.details.clone().to_string()),
+            )
+        }
+    }
+}
+
+// Convert json object to list of string with format `key: value`
+fn object_to_list(value: &serde_json::Value) -> Option<Vec<String>> {
+    value.as_object().and_then(|map| {
+        Some(
+            map.iter()
+                .map(|(key, value)| format!("{}: {}", key, value))
+                .collect::<Vec<String>>(),
+        )
+    })
+}
+
+// Convert json object to list of strings with format `key: old -> new`
+fn object_to_change(new: &serde_json::Value, old: &serde_json::Value) -> Option<Vec<String>> {
+    new.as_object().zip(old.as_object()).and_then(|(new, old)| {
+        Some(
+            new.iter()
+                .filter_map(|(key, value)| {
+                    old.get(key)
+                        .and_then(|old| Some((key, (old, value))))
+                        .and_then(|(key, (old, new))| Some(format!("{}: {} => {}", key, old, new)))
+                })
+                .collect::<Vec<String>>(),
+        )
+    })
+}
+
+#[derive(sqlx::Type, UriDisplayQuery, FromFormField, PartialEq, Clone, Debug)]
 #[sqlx(type_name = "action_kind", rename_all = "snake_case")]
 pub enum ActionKind {
     Create,
@@ -348,7 +420,18 @@ pub enum ActionKind {
     Impersonate,
 }
 
-#[derive(sqlx::Type)]
+impl fmt::Display for ActionKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ActionKind::Create => write!(f, "Create"),
+            ActionKind::Update => write!(f, "Update"),
+            ActionKind::Delete => write!(f, "Delete"),
+            ActionKind::Impersonate => write!(f, "Impersonate"),
+        }
+    }
+}
+
+#[derive(sqlx::Type, UriDisplayQuery, FromFormField, PartialEq, Clone, Debug)]
 #[sqlx(type_name = "target_kind", rename_all = "snake_case")]
 pub enum TargetKind {
     Group,
@@ -360,6 +443,22 @@ pub enum TargetKind {
     Permission,
     PermissionAssignment,
     User,
+}
+
+impl fmt::Display for TargetKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TargetKind::Group => write!(f, "Group"),
+            TargetKind::Membership => write!(f, "Membership"),
+            TargetKind::System => write!(f, "System"),
+            TargetKind::ApiToken => write!(f, "ApiToken"),
+            TargetKind::Tag => write!(f, "Tag"),
+            TargetKind::TagAssignment => write!(f, "TagAssignment"),
+            TargetKind::Permission => write!(f, "Permission"),
+            TargetKind::PermissionAssignment => write!(f, "PermissionAssignment"),
+            TargetKind::User => write!(f, "User"),
+        }
+    }
 }
 
 #[derive(FromRow)]

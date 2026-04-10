@@ -13,7 +13,7 @@ use serde::Serialize;
 const BROWSER_DATE_TIME_FORMAT: &str = "%Y-%m-%dT%H:%M";
 const BROWSER_DATE_FORMAT: &str = "%Y-%m-%d";
 
-#[derive(sqlx::Type, Serialize)]
+#[derive(sqlx::Type, Serialize, Clone, Debug)]
 #[sqlx(transparent)]
 #[serde(transparent)]
 pub struct BrowserDateTimeDto(pub DateTime<Local>);

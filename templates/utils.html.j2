@@ -47,6 +47,15 @@ selected
 {%- endif -%}
 {%- endmacro option %}
 
+{% macro optional_option(value, selected_value) -%}
+value="{{ value }}"
+{% if let Some(selected_value) = selected_value %}
+{%- if value == *selected_value -%}
+selected
+{%- endif -%}
+{%- endif -%}
+{%- endmacro optional_option %}
+
 
 {% macro stamp_or_never(option) -%}
 {%- if let Some(val) = option -%}
@@ -64,3 +73,10 @@ selected
 <span class="material-icons">close</span>
 {%- endif -%}
 {%- endmacro yn_indicator %}
+
+
+{% macro stringify_option(optional_term) -%}
+{%- if let Some(some_term) = optional_term -%}
+    {{ format!("{}", some_term) }}
+{%- endif -%}
+{%- endmacro stringify_option %}

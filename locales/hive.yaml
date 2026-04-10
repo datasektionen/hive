@@ -650,6 +650,78 @@ indicator.datetime.never:
 listing.n-results:
   en: Showing a total of %{x} results.
   sv: Visar totalt %{x} resultat.
+logs.list.control.action.label:
+  en: Action
+  sv: Handling
+logs.list.control.action.option.any:
+  en: All Actions
+  sv: Alla Handlingar
+logs.list.control.action.option.create:
+  en: Create
+  sv: Skapa
+logs.list.control.action.option.delete:
+  en: Delete
+  sv: Radera
+logs.list.control.action.option.impersonate:
+  en: Impersonate
+  sv: Imitera
+logs.list.control.action.option.update:
+  en: Update
+  sv: Updatera
+logs.list.control.actor.label:
+  en: Actor
+  sv: Aktör
+logs.list.control.actor.option.any:
+  en: All Actors
+  sv: Alla Aktör
+logs.list.control.from.label:
+  en: From
+  sv: Från
+logs.list.control.id.label:
+  en: ID
+  sv: ID
+logs.list.control.id.option.any:
+  en: All IDs
+  sv: Alla ID:n
+logs.list.control.order.label:
+  en: Chronological
+  sv: Kronologisk
+logs.list.control.target.label:
+  en: Target
+  sv: Mål
+logs.list.control.target.option.any:
+  en: All Targets
+  sv: Alla Mål
+logs.list.control.target.option.api-token:
+  en: API Token
+  sv: API-nyckel
+logs.list.control.target.option.group:
+  en: Group
+  sv: Grupp
+logs.list.control.target.option.membership:
+  en: Membership
+  sv: Medlemskap
+logs.list.control.target.option.permission:
+  en: Permission
+  sv: Rättighet
+logs.list.control.target.option.permission-assignment:
+  en: Permission Assignment
+  sv: Rättighetstilldelning
+logs.list.control.target.option.system:
+  en: System
+  sv: System
+logs.list.control.target.option.tag:
+  en: Tag
+  sv: Tagg
+logs.list.control.target.option.tag-assignment:
+  en: Tag Assignment
+  sv: Taggtilldelning
+logs.list.control.target.option.user:
+  en: User
+  sv: Användare
+logs.list.control.until.label:
+  en: Until
+  sv: Fram till
 nav.lang.switch:
   en: Switch to Swedish
   sv: Byt till engelska

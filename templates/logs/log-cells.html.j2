@@ -1,0 +1,88 @@
+{%- import "utils.html.j2" as utils -%}
+
+{% for log in logs %}
+    {% if loop.last %}
+    <tr hx-get="/logs?page={{ next_page }}&actor={{ filter.actor.unwrap_or("") }}&action={%- call utils::stringify_option(filter.action) -%}&target={%- call utils::stringify_option(filter.target) -%}&id={%- call utils::stringify_option(filter.id) -%}&from={%- call utils::stringify_option(filter.from) -%}&until={%- call utils::stringify_option(filter.until) -%}&order={{ filter.order }}"
+        hx-trigger="revealed"
+        hx-swap="afterend">
+    {% else %}
+    <tr>
+    {% endif %}
+        {% let time = log.stamp.format("%Y-%m-%d %H:%M:%S") %}
+        <td>{{ time }}</td>
+        <td>{{ log.actor }}</td>
+
+        {% match log.action_kind %}
+            {% when ActionKind::Create %}
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.action.option.create") }}">
+            <span class="material-icons">add</span>
+        </td>
+            {% when ActionKind::Delete %}
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.action.option.delete") }}">
+            <span class="material-icons">delete</span>
+        </td>
+            {% when ActionKind::Update %}
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.action.option.update") }}">
+            <span class="material-icons">update</span>
+        </td>
+            {% when ActionKind::Impersonate %}
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.action.option.impersonate") }}">
+            <span class="material-icons">person</span>
+        </td>
+        {% endmatch %}
+
+        {% match log.target_kind %}
+            {% when TargetKind::Group %}
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.target.option.group") }}">
+            <span class="material-icons">group</span>
+        </td>
+            {% when TargetKind::Membership %}
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.target.option.membership") }}">
+            <span class="material-icons">person</span>
+        </td>
+            {% when TargetKind::System %}
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.target.option.system") }}">
+            <span class="material-icons">build</span>
+        </td>
+            {% when TargetKind::ApiToken %}
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.target.option.api-token") }}">
+            <span class="material-icons">badge</span>
+        </td>
+            {% when TargetKind::Tag %}
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.target.option.tag") }}">
+            <span class="material-icons">label</span>
+        </td>
+            {% when TargetKind::TagAssignment %}
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.target.option.tag-assignment") }}">
+            <span class="material-icons">new_label</span>
+        </td>
+            {% when TargetKind::Permission %}
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.target.option.permission") }}">
+            <span class="material-icons">shield</span>
+        </td>
+            {% when TargetKind::PermissionAssignment %}
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.target.option.permission-assignment") }}">
+            <span class="material-icons">add_moderator</span>
+        </td>
+            {% when TargetKind::User %}
+        <td class="center" data-tooltip="{{ ctx.t("logs.list.control.target.option.user") }}">
+            <span class="material-icons">person_outline</span>
+        </td>
+        {% endmatch %}
+        <td>{{ log.target_id }}</td>
+        {% let details = log.format_details() %}
+        <td>
+            <details>
+                <summary>Details</summary>
+        {% match details %}
+            {% when Either::Left(list) %}
+                {% for line in list%}
+            {{ line }}
+            <br>
+                {% endfor %}
+            {% when Either::Right(obj) %} {{ obj }}
+        {% endmatch %}
+            </details>
+        </td>
+    </tr>
+{% endfor %}

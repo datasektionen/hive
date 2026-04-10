@@ -18,6 +18,7 @@ mod api_tokens;
 mod auth;
 mod catchers;
 mod groups;
+mod logs;
 mod permissions;
 mod systems;
 mod tags;
@@ -60,6 +61,7 @@ pub fn tree() -> RouteTree {
         user::routes(),
         systems::routes(),
         tags::routes(),
+        logs::routes(),
         rocket::routes![favicon, home, api_versions].into(),
     ])
 }
