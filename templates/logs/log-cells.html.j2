@@ -2,7 +2,8 @@
 
 {% for log in logs %}
     {% if loop.last %}
-    <tr hx-get="/logs?page={{ next_page }}&actor={{ filter.actor.unwrap_or("") }}&action={%- call utils::stringify_option(filter.action) -%}&target={%- call utils::stringify_option(filter.target) -%}&id={%- call utils::stringify_option(filter.id) -%}&from={%- call utils::stringify_option(filter.from) -%}&until={%- call utils::stringify_option(filter.until) -%}&order={{ filter.order }}"
+    {% let query = filter.to_url_query(true) %}
+    <tr hx-get="/logs?page={{ next_page }}{{ query }}"
         hx-trigger="revealed"
         hx-swap="afterend">
     {% else %}
