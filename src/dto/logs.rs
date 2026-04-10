@@ -70,12 +70,11 @@ impl LogsFilterDto<'_> {
         }
 
         if let Some(actor) = self.actor {
-            let term = SearchTerm::from(actor).anywhere();
             if added {
                 query.push(" AND");
             }
-            query.push(" actor LIKE ");
-            query.push_bind(term);
+            query.push(" actor = ");
+            query.push_bind(actor.to_owned());
             added = true;
         }
 
