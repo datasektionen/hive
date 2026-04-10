@@ -2,17 +2,17 @@ use rocket::FromForm;
 use sqlx::QueryBuilder;
 
 use crate::{
-    dto::datetime::BrowserDateTimeDto,
+    dto::{OptionalStr, datetime::BrowserDateTimeDto},
     models::{ActionKind, TargetKind},
     sanitizers::SearchTerm,
 };
 
 #[derive(FromForm, Debug)]
 pub struct LogsFilterDto<'r> {
-    pub actor: Option<&'r str>,
+    pub actor: OptionalStr<'r>,
     pub action: Option<ActionKind>,
     pub target: Option<TargetKind>,
-    pub id: Option<&'r str>,
+    pub id: OptionalStr<'r>,
     pub from: Option<BrowserDateTimeDto>,
     pub until: Option<BrowserDateTimeDto>,
     pub order: bool,
@@ -26,20 +26,6 @@ impl LogsFilterDto<'_> {
             || self.id.is_some()
             || self.from.is_some()
             || self.until.is_some()
-    }
-
-    pub fn remove_empty(&mut self) {
-        if let Some(actor) = self.actor
-            && actor == ""
-        {
-            self.actor = None;
-        }
-
-        if let Some(id) = self.id
-            && id == ""
-        {
-            self.id = None;
-        }
     }
 
     pub fn to_url_query(&self, is_following: bool) -> String {
@@ -86,7 +72,7 @@ impl LogsFilterDto<'_> {
             added = true;
         }
 
-        if let Some(actor) = self.actor {
+        if let Some(actor) = self.actor.0 {
             if added {
                 query += "&";
             }
@@ -96,7 +82,7 @@ impl LogsFilterDto<'_> {
             added = true;
         }
 
-        if let Some(id) = self.id {
+        if let Some(id) = self.id.0 {
             if added {
                 query += "&";
             }
@@ -158,7 +144,7 @@ impl LogsFilterDto<'_> {
             added = true;
         }
 
-        if let Some(actor) = self.actor {
+        if let Some(actor) = self.actor.0 {
             if added {
                 query.push(" AND");
             }
@@ -167,7 +153,7 @@ impl LogsFilterDto<'_> {
             added = true;
         }
 
-        if let Some(id) = self.id {
+        if let Some(id) = self.id.0 {
             let term = SearchTerm::from(id).anywhere();
             if added {
                 query.push(" AND");
