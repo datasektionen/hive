@@ -28,6 +28,90 @@ impl LogsFilterDto<'_> {
             || self.until.is_some()
     }
 
+    pub fn remove_empty(&mut self) {
+        if let Some(actor) = self.actor
+            && actor == ""
+        {
+            self.actor = None;
+        }
+
+        if let Some(id) = self.id
+            && id == ""
+        {
+            self.id = None;
+        }
+    }
+
+    pub fn to_url_query(&self, is_following: bool) -> String {
+        let mut query = String::new();
+        let mut added = false;
+
+        if is_following && (self.any() || self.order) {
+            query += "&";
+        }
+
+        if let Some(action) = &self.action {
+            query += "action=";
+            query += &action.to_string();
+            added = true;
+        }
+
+        if let Some(from) = &self.from {
+            if added {
+                query += "&";
+            }
+
+            query += "from=";
+            query += &from.to_string();
+            added = true;
+        }
+
+        if let Some(until) = &self.until {
+            if added {
+                query += "&";
+            }
+
+            query += "until=";
+            query += &until.to_string();
+            added = true;
+        }
+
+        if let Some(target) = &self.target {
+            if added {
+                query += "&";
+            }
+
+            query += "target=";
+            query += &target.to_string();
+            added = true;
+        }
+
+        if let Some(actor) = self.actor {
+            if added {
+                query += "&";
+            }
+
+            query += "actor=";
+            query += &actor.to_string();
+            added = true;
+        }
+
+        if let Some(id) = self.id {
+            if added {
+                query += "&";
+            }
+
+            query += "id=";
+            query += &id.to_string();
+        }
+
+        if self.order {
+            query += "order=true";
+        }
+
+        query
+    }
+
     pub fn apply<'a>(&self, query: &mut QueryBuilder<'a, sqlx::Postgres>) {
         let mut added = false;
         if self.any() {

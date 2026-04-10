@@ -45,10 +45,12 @@ async fn get_audit_logs<'r>(
     ctx: PageContext,
     perms: &PermsEvaluator,
     partial: Option<HxRequest<'_>>,
-    filter: LogsFilterDto<'_>,
+    mut filter: LogsFilterDto<'_>,
     page: Option<u32>,
 ) -> AppResult<RenderedTemplate> {
     perms.require(HivePermission::ViewLogs).await?;
+
+    filter.remove_empty();
 
     let page = page.unwrap_or(1);
 
