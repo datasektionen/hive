@@ -103,9 +103,14 @@ impl LogsFilterDto<'_> {
 
             query += "id=";
             query += &id.to_string();
+            added = true;
         }
 
         if self.order {
+            if added {
+                query += "&";
+            }
+
             query += "order=true";
         }
 
