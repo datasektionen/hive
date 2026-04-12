@@ -199,7 +199,7 @@ async fn setup_integration(manifest: &Manifest, db: &PgPool) {
     }
 }
 
-async fn dispatch_task_run(integration_id: &str, task: &Task, db: &PgPool) -> AppResult<()> {
+pub async fn dispatch_task_run(integration_id: &str, task: &Task, db: &PgPool) -> AppResult<()> {
     let run: IntegrationTaskRun = sqlx::query_as(
         "INSERT INTO integration_task_runs
             (integration_id, task_id)

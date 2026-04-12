@@ -1,4 +1,8 @@
-use std::{fmt, hash};
+use std::{
+    cmp::Ordering,
+    fmt::{self, Display},
+    hash,
+};
 
 use chrono::{DateTime, Local, NaiveDate};
 use rocket::{Either, FromFormField, UriDisplayQuery};
@@ -461,7 +465,7 @@ impl fmt::Display for TargetKind {
     }
 }
 
-#[derive(FromRow)]
+#[derive(FromRow, Debug, Clone)]
 pub struct IntegrationTaskRun {
     pub run_id: Uuid,
     pub task_id: String,
@@ -477,7 +481,7 @@ pub struct IntegrationTaskLogEntry {
     pub message: String,
 }
 
-#[derive(sqlx::Type, Clone, Copy)]
+#[derive(sqlx::Type, Clone, Copy, PartialEq, Eq, FromFormField, UriDisplayQuery)]
 #[sqlx(
     type_name = "integration_task_log_entry_kind",
     rename_all = "snake_case"
@@ -486,4 +490,28 @@ pub enum IntegrationTaskLogEntryKind {
     Error,
     Warning,
     Info,
+}
+
+impl PartialOrd for IntegrationTaskLogEntryKind {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match (self, other) {
+            (Self::Error, Self::Error) => Some(Ordering::Equal),
+            (Self::Error, _) => Some(Ordering::Greater),
+            (Self::Warning, Self::Error) => Some(Ordering::Less),
+            (Self::Warning, Self::Warning) => Some(Ordering::Equal),
+            (Self::Warning, Self::Info) => Some(Ordering::Greater),
+            (Self::Info, Self::Info) => Some(Ordering::Equal),
+            (Self::Info, _) => Some(Ordering::Less),
+        }
+    }
+}
+
+impl Display for IntegrationTaskLogEntryKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            IntegrationTaskLogEntryKind::Error => write!(f, "Error"),
+            IntegrationTaskLogEntryKind::Warning => write!(f, "Warning"),
+            IntegrationTaskLogEntryKind::Info => write!(f, "Info"),
+        }
+    }
 }

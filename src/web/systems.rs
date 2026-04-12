@@ -7,17 +7,16 @@ use rocket::{
     response::{Redirect, content::RawHtml},
     uri,
 };
+use serde_json::Value;
 use sqlx::PgPool;
+use std::collections::HashMap;
 
 use super::{Either, GracefulRedirect, RenderedTemplate, filters};
 use crate::{
-    dto::systems::{CreateSystemDto, EditSystemDto},
-    errors::{AppError, AppResult},
-    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
-    models::System,
-    perms::{HivePermission, SystemsScope},
-    routing::RouteTree,
-    services::systems,
+    dto::{
+        datetime::BrowserDateTimeDto,
+        systems::{CreateSystemDto, EditSystemDto},
+    }, errors::{AppError, AppResult}, guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User}, integrations::{self, Setting}, models::{IntegrationTaskLogEntry, IntegrationTaskLogEntryKind, IntegrationTaskRun, System}, perms::{HivePermission, SystemsScope}, routing::RouteTree, services::{self, systems}
 };
 
 pub fn routes() -> RouteTree {
@@ -26,7 +25,10 @@ pub fn routes() -> RouteTree {
         create_system,
         system_details,
         delete_system,
-        edit_system
+        edit_system,
+        run_integration_task,
+        integrations_settings,
+        integrations_logs
     ]
     .into()
 }
@@ -74,6 +76,7 @@ struct SystemDetailsView<'f, 'v> {
     tag_create_form: &'f form::Context<'v>,
     edit_form: &'f form::Context<'v>,
     edit_modal_open: bool,
+    run: Option<IntegrationTaskRun>,
 }
 
 #[derive(Template)]
@@ -91,6 +94,25 @@ struct SystemEditedView<'f, 'v> {
     system: System,
     edit_form: &'f form::Context<'v>,
     edit_modal_open: bool,
+}
+
+#[derive(Template)]
+#[template(path = "integrations/settings.html.j2")]
+struct PartialSettingsView {
+    ctx: PageContext,
+    settings: Vec<(String, serde_json::Value)>,
+}
+
+#[derive(Template)]
+#[template(path = "integrations/logs.html.j2")]
+struct PartialLogsView<'a> {
+    ctx: PageContext,
+    integration_id: &'a str,
+    kind_filter: IntegrationTaskLogEntryKind,
+    run_filter: BrowserDateTimeDto,
+    run: IntegrationTaskRun,
+    runs: Vec<IntegrationTaskRun>,
+    logs: Vec<IntegrationTaskLogEntry>,
 }
 
 #[rocket::get("/systems?<q>")]
@@ -202,6 +224,11 @@ pub async fn system_details(
 
     let is_integration = crate::integrations::integration_exists(id);
 
+    let run = services::integrations::list_runs(id, db.inner())
+        .await?
+        .last()
+        .map(|run| run.clone());
+
     let can_manage_permissions = perms
         .satisfies(HivePermission::ManagePerms(SystemsScope::Id(id.to_owned())))
         .await?;
@@ -223,6 +250,7 @@ pub async fn system_details(
         tag_create_form: &empty_form,
         edit_form: &empty_form,
         edit_modal_open: false,
+        run,
     };
 
     Ok(RawHtml(template.render()?))
@@ -314,6 +342,11 @@ pub async fn edit_system<'v>(
         } else {
             let is_integration = crate::integrations::integration_exists(id);
 
+            let run = services::integrations::list_runs(id, db.inner())
+                .await?
+                .last()
+                .map(|run| run.clone());
+
             let can_manage_permissions = perms
                 .satisfies(HivePermission::ManagePerms(SystemsScope::Id(id.to_owned())))
                 .await?;
@@ -335,9 +368,128 @@ pub async fn edit_system<'v>(
                 tag_create_form: &empty_form,
                 edit_form: &form.context,
                 edit_modal_open: true,
+                run,
             };
 
             Ok(EditSystemResponse::Invalid(RawHtml(template.render()?)))
         }
     }
+}
+
+#[rocket::get("/integrations/<id>/run")]
+async fn run_integration_task(
+    id: &str,
+    db: &State<PgPool>,
+    perms: &PermsEvaluator,
+) -> AppResult<String> {
+    let fully_authorized = perms.satisfies(HivePermission::ManageSystems).await?;
+
+    // check against everything first, without worrying about search query
+    if !fully_authorized {
+        let scope = SystemsScope::Id(id.to_owned());
+        perms.require(HivePermission::ManageSystem(scope)).await?;
+    }
+
+    let manifest = (*integrations::MANIFESTS)
+        .iter()
+        .find(|manifest| manifest.id == id)
+        .ok_or(AppError::NoSuchSystem(id.to_owned()))?;
+
+    for task in manifest.tasks {
+        integrations::dispatch_task_run(id, task, db).await?;
+    }
+
+    Ok("checkbox".to_string())
+}
+
+#[rocket::get("/integrations/<id>/settings")]
+async fn integrations_settings(
+    id: &str,
+    db: &State<PgPool>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<Either<RenderedTemplate, Redirect>> {
+    if partial.is_none() {
+        // we only know how to render a table, not a full page;
+        // redirect to group details
+
+        let target = uri!(system_details(id = id));
+        return Ok(Either::Right(Redirect::to(target)));
+    }
+
+    let fully_authorized = perms.satisfies(HivePermission::ManageSystems).await?;
+
+    // check against everything first, without worrying about search query
+    if !fully_authorized {
+        let scope = SystemsScope::Id(id.to_owned());
+        perms.require(HivePermission::ManageSystem(scope)).await?;
+    }
+
+    let mut settings: Vec<(String, serde_json::Value)> =
+        services::integrations::list_settings(id, db.inner())
+            .await?
+            .into_iter()
+            .collect();
+
+    settings.sort_unstable_by(|a, b| a.0.cmp(&b.0));
+
+    let template = PartialSettingsView { ctx, settings };
+
+    Ok(Either::Left(RawHtml(template.render()?)))
+}
+
+#[rocket::get("/integrations/<id>/logs?<run_filter>&<kind_filter>")]
+async fn integrations_logs(
+    id: &str,
+    run_filter: BrowserDateTimeDto,
+    kind_filter: IntegrationTaskLogEntryKind,
+    db: &State<PgPool>,
+    ctx: PageContext,
+    perms: &PermsEvaluator,
+    partial: Option<HxRequest<'_>>,
+) -> AppResult<Either<RenderedTemplate, Redirect>> {
+    if partial.is_none() {
+        // we only know how to render a table, not a full page;
+        // redirect to group details
+
+        let target = uri!(system_details(id = id));
+        return Ok(Either::Right(Redirect::to(target)));
+    }
+
+    let fully_authorized = perms.satisfies(HivePermission::ManageSystems).await?;
+
+    // check against everything first, without worrying about search query
+    if !fully_authorized {
+        let scope = SystemsScope::Id(id.to_owned());
+        perms.require(HivePermission::ManageSystem(scope)).await?;
+    }
+
+    let runs = services::integrations::list_runs(id, db.inner()).await?;
+
+    let run = runs
+        .iter()
+        .find(|run| BrowserDateTimeDto(run.start_stamp) == run_filter)
+        .or(runs.last())
+        .ok_or(AppError::ErrorDecodeFailure)?
+        .clone();
+
+    let logs = services::integrations::list_logs(run.run_id, db.inner()).await?;
+
+    let logs = logs
+        .into_iter()
+        .filter(|log| log.kind >= kind_filter)
+        .collect();
+
+    let template = PartialLogsView {
+        ctx,
+        integration_id: id,
+        kind_filter,
+        run_filter,
+        run,
+        runs,
+        logs,
+    };
+
+    Ok(Either::Left(RawHtml(template.render()?)))
 }

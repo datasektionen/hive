@@ -42,6 +42,12 @@ impl<'f> form::FromFormField<'f> for BrowserDateTimeDto {
     }
 }
 
+impl PartialEq for BrowserDateTimeDto {
+    fn eq(&self, other: &Self) -> bool {
+        self.to_string() == other.to_string()
+    }
+}
+
 #[derive(sqlx::Type, Serialize, PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Copy)]
 #[sqlx(transparent)]
 #[serde(transparent)]

@@ -1,0 +1,63 @@
+{%- import "utils.html.j2" as utils -%}
+
+<div id="logs-container">
+    <form method="get" action="/integrations/{{ integration_id }}/logs" hx-boost="true"
+        hx-target="#logs-container" hx-swap="outerHTML" hx-push-url="false" hx-trigger="submit" />
+        <div class="grid">
+            <label>
+                {{ ctx.t("systems.integrations.logs.control.kind.label") }}
+                <select name="kind_filter">
+                    <option {% call utils::option(IntegrationTaskLogEntryKind::Info, kind_filter) %}>
+                        {{ ctx.t("systems.integrations.logs.control.kind.option.info") }}
+                    </option>
+                    <option {% call utils::option(IntegrationTaskLogEntryKind::Warning, kind_filter) %}>
+                        {{ ctx.t("systems.integrations.logs.control.kind.option.warning") }}
+                    </option>
+                    <option {% call utils::option(IntegrationTaskLogEntryKind::Error, kind_filter) %}>
+                        {{ ctx.t("systems.integrations.logs.control.kind.option.error") }}
+                    </option>
+                </select>
+            </label>
+
+            <label>
+                {{ ctx.t("systems.integrations.logs.control.run.label") }}
+                <input list="runs" name="run_filter" required value="{{ run_filter }}" />
+            </label>
+
+            <datalist id="runs">
+                {% for run in runs %}
+                <option value="{{ BrowserDateTimeDto(*run.start_stamp) }}">{{ run.start_stamp.format("%F %R") }}</option>
+                {% endfor %}
+            </datalist>
+        </div>
+    </form>
+    <table id="logs-table" class="striped">
+        <thead>
+            <tr>
+                <th scope="col">{{ ctx.t("systems.integrations.logs.col.timestamp") }}</th>
+                <th scope="col">{{ ctx.t("systems.integrations.logs.col.kind") }}</th>
+                <th scope="col">{{ ctx.t("systems.integrations.logs.col.message") }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="if-table-empty">
+                <td colspan="3">
+                    {% if run.end_stamp.is_none() %}
+                    <span class="material-icons">block</span>
+                    {{ ctx.t("systems.integrations.logs.not-finished") }}
+                    {% else%}
+                    <span class="material-icons">block</span>
+                    {{ ctx.t("systems.integrations.logs.empty") }}
+                    {% endif %}
+                </td>
+            </tr>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.stamp.format("%F %X") }}</td>
+                <td>{{ log.kind }}</td>
+                <td>{{ log.message }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

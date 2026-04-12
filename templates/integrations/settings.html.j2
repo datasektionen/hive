@@ -1,0 +1,22 @@
+<table id="settings-table" class="striped">
+    <thead>
+        <tr>
+            <th scope="col">{{ ctx.t("systems.integrations.settings.col.key") }}</th>
+            <th scope="col">{{ ctx.t("systems.integrations.settings.col.value") }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="if-table-empty">
+            <td colspan="2">
+                <span class="material-icons">block</span>
+                {{ ctx.t("systems.integrations.settings.empty") }}
+            </td>
+        </tr>
+        {% for (key, value) in settings %}
+        <tr>
+            <td>{{ key }}</td>
+            <td>{{ value }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
