@@ -72,7 +72,7 @@ impl LogsFilterDto<'_> {
             added = true;
         }
 
-        if let Some(actor) = self.actor.0 {
+        if let Some(actor) = *self.actor {
             if added {
                 query += "&";
             }
@@ -82,7 +82,7 @@ impl LogsFilterDto<'_> {
             added = true;
         }
 
-        if let Some(id) = self.id.0 {
+        if let Some(id) = *self.id {
             if added {
                 query += "&";
             }
@@ -144,7 +144,7 @@ impl LogsFilterDto<'_> {
             added = true;
         }
 
-        if let Some(actor) = self.actor.0 {
+        if let Some(actor) = *self.actor {
             if added {
                 query.push(" AND");
             }
@@ -153,7 +153,7 @@ impl LogsFilterDto<'_> {
             added = true;
         }
 
-        if let Some(id) = self.id.0 {
+        if let Some(id) = *self.id {
             let term = SearchTerm::from(id).anywhere();
             if added {
                 query.push(" AND");
