@@ -1007,6 +1007,9 @@ systems.list.search.no-results:
 systems.list.title:
   en: Systems
   sv: System
+systems.integrations.control.task-finished:
+  en: Task Finished
+  sv: Uppgift slutförd
 systems.integrations.control.run-task:
   en: Run Task
   sv: Kör uppgift

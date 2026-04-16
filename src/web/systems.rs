@@ -115,6 +115,12 @@ struct PartialLogsView<'a> {
     logs: Vec<IntegrationTaskLogEntry>,
 }
 
+#[derive(Template)]
+#[template(path = "integrations/task-finished.html.j2")]
+struct PartialFinishedRun {
+    ctx: PageContext,
+}
+
 #[rocket::get("/systems?<q>")]
 async fn list_systems(
     q: Option<&str>,
@@ -379,9 +385,10 @@ pub async fn edit_system<'v>(
 #[rocket::get("/integrations/<id>/run")]
 async fn run_integration_task(
     id: &str,
+    ctx: PageContext,
     db: &State<PgPool>,
     perms: &PermsEvaluator,
-) -> AppResult<String> {
+) -> AppResult<RenderedTemplate> {
     let fully_authorized = perms.satisfies(HivePermission::ManageSystems).await?;
 
     // check against everything first, without worrying about search query
@@ -399,7 +406,9 @@ async fn run_integration_task(
         integrations::dispatch_task_run(id, task, db).await?;
     }
 
-    Ok("checkbox".to_string())
+    let template = PartialFinishedRun { ctx };
+
+    Ok(RawHtml(template.render()?))
 }
 
 #[rocket::get("/integrations/<id>/settings")]

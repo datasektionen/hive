@@ -23,8 +23,8 @@
 {% endif %}
 {% endif %}
 {% if is_integration %}
-<button class="secondary" hx-get="/integrations/{{ system.id }}/run" hx-swap="innerHTML" hx-target="#force-run-icon">
-    <span id="force-run-icon" class="material-icons">sync</span>
+<button class="secondary" hx-get="/integrations/{{ system.id }}/run" hx-swap="innerHTML">
+    <span class="material-icons">sync</span>
     {{ ctx.t("systems.integrations.control.run-task")}}
 </button>
 {% endif %}

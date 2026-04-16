@@ -2,7 +2,7 @@
 
 <div id="logs-container">
     <form method="get" action="/integrations/{{ integration_id }}/logs" hx-boost="true"
-        hx-target="#logs-container" hx-swap="outerHTML" hx-push-url="false" hx-trigger="submit" />
+        hx-target="#logs-container" hx-swap="outerHTML" hx-push-url="false" hx-trigger="submit, change, search" />
         <div class="grid">
             <label>
                 {{ ctx.t("systems.integrations.logs.control.kind.label") }}
