@@ -1,3 +1,5 @@
+use std::{collections::HashMap, sync::Arc};
+
 use log::*;
 use rinja::Template;
 use rocket::{
@@ -9,14 +11,21 @@ use rocket::{
 };
 use serde_json::Value;
 use sqlx::PgPool;
-use std::collections::HashMap;
 
 use super::{Either, GracefulRedirect, RenderedTemplate, filters};
 use crate::{
     dto::{
         datetime::BrowserDateTimeDto,
         systems::{CreateSystemDto, EditSystemDto},
-    }, errors::{AppError, AppResult}, guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User}, integrations::{self, Setting}, models::{IntegrationTaskLogEntry, IntegrationTaskLogEntryKind, IntegrationTaskRun, System}, perms::{HivePermission, SystemsScope}, routing::RouteTree, services::{self, systems}
+    },
+    errors::{AppError, AppResult},
+    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
+    integrations::{self, Setting},
+    models::{IntegrationTaskLogEntry, IntegrationTaskLogEntryKind, IntegrationTaskRun, System},
+    perms::{HivePermission, SystemsScope},
+    resolver::IdentityResolver,
+    routing::RouteTree,
+    services::{self, systems},
 };
 
 pub fn routes() -> RouteTree {
@@ -381,6 +390,7 @@ async fn run_integration_task(
     id: &str,
     db: &State<PgPool>,
     perms: &PermsEvaluator,
+    resolver: &State<Arc<Option<IdentityResolver>>>,
 ) -> AppResult<String> {
     let fully_authorized = perms.satisfies(HivePermission::ManageSystems).await?;
 
@@ -396,7 +406,8 @@ async fn run_integration_task(
         .ok_or(AppError::NoSuchSystem(id.to_owned()))?;
 
     for task in manifest.tasks {
-        integrations::dispatch_task_run(id, task, db).await?;
+        let resolver = resolver.inner().clone();
+        integrations::dispatch_task_run(id, task, resolver, db).await?;
     }
 
     Ok("checkbox".to_string())

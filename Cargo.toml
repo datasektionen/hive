@@ -15,8 +15,9 @@ api-docs = []
 integrations = [ # the underlying control mechanism
     "dep:tokio-cron-scheduler",
 ]
-default-integrations = ["integration-gworkspace"]
+default-integrations = ["integration-gworkspace", "integration-grafana"]
 integration-gworkspace = ["integrations", "dep:jsonwebtoken"]
+integration-grafana = ["integrations"]
 
 [dependencies]
 chrono = { version = "0.4.39", features = ["serde"] }
