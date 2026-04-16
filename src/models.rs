@@ -6,7 +6,7 @@ use std::{
 
 use chrono::{DateTime, Local, NaiveDate};
 use rocket::{Either, FromFormField, UriDisplayQuery};
-use sqlx::{types::JsonValue, FromRow};
+use sqlx::{FromRow, types::JsonValue};
 use uuid::Uuid;
 
 use crate::{

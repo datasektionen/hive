@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use log::*;
 use rinja::Template;
 use rocket::{
@@ -9,14 +11,20 @@ use rocket::{
 };
 use serde_json::Value;
 use sqlx::PgPool;
-use std::collections::HashMap;
 
 use super::{Either, GracefulRedirect, RenderedTemplate, filters};
 use crate::{
     dto::{
         datetime::BrowserDateTimeDto,
         systems::{CreateSystemDto, EditSystemDto},
-    }, errors::{AppError, AppResult}, guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User}, integrations::{self, Setting}, models::{IntegrationTaskLogEntry, IntegrationTaskLogEntryKind, IntegrationTaskRun, System}, perms::{HivePermission, SystemsScope}, routing::RouteTree, services::{self, systems}
+    },
+    errors::{AppError, AppResult},
+    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
+    integrations::{self, Setting},
+    models::{IntegrationTaskLogEntry, IntegrationTaskLogEntryKind, IntegrationTaskRun, System},
+    perms::{HivePermission, SystemsScope},
+    routing::RouteTree,
+    services::{self, systems},
 };
 
 pub fn routes() -> RouteTree {

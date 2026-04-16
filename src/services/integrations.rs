@@ -1,11 +1,14 @@
+use std::collections::HashMap;
+
 use serde_json::json;
 use uuid::Uuid;
-use std::collections::HashMap;
 
 use crate::{
     errors::AppResult,
     integrations::MANIFESTS,
-    models::{ActionKind, IntegrationTaskLogEntry, IntegrationTaskRun, System, TagAssignment, TargetKind},
+    models::{
+        ActionKind, IntegrationTaskLogEntry, IntegrationTaskRun, System, TagAssignment, TargetKind,
+    },
     services::audit_logs,
 };
 
@@ -140,14 +143,11 @@ where
     Ok(settings)
 }
 
-pub async fn list_runs<'x, X>(
-    integration_id: &str,
-    db: X,
-) -> AppResult<Vec<IntegrationTaskRun>>
+pub async fn list_runs<'x, X>(integration_id: &str, db: X) -> AppResult<Vec<IntegrationTaskRun>>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
-    let runs  = sqlx::query_as(
+    let runs = sqlx::query_as(
         "SELECT
             run_id,
             task_id,
@@ -167,10 +167,7 @@ where
     Ok(runs)
 }
 
-pub async fn list_logs<'x, X>(
-    run_id: Uuid,
-    db: X,
-) -> AppResult<Vec<IntegrationTaskLogEntry>>
+pub async fn list_logs<'x, X>(run_id: Uuid, db: X) -> AppResult<Vec<IntegrationTaskLogEntry>>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres>,
 {
