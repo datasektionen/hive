@@ -1007,6 +1007,54 @@ systems.list.search.no-results:
 systems.list.title:
   en: Systems
   sv: System
+systems.integrations.control.run-task:
+  en: Run Task
+  sv: Kör uppgift
+systems.integrations.details.logs.title:
+  en: Logs
+  sv: Loggar
+systems.integrations.details.settings.title:
+  en: Settings
+  sv: Inställningar
+systems.integrations.logs.col.kind:
+  en: Level
+  sv: Nivå
+systems.integrations.logs.col.message:
+  en: Message
+  sv: Meddelande
+systems.integrations.logs.col.timestamp:
+  en: Timestamp
+  sv: Tidsstämpel
+systems.integrations.logs.control.kind.label:
+  en: Log Level
+  sv: Loggnivå
+systems.integrations.logs.control.kind.option.error:
+  en: Error
+  sv: Fel
+systems.integrations.logs.control.kind.option.info:
+  en: Info
+  sv: Info
+systems.integrations.logs.control.kind.option.warning:
+  en: Warning
+  sv: Varning
+systems.integrations.logs.control.run.label:
+  en: Time of task run
+  sv: Tid för körning
+systems.integrations.logs.not-finished:
+  en: This run did not finish
+  sv: Den här körningen blev inte klar
+systems.integrations.logs.empty:
+  en: This run has no logs
+  sv: Den här körningen har inga loggar
+systems.integrations.settings.col.key:
+  en: Key
+  sv: Nyckel
+systems.integrations.settings.col.value:
+  en: Value
+  sv: Värde
+systems.integrations.settings.empty:
+  en: This integrations has no settigns
+  sv: Den här integrationen har inga inställningar
 tags.create.field.id.label:
   en: Tag ID
   sv: Tagg-ID

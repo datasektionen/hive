@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use auth::oidc::OidcClient;
 use errors::ErrorPageGenerator;
 use log::*;
@@ -60,14 +62,17 @@ async fn rocket() -> _ {
         .await
         .expect("Failed to initialize OIDC");
 
-    let resolver = IdentityResolver::new(config.identity_resolver_endpoint.clone());
+    let resolver = Arc::new(IdentityResolver::new(
+        config.identity_resolver_endpoint.clone(),
+    ));
 
     #[cfg(feature = "integrations")]
     {
         let db = db.clone(); // cloning is cheap (Arc)
+        let resolver = resolver.clone();
 
         rocket::tokio::spawn(async move {
-            integrations::schedule_tasks(db)
+            integrations::schedule_tasks(resolver, db)
                 .await
                 .expect("Failed to schedule integration tasks");
         });

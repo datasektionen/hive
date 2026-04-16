@@ -1,4 +1,9 @@
-use std::{collections::HashMap, future::Future, pin::Pin, sync::LazyLock};
+use std::{
+    collections::HashMap,
+    future::Future,
+    pin::Pin,
+    sync::{Arc, LazyLock},
+};
 
 use chrono::Local;
 use log::*;
@@ -8,8 +13,11 @@ use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
 use crate::{
     errors::AppResult,
     models::{IntegrationTaskLogEntry, IntegrationTaskLogEntryKind, IntegrationTaskRun},
+    resolver::{self, IdentityResolver},
 };
 
+#[cfg(feature = "integration-grafana")]
+mod grafana;
 #[cfg(feature = "integration-gworkspace")]
 mod gworkspace;
 
@@ -18,6 +26,8 @@ pub static MANIFESTS: LazyLock<Vec<&Manifest>> = LazyLock::new(|| {
     vec![
         #[cfg(feature = "integration-gworkspace")]
         &*gworkspace::MANIFEST,
+        #[cfg(feature = "integration-grafana")]
+        &*grafana::MANIFEST,
     ]
 });
 
@@ -73,7 +83,12 @@ type AppResultFuture<'a, T> = Pin<Box<dyn Future<Output = AppResult<T>> + Send +
 pub struct Task {
     pub id: &'static str,
     pub schedule: &'static str,
-    pub(self) func: fn(&mut TaskRunMonitor, SettingsValues, PgPool) -> AppResultFuture<'_, ()>,
+    pub(self) func: fn(
+        &mut TaskRunMonitor,
+        SettingsValues,
+        Arc<Option<IdentityResolver>>,
+        PgPool,
+    ) -> AppResultFuture<'_, ()>,
 }
 
 type SettingsValues = HashMap<String, serde_json::Value>;
@@ -116,7 +131,10 @@ impl_log_entry!(error, IntegrationTaskLogEntryKind::Error);
 impl_log_entry!(warn, IntegrationTaskLogEntryKind::Warning);
 impl_log_entry!(info, IntegrationTaskLogEntryKind::Info);
 
-pub async fn schedule_tasks(db: PgPool) -> Result<(), JobSchedulerError> {
+pub async fn schedule_tasks(
+    resolver: Arc<Option<IdentityResolver>>,
+    db: PgPool,
+) -> Result<(), JobSchedulerError> {
     let scheduler = JobScheduler::new().await?;
 
     for manifest in &*MANIFESTS {
@@ -128,8 +146,10 @@ pub async fn schedule_tasks(db: PgPool) -> Result<(), JobSchedulerError> {
 
         for task in manifest.tasks {
             let db = db.clone(); // cheap, just an Arc
+            let resolver = resolver.clone();
             let job = Job::new_async_tz(task.schedule, Local, move |uuid, _| {
                 let db = db.clone();
+                let resolver = resolver.clone();
 
                 Box::pin(async move {
                     debug!(
@@ -137,7 +157,7 @@ pub async fn schedule_tasks(db: PgPool) -> Result<(), JobSchedulerError> {
                         uuid, task.id, manifest.id
                     );
 
-                    dispatch_task_run(manifest.id, task, &db)
+                    dispatch_task_run(manifest.id, task, resolver, &db)
                         .await
                         .expect("Task run failed");
 
@@ -199,7 +219,12 @@ async fn setup_integration(manifest: &Manifest, db: &PgPool) {
     }
 }
 
-async fn dispatch_task_run(integration_id: &str, task: &Task, db: &PgPool) -> AppResult<()> {
+pub async fn dispatch_task_run(
+    integration_id: &str,
+    task: &Task,
+    resolver: Arc<Option<IdentityResolver>>,
+    db: &PgPool,
+) -> AppResult<()> {
     let run: IntegrationTaskRun = sqlx::query_as(
         "INSERT INTO integration_task_runs
             (integration_id, task_id)
@@ -234,7 +259,7 @@ async fn dispatch_task_run(integration_id: &str, task: &Task, db: &PgPool) -> Ap
 
     let mut mon = TaskRunMonitor::new();
 
-    let result = (task.func)(&mut mon, settings, db.clone()).await;
+    let result = (task.func)(&mut mon, settings, resolver, db.clone()).await;
 
     let mut txn = db.begin().await?;
 

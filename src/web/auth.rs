@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use log::*;
 use rocket::{
     State,
@@ -83,7 +85,7 @@ async fn logout(jar: &CookieJar<'_>) -> AppResult<Redirect> {
 async fn impersonate(
     target: &str,
     db: &State<PgPool>,
-    resolver: &State<Option<IdentityResolver>>,
+    resolver: &State<Arc<Option<IdentityResolver>>>,
     perms: &PermsEvaluator,
     user: User,
     jar: &CookieJar<'_>,
@@ -106,7 +108,7 @@ async fn impersonate(
     )
     .await?;
 
-    let display_name = if let Some(resolver) = resolver.inner() {
+    let display_name = if let Some(resolver) = resolver.as_ref() {
         resolver.resolve_one(target).await?
     } else {
         None

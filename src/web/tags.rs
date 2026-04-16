@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use log::*;
 use rinja::Template;
 use rocket::{
@@ -285,7 +287,7 @@ macro_rules! list_tag_assignments {
             system_id: &str,
             tag_id: &str,
             db: &State<PgPool>,
-            resolver: &State<Option<IdentityResolver>>,
+            resolver: &State<Arc<Option<IdentityResolver>>>,
             ctx: PageContext,
             perms: &PermsEvaluator,
             partial: Option<HxRequest<'_>>,
@@ -315,7 +317,7 @@ macro_rules! list_tag_assignments {
                 tag_id,
                 &ctx.lang,
                 db.inner(),
-                resolver.as_ref(),
+                resolver.as_ref().as_ref(),
                 perms,
             )
             .await?;
@@ -428,7 +430,7 @@ async fn assign_tag_to_user<'v>(
     tag_id: &str,
     form: Form<Contextual<'v, AssignTagToUserDto<'v>>>,
     db: &State<PgPool>,
-    resolver: &State<Option<IdentityResolver>>,
+    resolver: &State<Arc<Option<IdentityResolver>>>,
     ctx: PageContext,
     perms: &PermsEvaluator,
     user: User,
@@ -444,9 +446,15 @@ async fn assign_tag_to_user<'v>(
     if let Some(dto) = &form.value {
         // validation passed
 
-        let assignment =
-            tags::assign_to_user(system_id, tag_id, dto, db.inner(), resolver.as_ref(), &user)
-                .await?;
+        let assignment = tags::assign_to_user(
+            system_id,
+            tag_id,
+            dto,
+            db.inner(),
+            resolver.as_ref().as_ref(),
+            &user,
+        )
+        .await?;
 
         if partial.is_some() {
             let template = AssignTagToUserView {
