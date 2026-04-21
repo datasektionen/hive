@@ -998,21 +998,12 @@ systems.form.field.id.placeholder:
 systems.form.field.id.tip:
   en: Use only lowercase letters, numbers, or dashes
   sv: Använd endast gemener, siffror eller bindestreck
-systems.list.action.create:
-  en: Create
-  sv: Skapa ny
-systems.list.search.no-results:
-  en: No matching systems were found. Try adjusting your search query?
-  sv: Inga matchande system hittades. Testa att justera din sökfråga?
-systems.list.title:
-  en: Systems
-  sv: System
-systems.integrations.control.task-finished:
-  en: Task Finished
-  sv: Uppgift slutförd
 systems.integrations.control.run-task:
   en: Run Task
   sv: Kör uppgift
+systems.integrations.control.task-finished:
+  en: Task Finished
+  sv: Uppgift slutförd
 systems.integrations.details.logs.title:
   en: Logs
   sv: Loggar
@@ -1043,12 +1034,12 @@ systems.integrations.logs.control.kind.option.warning:
 systems.integrations.logs.control.run.label:
   en: Time of task run
   sv: Tid för körning
-systems.integrations.logs.not-finished:
-  en: This run did not finish
-  sv: Den här körningen blev inte klar
 systems.integrations.logs.empty:
   en: This run has no logs
   sv: Den här körningen har inga loggar
+systems.integrations.logs.not-finished:
+  en: This run did not finish
+  sv: Den här körningen blev inte klar
 systems.integrations.settings.col.key:
   en: Key
   sv: Nyckel
@@ -1058,6 +1049,15 @@ systems.integrations.settings.col.value:
 systems.integrations.settings.empty:
   en: This integrations has no settigns
   sv: Den här integrationen har inga inställningar
+systems.list.action.create:
+  en: Create
+  sv: Skapa ny
+systems.list.search.no-results:
+  en: No matching systems were found. Try adjusting your search query?
+  sv: Inga matchande system hittades. Testa att justera din sökfråga?
+systems.list.title:
+  en: Systems
+  sv: System
 tags.create.field.id.label:
   en: Tag ID
   sv: Tagg-ID
