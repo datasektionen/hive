@@ -80,6 +80,47 @@ impl PartialEq<TrimmedStr<'_>> for String {
     }
 }
 
+#[derive(sqlx::Type, Serialize, Clone, Copy, Debug)]
+#[sqlx(transparent)]
+#[serde(transparent)]
+pub struct OptionalStr<'v>(Option<&'v str>);
+
+#[rocket::async_trait]
+impl<'v> FromFormField<'v> for OptionalStr<'v> {
+    fn from_value(field: form::ValueField<'v>) -> form::Result<'v, Self> {
+        let value = field.value.trim();
+        if value.is_empty() {
+            Ok(Self(None))
+        } else {
+            Ok(Self(Some(value)))
+        }
+    }
+
+    fn default() -> Option<Self> {
+        Some(OptionalStr(None))
+    }
+}
+
+impl<'v> Deref for OptionalStr<'v> {
+    type Target = Option<&'v str>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<'v> From<&OptionalStr<'v>> for Option<&'v str> {
+    fn from(t: &OptionalStr<'v>) -> Self {
+        **t
+    }
+}
+
+impl From<OptionalStr<'_>> for serde_json::Value {
+    fn from(t: OptionalStr) -> Self {
+        (*t).into()
+    }
+}
+
 fn valid_slug<'v, T: Into<&'v str>>(s: T) -> form::Result<'v, ()> {
     let re = Regex::new("^[a-z0-9]+(-[a-z0-9]+)*$").unwrap();
 
