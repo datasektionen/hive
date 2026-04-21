@@ -359,7 +359,7 @@ pub async fn edit_system<'v>(
             let run = services::integrations::list_runs(id, db.inner())
                 .await?
                 .last()
-                .map(|run| run.clone());
+                .cloned();
 
             let can_manage_permissions = perms
                 .satisfies(HivePermission::ManagePerms(SystemsScope::Id(id.to_owned())))
