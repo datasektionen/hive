@@ -1048,12 +1048,12 @@ systems.integrations.settings.col.value:
   sv: Värde
 systems.integrations.settings.col.value.hidden:
   en: The setting is secret
-  sv: Inställningen är hämlig
+  sv: Inställningen är hemlig
 systems.integrations.settings.col.value.not-set:
   en: The setting is not set
   sv: Inställningen är inte satt
 systems.integrations.settings.empty:
-  en: This integrations has no settigns
+  en: This integrations has no settings
   sv: Den här integrationen har inga inställningar
 systems.list.action.create:
   en: Create
