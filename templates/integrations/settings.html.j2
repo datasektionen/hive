@@ -1,0 +1,37 @@
+<table id="settings-table" class="striped">
+    <thead>
+        <tr>
+            <th scope="col">{{ ctx.t("systems.integrations.settings.col.key") }}</th>
+            <th scope="col">{{ ctx.t("systems.integrations.settings.col.value") }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="if-table-empty">
+            <td colspan="2">
+                <span class="material-icons">block</span>
+                {{ ctx.t("systems.integrations.settings.empty") }}
+            </td>
+        </tr>
+        {% for (key, value) in settings %}
+        <tr>
+            <td>{{ key }}</td>
+            {% match value %}
+                {% when SettingDisplay::Value with (value) %}
+            <td>{{ value }}</td>
+                {% when SettingDisplay::Hidden %}
+            <td>
+                <span data-tooltip="{{ ctx.t("systems.integrations.settings.col.value.hidden") }}">
+                    ********
+                </span>
+            </td>
+                {% when SettingDisplay::NotSet %}
+            <td>
+                <span data-tooltip="{{ ctx.t("systems.integrations.settings.col.value.not-set") }}">
+                    -
+                </span>
+            </td>
+            {% endmatch %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

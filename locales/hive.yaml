@@ -998,6 +998,63 @@ systems.form.field.id.placeholder:
 systems.form.field.id.tip:
   en: Use only lowercase letters, numbers, or dashes
   sv: Använd endast gemener, siffror eller bindestreck
+systems.integrations.control.run-task:
+  en: Run Task
+  sv: Kör uppgift
+systems.integrations.control.task-finished:
+  en: Task Finished
+  sv: Uppgift slutförd
+systems.integrations.details.logs.title:
+  en: Logs
+  sv: Loggar
+systems.integrations.details.settings.title:
+  en: Settings
+  sv: Inställningar
+systems.integrations.logs.col.kind:
+  en: Level
+  sv: Nivå
+systems.integrations.logs.col.message:
+  en: Message
+  sv: Meddelande
+systems.integrations.logs.col.timestamp:
+  en: Timestamp
+  sv: Tidsstämpel
+systems.integrations.logs.control.kind.label:
+  en: Log Level
+  sv: Loggnivå
+systems.integrations.logs.control.kind.option.error:
+  en: Error
+  sv: Fel
+systems.integrations.logs.control.kind.option.info:
+  en: Info
+  sv: Info
+systems.integrations.logs.control.kind.option.warning:
+  en: Warning
+  sv: Varning
+systems.integrations.logs.control.run.label:
+  en: Time of task run
+  sv: Tid för körning
+systems.integrations.logs.empty:
+  en: This run has no logs
+  sv: Den här körningen har inga loggar
+systems.integrations.logs.not-finished:
+  en: This run did not finish
+  sv: Den här körningen blev inte klar
+systems.integrations.settings.col.key:
+  en: Key
+  sv: Nyckel
+systems.integrations.settings.col.value:
+  en: Value
+  sv: Värde
+systems.integrations.settings.col.value.hidden:
+  en: The setting is secret
+  sv: Inställningen är hemlig
+systems.integrations.settings.col.value.not-set:
+  en: The setting is not set
+  sv: Inställningen är inte satt
+systems.integrations.settings.empty:
+  en: This integrations has no settings
+  sv: Den här integrationen har inga inställningar
 systems.list.action.create:
   en: Create
   sv: Skapa ny
