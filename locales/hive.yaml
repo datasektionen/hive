@@ -1046,6 +1046,12 @@ systems.integrations.settings.col.key:
 systems.integrations.settings.col.value:
   en: Value
   sv: Värde
+systems.integrations.settings.col.value.hidden:
+  en: The setting is secret
+  sv: Inställningen är hämlig
+systems.integrations.settings.col.value.not-set:
+  en: The setting is not set
+  sv: Inställningen är inte satt
 systems.integrations.settings.empty:
   en: This integrations has no settigns
   sv: Den här integrationen har inga inställningar

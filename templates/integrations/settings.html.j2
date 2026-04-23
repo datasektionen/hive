@@ -15,7 +15,22 @@
         {% for (key, value) in settings %}
         <tr>
             <td>{{ key }}</td>
+            {% match value %}
+                {% when SettingDisplay::Value with (value) %}
             <td>{{ value }}</td>
+                {% when SettingDisplay::Hidden %}
+            <td>
+                <span data-tooltip="{{ ctx.t("systems.integrations.settings.col.value.hidden") }}">
+                    ********
+                </span>
+            </td>
+                {% when SettingDisplay::NotSet %}
+            <td>
+                <span data-tooltip="{{ ctx.t("systems.integrations.settings.col.value.not-set") }}">
+                    -
+                </span>
+            </td>
+            {% endmatch %}
         </tr>
         {% endfor %}
     </tbody>

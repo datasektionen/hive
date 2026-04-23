@@ -16,11 +16,11 @@ use super::{Either, GracefulRedirect, RenderedTemplate, filters};
 use crate::{
     dto::{
         datetime::BrowserDateTimeDto,
-        systems::{CreateSystemDto, EditSystemDto},
+        systems::{CreateSystemDto, EditSystemDto, SettingDisplay},
     },
     errors::{AppError, AppResult},
     guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
-    integrations::{self, Setting},
+    integrations::{self, MANIFESTS, Setting},
     models::{IntegrationTaskLogEntry, IntegrationTaskLogEntryKind, IntegrationTaskRun, System},
     perms::{HivePermission, SystemsScope},
     routing::RouteTree,
@@ -106,9 +106,9 @@ struct SystemEditedView<'f, 'v> {
 
 #[derive(Template)]
 #[template(path = "integrations/settings.html.j2")]
-struct PartialSettingsView {
+struct PartialSettingsView<'v> {
     ctx: PageContext,
-    settings: Vec<(String, serde_json::Value)>,
+    settings: Vec<(&'v str, SettingDisplay)>,
 }
 
 #[derive(Template)]
@@ -443,13 +443,42 @@ async fn integrations_settings(
         perms.require(HivePermission::ManageSystem(scope)).await?;
     }
 
-    let mut settings: Vec<(String, serde_json::Value)> =
-        services::integrations::list_settings(id, db.inner())
-            .await?
-            .into_iter()
-            .collect();
+    let manifest = (*integrations::MANIFESTS)
+        .iter()
+        .find(|manifest| manifest.id == id)
+        .ok_or(AppError::NoSuchSystem(id.to_owned()))?;
 
-    settings.sort_unstable_by(|a, b| a.0.cmp(&b.0));
+    let db_settings = services::integrations::list_settings(id, db.inner()).await?;
+
+    let settings = manifest
+        .settings
+        .iter()
+        .map(
+            |Setting {
+                 id,
+                 secret,
+                 name: _,
+                 description: _,
+                 r#type: _,
+             }| {
+                let setting_value = db_settings.get(&id.to_string());
+
+                let value = if let Some(_) = setting_value
+                    && *secret
+                {
+                    SettingDisplay::Hidden
+                } else if let Some(value) = setting_value
+                    && !secret
+                {
+                    SettingDisplay::Value(value.clone())
+                } else {
+                    SettingDisplay::NotSet
+                };
+
+                (*id, value)
+            },
+        )
+        .collect();
 
     let template = PartialSettingsView { ctx, settings };
 
