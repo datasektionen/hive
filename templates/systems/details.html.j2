@@ -22,6 +22,12 @@
 </button>
 {% endif %}
 {% endif %}
+{% if is_integration %}
+<button class="secondary" hx-get="/integrations/{{ system.id }}/run" hx-swap="innerHTML">
+    <span class="material-icons">sync</span>
+    {{ ctx.t("systems.integrations.control.run-task")}}
+</button>
+{% endif %}
 {% endblock action_buttons %}
 
 {% block content %}
@@ -92,6 +98,24 @@
 {% include "edit.html.j2" %}
 {% if system.id != crate::HIVE_SYSTEM_ID %}
 {% include "delete.html.j2" %}
+{% endif %}
+{% endif %}
+
+{% if is_integration %}
+<article class="overflow-auto">
+    <h2>{{ ctx.t("systems.integrations.details.settings.title") }}</h2>
+    <div hx-get="/integrations/{{ system.id }}/settings" hx-trigger="load delay:100ms" hx-swap="outerHTML">
+        {# delay is to give event listener time to be set, for aria-busy=true #}
+    </div>
+</article>
+
+{% if let Some(run) = run %}
+<article class="overflow-auto">
+    <h2>{{ ctx.t("systems.integrations.details.logs.title") }}</h2>
+    <div hx-get="/integrations/{{ system.id }}/logs?run_filter={{ BrowserDateTimeDto(*run.start_stamp) }}&kind_filter=Warning" hx-trigger="load delay:100ms" hx-swap="outerHTML">
+        {# delay is to give event listener time to be set, for aria-busy=true #}
+    </div>
+</article>
 {% endif %}
 {% endif %}
 {% endblock content %}

@@ -15,3 +15,9 @@ pub struct EditSystemDto<'v> {
     #[field(validate = len(3..))]
     pub description: TrimmedStr<'v>,
 }
+
+pub enum SettingDisplay {
+    Value(serde_json::Value),
+    Hidden,
+    NotSet
+}

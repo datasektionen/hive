@@ -1,5 +1,5 @@
 use rinja::Template;
-use rocket::{response::content::RawHtml, Either, State};
+use rocket::{Either, State, response::content::RawHtml};
 use sqlx::PgPool;
 
 use crate::{
