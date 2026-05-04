@@ -175,8 +175,8 @@ async fn sync_to_grafana(
 
         let usernames = group_members.iter().map(|member| member.username.as_str());
 
-        // Accounts in grafana are identified by there email which is assigned based on what they
-        // have set in SSO
+        // Accounts in grafana are identified by there email which is assigned based on
+        // what they have set in SSO
         let emails = resolver
             .as_ref()
             .as_ref()

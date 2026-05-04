@@ -202,7 +202,7 @@ async fn setup_integration(manifest: &Manifest, db: &PgPool) {
     .expect("Failed to create system for integration");
 
     // technically could do it in one query using UNNEST instead of looping,
-    // but code would be way more confusing and #tags and $permissions will 
+    // but code would be way more confusing and #tags and $permissions will
     // likely be very low anyway, so this is preferable
     for permission in manifest.permissions {
         sqlx::query(
