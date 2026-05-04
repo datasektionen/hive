@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use chrono::{Datelike, Local, NaiveDate};
 use log::*;
 use rinja::Template;
@@ -120,7 +122,7 @@ pub async fn list_members(
     domain: &str,
     show_indirect: bool,
     db: &State<PgPool>,
-    resolver: &State<Option<IdentityResolver>>,
+    resolver: &State<Arc<Option<IdentityResolver>>>,
     ctx: PageContext,
     perms: &PermsEvaluator,
     user: User,
@@ -147,7 +149,8 @@ pub async fn list_members(
     let (subgroups, members) = if show_indirect {
         (
             vec![],
-            groups::members::get_all_members(id, domain, db.inner(), resolver.as_ref()).await?,
+            groups::members::get_all_members(id, domain, db.inner(), resolver.as_ref().as_ref())
+                .await?,
         )
     } else {
         (
@@ -158,7 +161,7 @@ pub async fn list_members(
                 true,
                 None::<chrono::Days>,
                 db.inner(),
-                resolver.as_ref(),
+                resolver.as_ref().as_ref(),
             )
             .await?,
         )
@@ -284,7 +287,7 @@ async fn add_member<'v>(
     domain: &str,
     mut form: Form<Contextual<'v, AddMemberDto<'v>>>,
     db: &State<PgPool>,
-    resolver: &State<Option<IdentityResolver>>,
+    resolver: &State<Arc<Option<IdentityResolver>>>,
     ctx: PageContext,
     perms: &PermsEvaluator,
     user: User,
@@ -318,9 +321,15 @@ async fn add_member<'v>(
     if let Some(dto) = &form.value {
         // validation passed
 
-        let added =
-            groups::members::add_member(id, domain, dto, db.inner(), resolver.as_ref(), &user)
-                .await?;
+        let added = groups::members::add_member(
+            id,
+            domain,
+            dto,
+            db.inner(),
+            resolver.as_ref().as_ref(),
+            &user,
+        )
+        .await?;
 
         if partial.is_some() {
             let template = PartialAddMemberView {
@@ -457,7 +466,7 @@ async fn edit_member<'v>(
     show_indirect: bool,
     mut form: Form<Contextual<'v, EditMemberDto>>,
     db: &State<PgPool>,
-    resolver: &State<Option<IdentityResolver>>,
+    resolver: &State<Arc<Option<IdentityResolver>>>,
     ctx: PageContext,
     perms: &PermsEvaluator,
     user: User,
