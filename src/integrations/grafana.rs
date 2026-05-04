@@ -1,11 +1,10 @@
 use std::sync::{Arc, LazyLock};
 
-use serde::Deserialize;
 use sqlx::PgPool;
 
 use crate::{
     errors::{AppError, AppResult},
-    integrations::grafana::grafana_labs::{GrafanaApiClient, NewTeam, UpdateTeamMembers},
+    integrations::{Mode, fallible, grafana::grafana_labs::{GrafanaApiClient, NewTeam, UpdateTeamMembers}},
     models,
     resolver::IdentityResolver,
     services::groups,
@@ -60,50 +59,6 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| {
         }],
     }
 });
-
-#[derive(Deserialize, Clone, Copy)]
-#[serde(rename_all = "kebab-case")]
-enum Mode {
-    DryRun, // no actions are taken
-    Full,   // complete push from Hive to Google directory
-}
-
-impl Mode {
-    fn informational_message(&self) -> &'static str {
-        match self {
-            Self::DryRun => "Dry run is enabled. No actual changes will be made!",
-            Self::Full => "Full push mode is selected: all reported changes are real!",
-        }
-    }
-
-    fn should_insert(&self) -> bool {
-        matches!(self, Self::Full)
-    }
-
-    fn should_update(&self) -> bool {
-        matches!(self, Self::Full)
-    }
-
-    fn should_delete(&self) -> bool {
-        matches!(self, Self::Full)
-    }
-}
-
-macro_rules! fallible {
-    ($mon:expr, $result:expr, $ret:expr) => {
-        match $result {
-            Ok(x) => x,
-            Err(e) => {
-                $mon.error(e);
-
-                return Ok($ret);
-            }
-        }
-    };
-    ($mon:expr, $result:expr) => {
-        fallible!($mon, $result, ())
-    };
-}
 
 async fn sync_to_grafana(
     mon: &mut super::TaskRunMonitor,

@@ -4,7 +4,7 @@ use serde::Deserialize;
 use sqlx::PgPool;
 
 use crate::{
-    errors::AppResult, integrations::gworkspace::google::DirectoryApiClient, models,
+    errors::AppResult, integrations::{Mode, fallible, gworkspace::google::DirectoryApiClient}, models,
     services::groups,
 };
 
@@ -160,52 +160,6 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| {
         }],
     }
 });
-
-#[derive(Deserialize, Clone, Copy)]
-#[serde(rename_all = "kebab-case")]
-enum Mode {
-    DryRun,     // no actions are taken
-    NoDeletion, // unwarranted groups and members are never removed
-    Full,       // complete push from Hive to Google directory
-}
-
-impl Mode {
-    fn informational_message(&self) -> &'static str {
-        match self {
-            Self::DryRun => "Dry run is enabled. No actual changes will be made!",
-            Self::NoDeletion => "No deletion is enabled. Existing entities will be preserved!",
-            Self::Full => "Full push mode is selected: all reported changes are real!",
-        }
-    }
-
-    fn should_insert(&self) -> bool {
-        matches!(self, Self::NoDeletion | Self::Full)
-    }
-
-    fn should_update(&self) -> bool {
-        matches!(self, Self::NoDeletion | Self::Full)
-    }
-
-    fn should_delete(&self) -> bool {
-        matches!(self, Self::Full)
-    }
-}
-
-macro_rules! fallible {
-    ($mon:expr, $result:expr, $ret:expr) => {
-        match $result {
-            Ok(x) => x,
-            Err(e) => {
-                $mon.error(e);
-
-                return Ok($ret);
-            }
-        }
-    };
-    ($mon:expr, $result:expr) => {
-        fallible!($mon, $result, ())
-    };
-}
 
 async fn sync_to_directory(
     mon: &mut super::TaskRunMonitor,

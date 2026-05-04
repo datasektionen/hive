@@ -7,6 +7,7 @@ use std::{
 
 use chrono::Local;
 use log::*;
+use serde::Deserialize;
 use sqlx::{PgPool, error::DatabaseError};
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
 
@@ -308,6 +309,53 @@ pub fn integration_exists(id: &str) -> bool {
     false
 }
 
+#[derive(Deserialize, Clone, Copy)]
+#[serde(rename_all = "kebab-case")]
+enum Mode {
+    DryRun,     // no actions are taken
+    NoDeletion, // unwarranted groups and members are never removed
+    Full,       // complete push from Hive to Google directory
+}
+
+impl Mode {
+    fn informational_message(&self) -> &'static str {
+        match self {
+            Self::DryRun => "Dry run is enabled. No actual changes will be made!",
+            Self::NoDeletion => "No deletion is enabled. Existing entities will be preserved!",
+            Self::Full => "Full push mode is selected: all reported changes are real!",
+        }
+    }
+
+    fn should_insert(&self) -> bool {
+        matches!(self, Self::NoDeletion | Self::Full)
+    }
+
+    fn should_update(&self) -> bool {
+        matches!(self, Self::NoDeletion | Self::Full)
+    }
+
+    fn should_delete(&self) -> bool {
+        matches!(self, Self::Full)
+    }
+}
+
+macro_rules! fallible {
+    ($mon:expr, $result:expr, $ret:expr) => {
+        match $result {
+            Ok(x) => x,
+            Err(e) => {
+                $mon.error(e);
+
+                return Ok($ret);
+            }
+        }
+    };
+    ($mon:expr, $result:expr) => {
+        fallible!($mon, $result, ())
+    };
+}
+
+
 macro_rules! require_list_setting {
     ($settings:expr, $key:literal) => {
         super::require_list_setting!($settings, $key, "")
@@ -363,4 +411,4 @@ macro_rules! require_string_setting {
 #[allow(clippy::useless_attribute)]
 // required for usage in this module's children
 #[allow(clippy::needless_pub_self)]
-pub(self) use {require_list_setting, require_serde_setting, require_string_setting};
+pub(self) use {fallible, require_list_setting, require_serde_setting, require_string_setting};
