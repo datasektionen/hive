@@ -14,7 +14,7 @@ use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
 use crate::{
     errors::AppResult,
     models::{IntegrationTaskLogEntry, IntegrationTaskLogEntryKind, IntegrationTaskRun},
-    resolver::{self, IdentityResolver},
+    resolver::IdentityResolver,
 };
 
 #[cfg(feature = "integration-grafana")]
@@ -36,6 +36,7 @@ pub struct Manifest {
     pub id: &'static str,
     pub description: &'static str,
     pub settings: &'static [Setting],
+    pub permissions: &'static [Permission],
     pub tags: &'static [Tag],
     pub tasks: &'static [Task],
 }
@@ -58,6 +59,12 @@ pub enum SettingType {
 pub struct SelectSettingOption {
     pub value: &'static str,
     pub display_name: &'static str,
+}
+
+pub struct Permission {
+    id: &'static str,
+    has_scope: bool,
+    description: &'static str,
 }
 
 pub struct Tag {
@@ -195,8 +202,26 @@ async fn setup_integration(manifest: &Manifest, db: &PgPool) {
     .expect("Failed to create system for integration");
 
     // technically could do it in one query using UNNEST instead of looping,
-    // but code would be way more confusing and #tags will likely be very low
-    // anyway, so this is preferable
+    // but code would be way more confusing and #tags and $permissions will 
+    // likely be very low anyway, so this is preferable
+    for permission in manifest.permissions {
+        sqlx::query(
+            "INSERT INTO permissions
+                (system_id, perm_id, has_scope, description)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (system_id, perm_id) DO UPDATE SET
+                description = EXCLUDED.description,
+                has_scope = EXCLUDED.has_scope",
+        )
+        .bind(manifest.id)
+        .bind(permission.id)
+        .bind(permission.has_scope)
+        .bind(permission.description)
+        .execute(db)
+        .await
+        .expect("Failed to create permission for integration");
+    }
+
     for tag in manifest.tags {
         sqlx::query(
             "INSERT INTO tags
@@ -354,7 +379,6 @@ macro_rules! fallible {
         fallible!($mon, $result, ())
     };
 }
-
 
 macro_rules! require_list_setting {
     ($settings:expr, $key:literal) => {

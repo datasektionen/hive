@@ -58,7 +58,6 @@
     </footer>
 </article>
 
-{% if !is_integration %}
 <article class="overflow-auto">
     <h2>{{ ctx.t("systems.details.permissions.title") }}</h2>
     <div hx-get="/system/{{ system.id }}/permissions" hx-trigger="load delay:100ms" hx-swap="outerHTML">
@@ -75,7 +74,6 @@
     </footer>
     {% endif %}
 </article>
-{% endif %}
 
 <article class="overflow-auto">
     <h2>{{ ctx.t("systems.details.tags.title") }}</h2>

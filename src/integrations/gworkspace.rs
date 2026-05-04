@@ -4,7 +4,9 @@ use serde::Deserialize;
 use sqlx::PgPool;
 
 use crate::{
-    errors::AppResult, integrations::{Mode, fallible, gworkspace::google::DirectoryApiClient}, models,
+    errors::AppResult,
+    integrations::{Mode, fallible, gworkspace::google::DirectoryApiClient},
+    models,
     services::groups,
 };
 
@@ -80,6 +82,7 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| {
                 r#type: super::SettingType::ShortText,
             },
         ],
+        permissions: &[],
         tags: &[
             super::Tag {
                 id: "sync",

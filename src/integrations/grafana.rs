@@ -6,7 +6,7 @@ use crate::{
     errors::{AppError, AppResult},
     integrations::{
         Mode, fallible,
-        grafana::grafana_labs::{GrafanaApiClient, CreateTeam, UpdateTeamMembers},
+        grafana::grafana_labs::{CreateTeam, GrafanaApiClient, UpdateTeamMembers},
     },
     models,
     resolver::IdentityResolver,
@@ -45,9 +45,26 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| {
                 r#type: super::SettingType::ShortText,
             },
         ],
+        permissions: &[
+            super::Permission {
+                id: "admin",
+                has_scope: false,
+                description: "Manage server-wide settings and access to resources",
+            },
+            super::Permission {
+                id: "editor",
+                has_scope: false,
+                description: "Can view and edit dashboards, folders, and playlists",
+            },
+            super::Permission {
+                id: "viewer",
+                has_scope: false,
+                description: "Can view dashboards, playlists, and query data sources",
+            },
+        ],
         tags: &[super::Tag {
             id: "member",
-            description: "Entity whoes member should be sync'd to Grafana",
+            description: "Entity whoes member should be sync'd to a team in Grafana",
             has_content: true,
             supports_groups: true,
             supports_users: false,
@@ -108,7 +125,10 @@ async fn sync_to_grafana(
     }
 
     for team in &teams {
-        if listed.binary_search_by_key(&team.as_str(), |a| a.name.as_str()).is_err() {
+        if listed
+            .binary_search_by_key(&team.as_str(), |a| a.name.as_str())
+            .is_err()
+        {
             mon.info(format!("Creating team: `{team}`"));
 
             if mode.should_insert() {
@@ -203,10 +223,7 @@ async fn sync_team_members(
     }
 
     for member in &members {
-        if current_members
-            .binary_search(&member)
-            .is_err()
-        {
+        if current_members.binary_search(&member).is_err() {
             mon.info(format!("Adding member `{}` to team `{}`", member, key));
         }
     }
