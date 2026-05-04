@@ -101,7 +101,7 @@ impl GrafanaApiClient {
         .and_then(|op| op.ok_or("Failed to list team members"))
     }
 
-    pub async fn create_team(&self, body: NewTeam) -> Result<NewTeamResponse, &'static str> {
+    pub async fn create_team(&self, body: CreateTeam) -> Result<CreateTeamResponse, &'static str> {
         self.exec_request(
             reqwest::Method::POST,
             "https://grafana.datasektionen.se/api/teams",
@@ -174,22 +174,17 @@ pub struct Team {
 }
 
 #[derive(Debug, Serialize)]
-pub struct NewTeam {
+pub struct CreateTeam {
     pub name: String,
     pub email: String,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct NewTeamResponse {
+pub struct CreateTeamResponse {
     pub message: String,
     pub team_id: u32,
     pub uid: String,
-}
-
-struct PatchTeam {
-    name: String,
-    email: String,
 }
 
 #[derive(Debug, Deserialize)]

@@ -4,7 +4,10 @@ use sqlx::PgPool;
 
 use crate::{
     errors::{AppError, AppResult},
-    integrations::{Mode, fallible, grafana::grafana_labs::{GrafanaApiClient, NewTeam, UpdateTeamMembers}},
+    integrations::{
+        Mode, fallible,
+        grafana::grafana_labs::{GrafanaApiClient, CreateTeam, UpdateTeamMembers},
+    },
     models,
     resolver::IdentityResolver,
     services::groups,
@@ -52,7 +55,7 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| {
         }],
         tasks: &[super::Task {
             id: "sync-to-grafana",
-            schedule: "0 0 * * * *", // every hour
+            schedule: "0 0 * * * *", // every day
             func: |mon, settings, resolver, db| {
                 Box::pin(sync_to_grafana(mon, settings, resolver, db))
             },
@@ -90,13 +93,12 @@ async fn sync_to_grafana(
     // would expect, so the binary search below fails when it shouldn't
     teams.sort_unstable();
 
-    let listed = fallible!(mon, client.list_teams().await).teams;
+    let mut listed = fallible!(mon, client.list_teams().await).teams;
+
+    listed.sort_unstable_by(|a, b| a.name.cmp(&b.name));
 
     for existing in &listed {
-        if teams
-            .binary_search_by_key(&existing.name, |t| t.to_string())
-            .is_err()
-        {
+        if teams.binary_search(&existing.name).is_err() {
             mon.info(format!("Deleting team `{}`", existing.name));
 
             if mode.should_delete() {
@@ -104,6 +106,24 @@ async fn sync_to_grafana(
             }
         }
     }
+
+    for team in &teams {
+        if listed.binary_search_by_key(&team.as_str(), |a| a.name.as_str()).is_err() {
+            mon.info(format!("Creating team: `{team}`"));
+
+            if mode.should_insert() {
+                let new = CreateTeam {
+                    name: team.to_owned(),
+                    email: String::new(), // Primarly used for gravatar which we don't use
+                };
+
+                fallible!(mon, client.create_team(new).await);
+            }
+        }
+    }
+
+    // Get the updated list with the new teams because we need grafanas internal IDs
+    let teams = fallible!(mon, client.list_teams().await).teams;
 
     let mut org_members: Vec<String> = fallible!(mon, client.list_org_members().await)
         .into_iter()
@@ -113,12 +133,7 @@ async fn sync_to_grafana(
     org_members.sort_unstable();
 
     for team in &teams {
-        mon.info(format!("Synchronizing team `{team}`"));
-
-        let grafana_team_id = listed
-            .iter()
-            .find(|t| t.name == *team)
-            .and_then(|g| Some(g.id));
+        mon.info(format!("Synchronizing team `{}`", team.name));
 
         let (id, domain): (String, String) = sqlx::query_as(
             "SELECT gs.id, gs.domain
@@ -131,7 +146,7 @@ async fn sync_to_grafana(
                 AND ta.content = $1
             ORDER BY gs.domain, gs.id",
         )
-        .bind(team)
+        .bind(&team.name)
         .fetch_one(&db)
         .await?;
 
@@ -140,53 +155,28 @@ async fn sync_to_grafana(
 
         let usernames = group_members.iter().map(|member| member.username.as_str());
 
-        let emails = if let Some(resolver) = resolver.as_ref() {
-            resolver.resolve_emails(usernames.into_iter()).await?
-        } else {
-            return Err(AppError::ErrorDecodeFailure);
-        };
+        // Accounts in grafana are identified by there email which is assigned based on what they
+        // have set in SSO
+        let emails = resolver
+            .as_ref()
+            .as_ref()
+            .ok_or(AppError::MissingIdentityResolver)?
+            .resolve_emails(usernames.into_iter())
+            .await?;
 
+        // Only sync members who have an account in grafana
         let members: Vec<String> = emails
             .into_iter()
             .map(|(_, email)| email)
-            .filter(|member| org_members.binary_search_by_key(&member, |m| m).is_ok())
+            .filter(|member| org_members.contains(member))
             .collect();
 
-        // Because we need grafanas internal teamId to sync members, if the team doesn't
-        // exist we first need to create the team and then sync the members
-        if let Some(team_id) = grafana_team_id {
-            sync_team_members(&team, team_id, members, &client, mode, mon).await?;
-        } else {
-            create_team(&team, members, &client, mode, mon).await?;
-        }
+        sync_team_members(&team.name, team.id, members, &client, mode, mon).await?;
     }
 
     mon.info(format!("Synchronized {} teams!", teams.len()));
 
     mon.succeeded();
-
-    Ok(())
-}
-
-async fn create_team(
-    key: &str,
-    members: Vec<String>,
-    client: &GrafanaApiClient,
-    mode: Mode,
-    mon: &mut super::TaskRunMonitor,
-) -> AppResult<()> {
-    mon.info(format!("Creating team: `{key}`"));
-
-    if mode.should_insert() {
-        let new = NewTeam {
-            name: key.to_string(),
-            email: String::new(), // Primarly used for gravatar which we don't use
-        };
-
-        let new_team = fallible!(mon, client.create_team(new).await);
-
-        sync_team_members(key, new_team.team_id, members, client, mode, mon).await?;
-    }
 
     Ok(())
 }
@@ -207,14 +197,14 @@ async fn sync_team_members(
     current_members.sort_unstable();
 
     for member in &current_members {
-        if members.binary_search_by_key(&member, |m| m).is_err() {
+        if members.binary_search(&member).is_err() {
             mon.info(format!("Removing member `{}` from team `{}`", member, key));
         }
     }
 
     for member in &members {
         if current_members
-            .binary_search_by_key(&member, |m| m)
+            .binary_search(&member)
             .is_err()
         {
             mon.info(format!("Adding member `{}` to team `{}`", member, key));

@@ -38,6 +38,8 @@ pub enum AppError {
     StateDeserializationError(#[source] serde_json::Error), // not from client-controlled
     #[error("failed to translate usernames to display names via the set endpoint: {0}")]
     IdentityResolutionError(#[source] reqwest::Error),
+    #[error("failed to get the identity resolver")]
+    MissingIdentityResolver,
     #[error("failed to decode error while generating error page from JSON")]
     ErrorDecodeFailure,
 
@@ -127,6 +129,7 @@ impl AppError {
             AppError::StateSerializationError(..) => Status::InternalServerError,
             AppError::StateDeserializationError(..) => Status::InternalServerError,
             AppError::IdentityResolutionError(..) => Status::InternalServerError,
+            AppError::MissingIdentityResolver => Status::InternalServerError,
             AppError::ErrorDecodeFailure => Status::InternalServerError,
             AppError::NotAllowed(..) => Status::Forbidden,
             AppError::InsufficientAuthorityInGroup(..) => Status::Forbidden,
