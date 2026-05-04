@@ -32,16 +32,20 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| {
                         display_name: "Dry run",
                     },
                     super::SelectSettingOption {
+                        value: "no-deletion",
+                        display_name: "Sync without removing existing entities",
+                    },
+                    super::SelectSettingOption {
                         value: "full",
                         display_name: "Complete push from Hive to Grafana",
                     },
                 ]),
             },
             super::Setting {
-                id: "service-account-key",
+                id: "service-account-token",
                 secret: true,
-                name: "Service Account Private Key",
-                description: "Service account API-token",
+                name: "Service Account Token",
+                description: "API-token for service account used when syncing",
                 r#type: super::SettingType::ShortText,
             },
         ],
