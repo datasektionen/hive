@@ -26,20 +26,7 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| {
                 secret: false,
                 name: "Mode",
                 description: "Level of structural mirroring to enforce",
-                r#type: super::SettingType::Select(&[
-                    super::SelectSettingOption {
-                        value: "dry-run",
-                        display_name: "Dry run",
-                    },
-                    super::SelectSettingOption {
-                        value: "no-deletion",
-                        display_name: "Sync without removing existing entities",
-                    },
-                    super::SelectSettingOption {
-                        value: "full",
-                        display_name: "Complete push from Hive to Grafana",
-                    },
-                ]),
+                r#type: super::SettingType::Select(super::MODE_OPTION),
             },
             super::Setting {
                 id: "service-account-token",

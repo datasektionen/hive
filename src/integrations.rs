@@ -334,6 +334,21 @@ pub fn integration_exists(id: &str) -> bool {
     false
 }
 
+const MODE_OPTION: &[SelectSettingOption] = &[
+    SelectSettingOption {
+        value: "dry-run",
+        display_name: "Dry run",
+    },
+    SelectSettingOption {
+        value: "no-deletion",
+        display_name: "Sync without removing existing entities",
+    },
+    SelectSettingOption {
+        value: "full",
+        display_name: "Complete push from Hive to the external service",
+    },
+];
+
 #[derive(Deserialize, Clone, Copy)]
 #[serde(rename_all = "kebab-case")]
 enum Mode {
