@@ -23,7 +23,7 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| {
                 secret: false,
                 name: "Mode",
                 description: "Level of structural mirroring to enforce",
-                r#type: super::SettingType::Select(super::MODE_OPTION),
+                r#type: super::SettingType::Select(super::MODE_OPTIONS),
             },
             super::Setting {
                 id: "primary-domain",

@@ -334,7 +334,7 @@ pub fn integration_exists(id: &str) -> bool {
     false
 }
 
-const MODE_OPTION: &[SelectSettingOption] = &[
+const MODE_OPTIONS: &[SelectSettingOption] = &[
     SelectSettingOption {
         value: "dry-run",
         display_name: "Dry run",
