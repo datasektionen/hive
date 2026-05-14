@@ -1,5 +1,6 @@
 use std::fmt;
 
+use log::*;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 const USER_AGENT: &str = "hive-grafana-integration";
@@ -16,7 +17,7 @@ impl GrafanaApiClient {
             .user_agent(USER_AGENT)
             .build()
             .map_err(|e| {
-                log::error!("Grafana API failed to build reqwest client: {e}");
+                error!("Grafana API failed to build reqwest client: {e}");
 
                 "Failed to build Reqwest client"
             })?;
@@ -51,8 +52,8 @@ impl GrafanaApiClient {
             .await
             .and_then(reqwest::Response::error_for_status)
             .map_err(|e| {
-                log::error!("Grafana API failed to execute request ({url}): {e:?}");
-                log::error!("Sent body: {body:?}");
+                error!("Grafana API failed to execute request ({url}): {e:?}");
+                error!("Sent body: {body:?}");
 
                 error_message
             })?;
@@ -62,7 +63,7 @@ impl GrafanaApiClient {
         }
 
         let decoded = response.json().await.map_err(|e| {
-            log::error!("Grafana API failed to decode response JSON ({url}): {e:?}");
+            error!("Grafana API failed to decode response JSON ({url}): {e:?}");
 
             "Failed to decode response JSON"
         })?;
