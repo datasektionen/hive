@@ -5,12 +5,13 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 const USER_AGENT: &str = "hive-grafana-integration";
 
 pub struct GrafanaApiClient {
+    url: String,
     reqwest_client: reqwest::Client,
     access_token: String,
 }
 
 impl GrafanaApiClient {
-    pub fn new(api_token: &str) -> Result<Self, &'static str> {
+    pub fn new(url: &str, api_token: &str) -> Result<Self, &'static str> {
         let reqwest_client = reqwest::Client::builder()
             .user_agent(USER_AGENT)
             .build()
@@ -21,6 +22,7 @@ impl GrafanaApiClient {
             })?;
 
         Ok(Self {
+            url: url.to_owned(),
             reqwest_client,
             access_token: api_token.to_owned(),
         })
@@ -71,7 +73,7 @@ impl GrafanaApiClient {
     pub async fn list_teams(&self) -> Result<TeamList, &'static str> {
         self.exec_request(
             reqwest::Method::GET,
-            "https://grafana.datasektionen.se/api/teams/search",
+            &format!("{}/api/teams/search", self.url),
             None::<()>,
             "Failed to list teams",
         )
@@ -82,7 +84,7 @@ impl GrafanaApiClient {
     pub async fn list_org_members(&self) -> Result<Vec<OrgUser>, &'static str> {
         self.exec_request(
             reqwest::Method::GET,
-            "https://grafana.datasektionen.se/api/org/users",
+            &format!("{}/api/org/users", self.url),
             None::<()>,
             "Failed to list members",
         )
@@ -93,7 +95,7 @@ impl GrafanaApiClient {
     pub async fn list_team_members(&self, key: u32) -> Result<Vec<TeamMember>, &'static str> {
         self.exec_request(
             reqwest::Method::GET,
-            &format!("https://grafana.datasektionen.se/api/teams/{key}/members"),
+            &format!("{}/api/teams/{key}/members", self.url),
             None::<()>,
             "Failed to list team members",
         )
@@ -104,7 +106,7 @@ impl GrafanaApiClient {
     pub async fn create_team(&self, body: CreateTeam) -> Result<CreateTeamResponse, &'static str> {
         self.exec_request(
             reqwest::Method::POST,
-            "https://grafana.datasektionen.se/api/teams",
+            &format!("{}/api/teams", self.url),
             Some(body),
             "Failed to create team",
         )
@@ -119,7 +121,7 @@ impl GrafanaApiClient {
     ) -> Result<Option<GrafanaResponse>, &'static str> {
         self.exec_request(
             reqwest::Method::PUT,
-            &format!("https://grafana.datasektionen.se/api/teams/{key}/members"),
+            &format!("{}/api/teams/{key}/members", self.url),
             Some(body),
             "Failed to sync team members",
         )
@@ -129,7 +131,7 @@ impl GrafanaApiClient {
     pub async fn delete_team(&self, key: u32) -> Result<Option<()>, &'static str> {
         self.exec_request(
             reqwest::Method::DELETE,
-            &format!("https://grafana.datasektionen.se/api/teams/{key}"),
+            &format!("{}/api/teams/{key}", self.url),
             None::<()>,
             "Failed to delete team",
         )

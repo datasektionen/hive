@@ -29,6 +29,13 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| {
                 r#type: super::SettingType::Select(super::MODE_OPTION),
             },
             super::Setting {
+                id: "grafana-url",
+                secret: false,
+                name: "Grafana URL",
+                description: "The URL to the grafana instance without any path",
+                r#type: super::SettingType::ShortText,
+            },
+            super::Setting {
                 id: "service-account-token",
                 secret: true,
                 name: "Service Account Token",
@@ -79,9 +86,10 @@ async fn sync_to_grafana(
 ) -> AppResult<()> {
     let mode: Mode = super::require_serde_setting!(mon, settings, "mode");
 
-    let api_token = super::require_string_setting!(mon, settings, "service-account-key");
+    let url = super::require_string_setting!(mon, settings, "grafana-url");
+    let api_token = super::require_string_setting!(mon, settings, "service-account-token");
 
-    let client = fallible!(mon, grafana_labs::GrafanaApiClient::new(api_token));
+    let client = fallible!(mon, grafana_labs::GrafanaApiClient::new(url, api_token));
 
     mon.warn(mode.informational_message());
 
