@@ -89,7 +89,10 @@ async fn sync_to_grafana(
     let url = super::require_string_setting!(mon, settings, "grafana-url");
     let api_token = super::require_string_setting!(mon, settings, "service-account-token");
 
-    let client = fallible!(mon, grafana_labs::GrafanaApiClient::new(url, api_token));
+    let client = fallible!(
+        mon,
+        grafana_labs::GrafanaApiClient::new(url.to_string(), api_token.to_string())
+    );
 
     mon.warn(mode.informational_message());
 
