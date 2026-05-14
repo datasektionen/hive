@@ -354,7 +354,7 @@ const MODE_OPTION: &[SelectSettingOption] = &[
 enum Mode {
     DryRun,     // no actions are taken
     NoDeletion, // unwarranted groups and members are never removed
-    Full,       // complete push from Hive to Google directory
+    Full,       // complete push from Hive to the external service
 }
 
 impl Mode {
