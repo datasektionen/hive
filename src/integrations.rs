@@ -1,15 +1,24 @@
-use std::{collections::HashMap, future::Future, pin::Pin, sync::LazyLock};
+use std::{
+    collections::HashMap,
+    future::Future,
+    pin::Pin,
+    sync::{Arc, LazyLock},
+};
 
 use chrono::Local;
 use log::*;
+use serde::Deserialize;
 use sqlx::{PgPool, error::DatabaseError};
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
 
 use crate::{
     errors::AppResult,
     models::{IntegrationTaskLogEntry, IntegrationTaskLogEntryKind, IntegrationTaskRun},
+    resolver::IdentityResolver,
 };
 
+#[cfg(feature = "integration-grafana")]
+mod grafana;
 #[cfg(feature = "integration-gworkspace")]
 mod gworkspace;
 
@@ -18,6 +27,8 @@ pub static MANIFESTS: LazyLock<Vec<&Manifest>> = LazyLock::new(|| {
     vec![
         #[cfg(feature = "integration-gworkspace")]
         &*gworkspace::MANIFEST,
+        #[cfg(feature = "integration-grafana")]
+        &*grafana::MANIFEST,
     ]
 });
 
@@ -25,6 +36,7 @@ pub struct Manifest {
     pub id: &'static str,
     pub description: &'static str,
     pub settings: &'static [Setting],
+    pub permissions: &'static [Permission],
     pub tags: &'static [Tag],
     pub tasks: &'static [Task],
 }
@@ -47,6 +59,12 @@ pub enum SettingType {
 pub struct SelectSettingOption {
     pub value: &'static str,
     pub display_name: &'static str,
+}
+
+pub struct Permission {
+    id: &'static str,
+    has_scope: bool,
+    description: &'static str,
 }
 
 pub struct Tag {
@@ -73,7 +91,12 @@ type AppResultFuture<'a, T> = Pin<Box<dyn Future<Output = AppResult<T>> + Send +
 pub struct Task {
     pub id: &'static str,
     pub schedule: &'static str,
-    pub(self) func: fn(&mut TaskRunMonitor, SettingsValues, PgPool) -> AppResultFuture<'_, ()>,
+    pub(self) func: fn(
+        &mut TaskRunMonitor,
+        SettingsValues,
+        Arc<Option<IdentityResolver>>,
+        PgPool,
+    ) -> AppResultFuture<'_, ()>,
 }
 
 type SettingsValues = HashMap<String, serde_json::Value>;
@@ -116,7 +139,10 @@ impl_log_entry!(error, IntegrationTaskLogEntryKind::Error);
 impl_log_entry!(warn, IntegrationTaskLogEntryKind::Warning);
 impl_log_entry!(info, IntegrationTaskLogEntryKind::Info);
 
-pub async fn schedule_tasks(db: PgPool) -> Result<(), JobSchedulerError> {
+pub async fn schedule_tasks(
+    resolver: Arc<Option<IdentityResolver>>,
+    db: PgPool,
+) -> Result<(), JobSchedulerError> {
     let scheduler = JobScheduler::new().await?;
 
     for manifest in &*MANIFESTS {
@@ -128,8 +154,10 @@ pub async fn schedule_tasks(db: PgPool) -> Result<(), JobSchedulerError> {
 
         for task in manifest.tasks {
             let db = db.clone(); // cheap, just an Arc
+            let resolver = resolver.clone();
             let job = Job::new_async_tz(task.schedule, Local, move |uuid, _| {
                 let db = db.clone();
+                let resolver = resolver.clone();
 
                 Box::pin(async move {
                     debug!(
@@ -137,7 +165,7 @@ pub async fn schedule_tasks(db: PgPool) -> Result<(), JobSchedulerError> {
                         uuid, task.id, manifest.id
                     );
 
-                    dispatch_task_run(manifest.id, task, &db)
+                    dispatch_task_run(manifest.id, task, resolver, &db)
                         .await
                         .expect("Task run failed");
 
@@ -174,8 +202,26 @@ async fn setup_integration(manifest: &Manifest, db: &PgPool) {
     .expect("Failed to create system for integration");
 
     // technically could do it in one query using UNNEST instead of looping,
-    // but code would be way more confusing and #tags will likely be very low
-    // anyway, so this is preferable
+    // but code would be way more confusing and the number of tags and
+    // permissions will likely be very low anyway, so this is preferable
+    for permission in manifest.permissions {
+        sqlx::query(
+            "INSERT INTO permissions
+                (system_id, perm_id, has_scope, description)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (system_id, perm_id) DO UPDATE SET
+                description = EXCLUDED.description,
+                has_scope = EXCLUDED.has_scope",
+        )
+        .bind(manifest.id)
+        .bind(permission.id)
+        .bind(permission.has_scope)
+        .bind(permission.description)
+        .execute(db)
+        .await
+        .expect("Failed to create permission for integration");
+    }
+
     for tag in manifest.tags {
         sqlx::query(
             "INSERT INTO tags
@@ -199,7 +245,12 @@ async fn setup_integration(manifest: &Manifest, db: &PgPool) {
     }
 }
 
-pub async fn dispatch_task_run(integration_id: &str, task: &Task, db: &PgPool) -> AppResult<()> {
+pub async fn dispatch_task_run(
+    integration_id: &str,
+    task: &Task,
+    resolver: Arc<Option<IdentityResolver>>,
+    db: &PgPool,
+) -> AppResult<()> {
     let run: IntegrationTaskRun = sqlx::query_as(
         "INSERT INTO integration_task_runs
             (integration_id, task_id)
@@ -234,7 +285,7 @@ pub async fn dispatch_task_run(integration_id: &str, task: &Task, db: &PgPool) -
 
     let mut mon = TaskRunMonitor::new();
 
-    let result = (task.func)(&mut mon, settings, db.clone()).await;
+    let result = (task.func)(&mut mon, settings, resolver, db.clone()).await;
 
     let mut txn = db.begin().await?;
 
@@ -281,6 +332,67 @@ pub fn integration_exists(id: &str) -> bool {
     }
 
     false
+}
+
+const MODE_OPTIONS: &[SelectSettingOption] = &[
+    SelectSettingOption {
+        value: "dry-run",
+        display_name: "Dry run",
+    },
+    SelectSettingOption {
+        value: "no-deletion",
+        display_name: "Sync without removing existing entities",
+    },
+    SelectSettingOption {
+        value: "full",
+        display_name: "Complete push from Hive to the external service",
+    },
+];
+
+#[derive(Deserialize, Clone, Copy)]
+#[serde(rename_all = "kebab-case")]
+enum Mode {
+    DryRun,     // no actions are taken
+    NoDeletion, // unwarranted groups and members are never removed
+    Full,       // complete push from Hive to the external service
+}
+
+impl Mode {
+    fn informational_message(&self) -> &'static str {
+        match self {
+            Self::DryRun => "Dry run is enabled. No actual changes will be made!",
+            Self::NoDeletion => "No deletion is enabled. Existing entities will be preserved!",
+            Self::Full => "Full push mode is selected: all reported changes are real!",
+        }
+    }
+
+    fn should_insert(&self) -> bool {
+        matches!(self, Self::NoDeletion | Self::Full)
+    }
+
+    fn should_update(&self) -> bool {
+        matches!(self, Self::NoDeletion | Self::Full)
+    }
+
+    fn should_delete(&self) -> bool {
+        matches!(self, Self::Full)
+    }
+}
+
+macro_rules! fallible {
+    ($mon:expr, $result:expr, $ret:expr) => {
+        match $result {
+            Ok(x) => x,
+            Err(e) => {
+                $mon.error(e);
+
+                return Ok($ret);
+            }
+        }
+    };
+    ($mon:expr, $result:expr) => {
+        fallible!($mon, $result, ())
+    };
 }
 
 macro_rules! require_list_setting {
@@ -338,4 +450,4 @@ macro_rules! require_string_setting {
 #[allow(clippy::useless_attribute)]
 // required for usage in this module's children
 #[allow(clippy::needless_pub_self)]
-pub(self) use {require_list_setting, require_serde_setting, require_string_setting};
+pub(self) use {fallible, require_list_setting, require_serde_setting, require_string_setting};

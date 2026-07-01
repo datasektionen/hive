@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use rinja::Template;
 use rocket::{State, form::Form, response::content::RawHtml};
@@ -43,7 +43,7 @@ struct SettingsView {
 async fn show_profile(
     username: &str,
     db: &State<PgPool>,
-    resolver: &State<Option<IdentityResolver>>,
+    resolver: &State<Arc<Option<IdentityResolver>>>,
     ctx: PageContext,
     perms: &PermsEvaluator,
     user: User,
@@ -52,7 +52,7 @@ async fn show_profile(
 
     let may_impersonate = perms.satisfies(HivePermission::ImpersonateUsers).await?;
 
-    let display_name = if let Some(resolver) = resolver.inner() {
+    let display_name = if let Some(resolver) = resolver.as_ref() {
         resolver.resolve_one(username).await?
     } else {
         None

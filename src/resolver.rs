@@ -8,6 +8,7 @@ use crate::errors::{AppError, AppResult};
 const REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 const USER_AGENT: &str = "hive-identity-resolver";
 
+#[derive(Clone)]
 pub struct IdentityResolver {
     endpoint: String,
     client: reqwest::Client,
@@ -102,6 +103,31 @@ impl IdentityResolver {
 
         Ok(())
     }
+
+    pub async fn resolve_emails<'s>(
+        &self,
+        usernames: impl Iterator<Item = &'s str>,
+    ) -> AppResult<HashMap<String, String>> {
+        let params: HashSet<_> = usernames.map(|u| ("u", u)).collect();
+        // ^ HashSet means deduplication, we only need to ask each username once
+
+        let entries: HashMap<String, ResolvedEntry> = self
+            .client
+            .get(&self.endpoint)
+            .query(&[("format", "map")])
+            .query(&params)
+            .send()
+            .await
+            .and_then(reqwest::Response::error_for_status)
+            .map_err(AppError::IdentityResolutionError)?
+            .json()
+            .await
+            .map_err(AppError::IdentityResolutionError)?;
+
+        let emails = entries.into_iter().map(|(k, v)| (k, v.email)).collect();
+
+        Ok(emails)
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -109,6 +135,7 @@ impl IdentityResolver {
 struct ResolvedEntry {
     first_name: String,
     family_name: String,
+    email: String,
 }
 
 impl ResolvedEntry {

@@ -19,5 +19,5 @@ pub struct EditSystemDto<'v> {
 pub enum SettingDisplay {
     Value(serde_json::Value),
     Hidden,
-    NotSet
+    NotSet,
 }

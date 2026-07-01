@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use log::*;
 use rinja::Template;
@@ -20,9 +20,10 @@ use crate::{
     },
     errors::{AppError, AppResult},
     guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
-    integrations::{self, MANIFESTS, Setting},
+    integrations::{self, Setting},
     models::{IntegrationTaskLogEntry, IntegrationTaskLogEntryKind, IntegrationTaskRun, System},
     perms::{HivePermission, SystemsScope},
+    resolver::IdentityResolver,
     routing::RouteTree,
     services::{self, systems},
 };
@@ -396,6 +397,7 @@ async fn run_integration_task(
     ctx: PageContext,
     db: &State<PgPool>,
     perms: &PermsEvaluator,
+    resolver: &State<Arc<Option<IdentityResolver>>>,
 ) -> AppResult<RenderedTemplate> {
     let fully_authorized = perms.satisfies(HivePermission::ManageSystems).await?;
 
@@ -411,7 +413,8 @@ async fn run_integration_task(
         .ok_or(AppError::NoSuchSystem(id.to_owned()))?;
 
     for task in manifest.tasks {
-        integrations::dispatch_task_run(id, task, db).await?;
+        let resolver = resolver.inner().clone();
+        integrations::dispatch_task_run(id, task, resolver, db).await?;
     }
 
     let template = PartialFinishedRun { ctx };

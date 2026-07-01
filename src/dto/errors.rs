@@ -103,6 +103,7 @@ impl From<AppError> for InnerAppErrorDto {
             AppError::StateSerializationError(..) => Self::PipelineError,
             AppError::StateDeserializationError(..) => Self::PipelineError,
             AppError::IdentityResolutionError(..) => Self::PipelineError,
+            AppError::MissingIdentityResolver => Self::PipelineError,
             AppError::ErrorDecodeFailure => Self::PipelineError,
             AppError::NotAllowed(..) => Self::NotAllowed,
             AppError::InsufficientAuthorityInGroup(min) => {
