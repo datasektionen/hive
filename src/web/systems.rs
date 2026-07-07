@@ -117,8 +117,10 @@ struct PartialSettingsView<'v> {
 struct PartialLogsView<'a> {
     ctx: PageContext,
     integration_id: &'a str,
+    task_filter: &'a str,
+    time_filter: BrowserDateTimeDto,
     kind_filter: IntegrationTaskLogEntryKind,
-    run_filter: BrowserDateTimeDto,
+    tasks: Vec<&'a str>,
     run: IntegrationTaskRun,
     runs: Vec<IntegrationTaskRun>,
     logs: Vec<IntegrationTaskLogEntry>,
@@ -488,10 +490,11 @@ async fn integrations_settings(
     Ok(Either::Left(RawHtml(template.render()?)))
 }
 
-#[rocket::get("/integrations/<id>/logs?<run_filter>&<kind_filter>")]
+#[rocket::get("/integrations/<id>/logs?<task_filter>&<time_filter>&<kind_filter>")]
 async fn integrations_logs(
     id: &str,
-    run_filter: BrowserDateTimeDto,
+    task_filter: &str,
+    time_filter: BrowserDateTimeDto,
     kind_filter: IntegrationTaskLogEntryKind,
     db: &State<PgPool>,
     ctx: PageContext,
@@ -514,11 +517,22 @@ async fn integrations_logs(
         perms.require(HivePermission::ManageSystem(scope)).await?;
     }
 
-    let runs = services::integrations::list_runs(id, db.inner()).await?;
+    let manifest = (*integrations::MANIFESTS)
+        .iter()
+        .find(|manifest| manifest.id == id)
+        .ok_or(AppError::NoSuchSystem(id.to_owned()))?;
+
+    let tasks = manifest.tasks.iter().map(|task| task.id).collect();
+
+    let runs: Vec<IntegrationTaskRun> = services::integrations::list_runs(id, db.inner())
+        .await?
+        .into_iter()
+        .filter(|run| run.task_id == task_filter)
+        .collect();
 
     let run = runs
         .iter()
-        .find(|run| BrowserDateTimeDto(run.start_stamp) == run_filter)
+        .find(|run| BrowserDateTimeDto(run.start_stamp) == time_filter)
         .or(runs.last())
         .ok_or(AppError::ErrorDecodeFailure)?
         .clone();
@@ -533,8 +547,10 @@ async fn integrations_logs(
     let template = PartialLogsView {
         ctx,
         integration_id: id,
+        task_filter,
+        time_filter,
         kind_filter,
-        run_filter,
+        tasks,
         run,
         runs,
         logs,

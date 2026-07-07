@@ -1031,7 +1031,10 @@ systems.integrations.logs.control.kind.option.info:
 systems.integrations.logs.control.kind.option.warning:
   en: Warning
   sv: Varning
-systems.integrations.logs.control.run.label:
+systems.integrations.logs.control.task.label:
+  en: Run ID
+  sv: Körnings ID
+systems.integrations.logs.control.time.label:
   en: Time of task run
   sv: Tid för körning
 systems.integrations.logs.empty:

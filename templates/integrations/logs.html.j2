@@ -20,8 +20,19 @@
             </label>
 
             <label>
-                {{ ctx.t("systems.integrations.logs.control.run.label") }}
-                <input list="runs" name="run_filter" required value="{{ run_filter }}" />
+                {{ ctx.t("systems.integrations.logs.control.task.label") }}
+                <select name="task_filter">
+                    {% for task in tasks %}
+                        <option {% call utils::option(**task, task_filter) %}>
+                            {{ task }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label>
+                {{ ctx.t("systems.integrations.logs.control.time.label") }}
+                <input list="times" name="time_filter" required value="{{ time_filter }}" />
             </label>
 
             <datalist id="runs">

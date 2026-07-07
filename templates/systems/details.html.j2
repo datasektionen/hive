@@ -110,7 +110,7 @@
 {% if let Some(run) = run %}
 <article class="overflow-auto">
     <h2>{{ ctx.t("systems.integrations.details.logs.title") }}</h2>
-    <div hx-get="/integrations/{{ system.id }}/logs?run_filter={{ BrowserDateTimeDto(*run.start_stamp) }}&kind_filter=Warning" hx-trigger="load delay:100ms" hx-swap="outerHTML">
+    <div hx-get="/integrations/{{ system.id }}/logs?task_filter={{ run.task_id }}&time_filter={{ BrowserDateTimeDto(*run.start_stamp) }}&kind_filter=Warning" hx-trigger="load delay:100ms" hx-swap="outerHTML">
         {# delay is to give event listener time to be set, for aria-busy=true #}
     </div>
 </article>
