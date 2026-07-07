@@ -182,6 +182,7 @@ where
                 &mut assignments,
                 |assignment| assignment.username.as_deref().unwrap(),
                 |assignment, name| assignment.label = Some(name),
+                |_assignment, _email| (),
             )
             .await?;
 

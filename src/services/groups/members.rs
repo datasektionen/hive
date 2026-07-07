@@ -117,7 +117,7 @@ where
         .fetch_all(db)
         .await?;
 
-    populate_member_names(&mut members, resolver, Some(today)).await?;
+    populate_member_identities(&mut members, resolver, Some(today)).await?;
 
     Ok(members)
 }
@@ -148,7 +148,7 @@ where
     .fetch_all(db)
     .await?;
 
-    populate_member_names(&mut members, resolver, None).await?;
+    populate_member_identities(&mut members, resolver, None).await?;
 
     Ok(members)
 }
@@ -716,7 +716,7 @@ where
     Ok(true)
 }
 
-async fn populate_member_names(
+async fn populate_member_identities(
     members: &mut [GroupMember],
     resolver: Option<&IdentityResolver>,
     today: Option<NaiveDate>,
@@ -727,6 +727,7 @@ async fn populate_member_names(
                 members,
                 |member| &member.username,
                 |member, name| member.display_name = Some(name),
+                |member, email| member.email = Some(email),
             )
             .await?;
 

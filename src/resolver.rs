@@ -59,6 +59,54 @@ impl IdentityResolver {
         Ok(display_names)
     }
 
+    pub async fn resolve_emails<'s>(
+        &self,
+        usernames: impl Iterator<Item = &'s str>,
+    ) -> AppResult<HashMap<String, String>> {
+        let params: HashSet<_> = usernames.map(|u| ("u", u)).collect();
+        // ^ HashSet means deduplication, we only need to ask each username once
+
+        let entries: HashMap<String, ResolvedEntry> = self
+            .client
+            .get(&self.endpoint)
+            .query(&[("format", "map")])
+            .query(&params)
+            .send()
+            .await
+            .and_then(reqwest::Response::error_for_status)
+            .map_err(AppError::IdentityResolutionError)?
+            .json()
+            .await
+            .map_err(AppError::IdentityResolutionError)?;
+
+        let emails = entries.into_iter().map(|(k, v)| (k, v.email)).collect();
+
+        Ok(emails)
+    }
+
+    pub async fn resolve_identities<'s>(
+        &self,
+        usernames: impl Iterator<Item = &'s str>,
+    ) -> AppResult<HashMap<String, ResolvedEntry>> {
+        let params: HashSet<_> = usernames.map(|u| ("u", u)).collect();
+        // ^ HashSet means deduplication, we only need to ask each username once
+
+        let entries: HashMap<String, ResolvedEntry> = self
+            .client
+            .get(&self.endpoint)
+            .query(&[("format", "map")])
+            .query(&params)
+            .send()
+            .await
+            .and_then(reqwest::Response::error_for_status)
+            .map_err(AppError::IdentityResolutionError)?
+            .json()
+            .await
+            .map_err(AppError::IdentityResolutionError)?;
+
+        Ok(entries)
+    }
+
     pub async fn resolve_one(&self, username: &str) -> AppResult<Option<String>> {
         let result = self
             .client
@@ -90,43 +138,20 @@ impl IdentityResolver {
         items: &mut [T],
         username_getter: impl Fn(&T) -> &str,
         display_name_setter: impl Fn(&mut T, String),
+        email_setter: impl Fn(&mut T, String),
     ) -> AppResult<()> {
         let usernames = items.iter().map(&username_getter);
-        let result = self.resolve_usernames(usernames).await?;
+        let result = self.resolve_identities(usernames).await?;
 
         for item in items {
             let username = username_getter(item);
-            if let Some(display_name) = result.get(username) {
-                display_name_setter(item, display_name.clone());
+            if let Some(entry) = result.get(username) {
+                display_name_setter(item, entry.display_name());
+                email_setter(item, entry.email.clone());
             }
         }
 
         Ok(())
-    }
-
-    pub async fn resolve_emails<'s>(
-        &self,
-        usernames: impl Iterator<Item = &'s str>,
-    ) -> AppResult<HashMap<String, String>> {
-        let params: HashSet<_> = usernames.map(|u| ("u", u)).collect();
-        // ^ HashSet means deduplication, we only need to ask each username once
-
-        let entries: HashMap<String, ResolvedEntry> = self
-            .client
-            .get(&self.endpoint)
-            .query(&[("format", "map")])
-            .query(&params)
-            .send()
-            .await
-            .and_then(reqwest::Response::error_for_status)
-            .map_err(AppError::IdentityResolutionError)?
-            .json()
-            .await
-            .map_err(AppError::IdentityResolutionError)?;
-
-        let emails = entries.into_iter().map(|(k, v)| (k, v.email)).collect();
-
-        Ok(emails)
     }
 }
 
