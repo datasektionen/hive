@@ -5,7 +5,7 @@
 {% block content %}
 <form method="post" hx-boost="true" hx-push-url="false" hx-indicator="button">
 
-    {% for (key, value) in settings %}
+    {% for (key, value) in text_settings %}
     <p>
         <label>
             {{ ctx.t(format!("user.settings.field.{key}.label").as_str()) }}
@@ -17,7 +17,17 @@
     </p>
     {% endfor %}
 
-    {% if settings.is_empty() %}
+    {% for (key, value) in bool_settings %}
+    <p>
+        <label>
+            {{ ctx.t(format!("user.settings.field.{key}.label").as_str()) }}
+            <input type="checkbox" name="{{ key }}" {% if *value == true -%} checked {%- endif %}
+                aria-describedby="field-{{ key }}-tip" />
+        </label>
+    </p>
+    {% endfor %}
+
+    {% if text_settings.is_empty() && bool_settings.is_empty() %}
     <p class="secondary">
         <em>
             <span class="material-icons">block</span>

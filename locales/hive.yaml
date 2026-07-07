@@ -1390,6 +1390,9 @@ user.settings.field.integration_gworkspace_personal-email.tip:
     du inte har något professionellt Google Workspace-konto inom organisationens
     primära domän. Observera att dettas endast gäller till grupper som tillåter
     externa medlemmar.
+user.settings.field.integration_vaultwarden_access.label:
+  en: Vaultwarden Access
+  sv: Vaultwarden Tillgång
 user.settings.title:
   en: My Settings
   sv: Mina inställningar
