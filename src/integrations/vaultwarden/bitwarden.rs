@@ -206,7 +206,7 @@ impl OrganisationAPIClient {
                 error_message
             })?;
 
-        // We don't care about the response body except when we do a get
+        // We don't care about the response body except when we do a GET
         if method != reqwest::Method::GET {
             return Ok(None);
         }
