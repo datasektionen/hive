@@ -6,6 +6,9 @@ job "hive" {
   group "hive" {
     network {
       port "http" { }
+      port "bitwarden-cli" {
+        to = 8087
+      }
     }
 
     service {
@@ -19,6 +22,17 @@ job "hive" {
 
         "traefik.http.routers.hive-internal.rule=Host(`hive.nomad.dsekt.internal`)",
         "traefik.http.routers.hive-internal.entrypoints=web-internal",
+      ]
+    }
+
+    service {
+      name = "bitwarden-cli"
+      port = "bitwarden-cli"
+      provider = "nomad"
+      tags = [
+        "traefik.enable=true",
+        "traefik.http.routers.bitwarden-cli.rule=Host(`bitwarden.hive.nomad.dsekt.internal`)",
+        "traefik.http.routers.bitwarden-cli.entrypoints=web-internal",
       ]
     }
 
@@ -47,10 +61,38 @@ ENV
         env         = true
       }
     }
+
+    task "bitwarden-cli" {
+      driver = "docker"
+
+      config {
+        image = var.bitwarden_image_tag
+        ports = ["bitwarden-cli"]
+
+        template {
+        data        = <<ENV
+{{ with nomadVar "nomad/jobs/hive" }}
+BW_CLIENTID={{ .bw_client_id }}
+BW_CLIENTSECRET={{ .bw_client_secret }}
+{{ end }}
+BW_SERVER=https://vault.datasektionen.se
+BW_HOST=http://bitwarden.hive.nomad.dsekt.internal
+BW_PORT=8087
+ENV
+        destination = "local/.env"
+        env         = true
+        }
+      }
+    }
   }
 }
 
 variable "image_tag" {
   type = string
   default = "ghcr.io/datasektionen/hive:latest"
+}
+
+variable "bitwarden_image_tag" {
+  type = string
+  default = "ghcr.io/datasektionen/hive-bitwarden:latest"
 }

@@ -14,7 +14,7 @@ jobs:
         uses: datasektionen/nomad-deploy@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          package-variant: bitwarden-cli
+          package-variant: bitwarden
           build-dockerfile: Dockerfile.bw
           skip-deploy: true
       - name: Deploy to Nomad
