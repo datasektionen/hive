@@ -126,6 +126,8 @@ pub struct GroupMember {
     pub manager: bool,
     #[sqlx(default)]
     pub display_name: Option<String>, // None if not loaded yet
+    #[sqlx(default)]
+    pub email: Option<String>, // None if not loaded yet
 }
 
 impl GroupMember {

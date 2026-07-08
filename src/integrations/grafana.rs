@@ -172,73 +172,49 @@ async fn sync_to_grafana(
         .fetch_one(&db)
         .await?;
 
-        let group_members: Vec<models::GroupMember> =
-            groups::members::get_all_members(&id, &domain, &db, None).await?;
-
-        let usernames = group_members.iter().map(|member| member.username.as_str());
-
         // Accounts in grafana are identified by their email which is assigned based on
         // what they have set in SSO
-        let emails = resolver
-            .as_ref()
-            .as_ref()
-            .ok_or(AppError::MissingIdentityResolver)?
-            .resolve_emails(usernames.into_iter())
-            .await?;
+        let members: Vec<String> =
+            groups::members::get_all_members(&id, &domain, &db, resolver.as_ref().as_ref())
+                .await?
+                .into_iter()
+                .filter_map(|user| user.email)
+                .filter(|email| org_members.contains(email))
+                .collect();
 
-        // Only sync members who have an account in grafana
-        let members: Vec<String> = emails
+        let mut current_members: Vec<String> = fallible!(mon, client.list_team_members(team.id).await)
             .into_iter()
-            .map(|(_, email)| email)
-            .filter(|member| org_members.contains(member))
+            .map(|m| m.email)
             .collect();
 
-        sync_team_members(&team.name, team.id, members, &client, mode, mon).await?;
+        current_members.sort_unstable();
+
+        for member in &current_members {
+            if members.binary_search(&member).is_err() {
+                mon.info(format!("Removing member `{}` from team `{}`", member, team.name));
+            }
+        }
+
+        for member in &members {
+            if current_members.binary_search(&member).is_err() {
+                mon.info(format!("Adding member `{}` to team `{}`", member, team.name));
+            }
+        }
+
+        if mode.should_update() {
+            let update_team_members = UpdateTeamMembers {
+                members,
+                admins: Vec::new(), /* Since we administrate team using hive there is no need to have
+                                     * admins in grafana */
+            };
+
+            fallible!(mon, client.sync_team_members(team.id, update_team_members).await);
+        }
     }
 
     mon.info(format!("Synchronized {} teams!", teams.len()));
 
     mon.succeeded();
-
-    Ok(())
-}
-
-async fn sync_team_members(
-    key: &str,
-    id: u32,
-    members: Vec<String>,
-    client: &GrafanaApiClient,
-    mode: Mode,
-    mon: &mut super::TaskRunMonitor,
-) -> AppResult<()> {
-    let mut current_members: Vec<String> = fallible!(mon, client.list_team_members(id).await)
-        .into_iter()
-        .map(|m| m.email)
-        .collect();
-
-    current_members.sort_unstable();
-
-    for member in &current_members {
-        if members.binary_search(&member).is_err() {
-            mon.info(format!("Removing member `{}` from team `{}`", member, key));
-        }
-    }
-
-    for member in &members {
-        if current_members.binary_search(&member).is_err() {
-            mon.info(format!("Adding member `{}` to team `{}`", member, key));
-        }
-    }
-
-    if mode.should_update() {
-        let update_team_members = UpdateTeamMembers {
-            members,
-            admins: Vec::new(), /* Since we administrate team using hive there is no need to have
-                                 * admins in grafana */
-        };
-
-        fallible!(mon, client.sync_team_members(id, update_team_members).await);
-    }
 
     Ok(())
 }
