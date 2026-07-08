@@ -35,7 +35,9 @@ struct ProfileView<'a> {
 #[template(path = "user/settings.html.j2")]
 struct SettingsView {
     ctx: PageContext,
-    settings: HashMap<String, Option<String>>,
+    text_settings: HashMap<String, Option<String>>,
+    // ^ generated dynamically
+    bool_settings: HashMap<String, bool>,
     // ^ generated dynamically
 }
 
@@ -106,22 +108,15 @@ async fn show_settings(
     ctx: PageContext,
     user: User,
 ) -> AppResult<RenderedTemplate> {
-    let mut settings = HashMap::new();
+    let mut text_settings = HashMap::new();
+    let mut bool_settings = HashMap::new();
 
     #[cfg(feature = "integrations")]
     {
         for manifest in &*crate::integrations::MANIFESTS {
             for tag in manifest.tags {
-                if tag.self_service && tag.supports_users && tag.has_content {
+                if tag.self_service && tag.supports_users {
                     use crate::services::integrations;
-
-                    let value = integrations::get_self_service(
-                        manifest.id,
-                        tag.id,
-                        user.username(),
-                        db.inner(),
-                    )
-                    .await?;
 
                     // dots instead of underscores would look nicer, but we
                     // cannot use them because then we wouldn't be able to
@@ -129,13 +124,39 @@ async fn show_settings(
                     // in the POST route, since rocket very helpfully(!)
                     // interprets dots for us as nesting
                     // (and we can't use dashes because slugs may contain them)
-                    settings.insert(format!("integration_{}_{}", manifest.id, tag.id), value);
+                    if tag.has_content {
+                        let value = integrations::get_self_service_text(
+                            manifest.id,
+                            tag.id,
+                            user.username(),
+                            db.inner(),
+                        )
+                        .await?;
+
+                        text_settings
+                            .insert(format!("integration_{}_{}", manifest.id, tag.id), value);
+                    } else {
+                        let value = integrations::get_self_service_bool(
+                            manifest.id,
+                            tag.id,
+                            user.username(),
+                            db.inner(),
+                        )
+                        .await?;
+
+                        bool_settings
+                            .insert(format!("integration_{}_{}", manifest.id, tag.id), value);
+                    }
                 }
             }
         }
     }
 
-    let template = SettingsView { ctx, settings };
+    let template = SettingsView {
+        ctx,
+        bool_settings,
+        text_settings,
+    };
 
     Ok(RawHtml(template.render()?))
 }
@@ -153,14 +174,25 @@ async fn update_settings(
             if let Some((integration_id, tag_id)) = scoped.split_once('_') {
                 use crate::services::integrations;
 
-                integrations::set_self_service(
-                    integration_id,
-                    tag_id,
-                    user.username(),
-                    &value,
-                    db.inner(),
-                )
-                .await?;
+                if let Ok(value) = value.parse::<bool>() {
+                    integrations::set_self_service_bool(
+                        integration_id,
+                        tag_id,
+                        user.username(),
+                        value,
+                        db.inner(),
+                    )
+                    .await;
+                } else {
+                    integrations::set_self_service_text(
+                        integration_id,
+                        tag_id,
+                        user.username(),
+                        &value,
+                        db.inner(),
+                    )
+                    .await?;
+                }
             }
         }
     }

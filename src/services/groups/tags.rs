@@ -5,7 +5,7 @@ use crate::{
     dto::tags::{AssignTagDto, BulkTagGroupsDto},
     errors::{AppError, AppResult},
     guards::{perms::PermsEvaluator, user::User},
-    models::{ActionKind, Tag, TagAssignment, TargetKind},
+    models::{ActionKind, SimpleGroup, Tag, TagAssignment, TargetKind},
     perms::{HivePermission, SystemsScope},
     services::{audit_logs, tags},
 };
@@ -238,6 +238,25 @@ where
     .bind(domain)
     .bind(system_id)
     .fetch_one(db)
+    .await?;
+
+    Ok(result)
+}
+
+pub async fn list_tagged_for_system<'x, X>(system_id: &str, db: X) -> AppResult<Vec<SimpleGroup>>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres> + Copy,
+{
+    let result = sqlx::query_as(
+        "SELECT DISTINCT gs.id, gs.domain, gs.name_sv, gs.name_en
+        FROM groups gs
+        JOIN all_tag_assignments ta
+            ON gs.id = ta.group_id
+                AND gs.domain = ta.group_domain
+        WHERE ta.system_id = $1",
+    )
+    .bind(system_id)
+    .fetch_all(db)
     .await?;
 
     Ok(result)

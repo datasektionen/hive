@@ -9,6 +9,14 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - id: bitwarden-cli
+        name: Containerize bitwarden-cli
+        uses: datasektionen/nomad-deploy@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          package-variant: bitwarden
+          build-dockerfile: Dockerfile.bw
+          skip-deploy: true
       - name: Deploy to Nomad
         uses: datasektionen/nomad-deploy@v1
         with:
