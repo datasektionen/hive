@@ -68,6 +68,7 @@ ENV
       config {
         image = var.bitwarden_image_tag
         ports = ["bitwarden-cli"]
+      }
 
         template {
         data        = <<ENV
@@ -76,12 +77,11 @@ BW_CLIENTID={{ .bw_client_id }}
 BW_CLIENTSECRET={{ .bw_client_secret }}
 {{ end }}
 BW_SERVER=https://vault.datasektionen.se
-BW_HOST=http://bitwarden.hive.nomad.dsekt.internal
+BW_HOST=all
 BW_PORT=8087
 ENV
         destination = "local/.env"
         env         = true
-        }
       }
     }
   }
