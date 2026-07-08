@@ -1,5 +1,6 @@
 use std::{collections::HashMap, fmt};
 
+use log::*;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 const USER_AGENT: &str = "hive-vaultwarden-integration";
@@ -21,7 +22,7 @@ impl VaultManagementAPIClient {
             .user_agent(USER_AGENT)
             .build()
             .map_err(|e| {
-                log::error!("Vault Management API failed to build reqwest client: {e}");
+                error!("Vault Management API failed to build reqwest client: {e}");
 
                 "Failed to build Reqwest client"
             })?;
@@ -34,13 +35,13 @@ impl VaultManagementAPIClient {
         })
     }
 
-    async fn exec_request<R: DeserializeOwned>(
+    async fn exec_request(
         &self,
         method: reqwest::Method,
         url: impl reqwest::IntoUrl + Copy + fmt::Display,
         body: Option<impl Serialize + fmt::Debug>,
         error_message: &'static str,
-    ) -> Result<Option<R>, &'static str> {
+    ) -> Result<(), &'static str> {
         let request = self.reqwest_client.request(method.clone(), url);
 
         let request = if let Some(ref body) = body {
@@ -49,31 +50,22 @@ impl VaultManagementAPIClient {
             request
         };
 
-        let response = request
+        request
             .send()
             .await
             .and_then(reqwest::Response::error_for_status)
             .map_err(|e| {
-                log::error!("Organisation API failed to execute request ({url}): {e:?}");
-                log::error!("Sent body: {body:?}");
+                error!("Vault Management API failed to execute request ({url}): {e:?}");
+                error!("Sent body: {body:?}");
 
                 error_message
             })?;
 
-        if method == reqwest::Method::DELETE {
-            return Ok(None);
-        }
-
-        let decoded = response.json().await.map_err(|e| {
-            log::error!("Organisation API failed to decode response JSON ({url}): {e:?}");
-
-            "Failed to decode response JSON"
-        })?;
-
-        Ok(Some(decoded))
+        // We don't care about the response, as long as it is OK 200
+        Ok(())
     }
 
-    pub async fn unlock(&self) -> Result<Option<serde_json::Value>, &'static str> {
+    pub async fn unlock(&self) -> Result<(), &'static str> {
         self.exec_request(
             reqwest::Method::POST,
             &format!("{}/unlock", self.base_url),
@@ -85,7 +77,7 @@ impl VaultManagementAPIClient {
         .await
     }
 
-    pub async fn lock(&self) -> Result<Option<serde_json::Value>, &'static str> {
+    pub async fn lock(&self) -> Result<(), &'static str> {
         self.exec_request(
             reqwest::Method::POST,
             &format!("{}/lock", self.base_url),
@@ -95,7 +87,7 @@ impl VaultManagementAPIClient {
         .await
     }
 
-    pub async fn confirm(&self, id: &str) -> Result<Option<serde_json::Value>, &'static str> {
+    pub async fn confirm(&self, id: &str) -> Result<(), &'static str> {
         self.exec_request(
             reqwest::Method::POST,
             &format!(
@@ -129,7 +121,7 @@ impl OrganisationAPIClient {
             .user_agent(USER_AGENT)
             .build()
             .map_err(|e| {
-                log::error!("Organisation API failed to build reqwest client: {e}");
+                error!("Organisation API failed to build reqwest client: {e}");
 
                 "Failed to build Reqwest client"
             })?;
@@ -146,6 +138,7 @@ impl OrganisationAPIClient {
             access_token,
         })
     }
+
     async fn get_access_token(
         client: &reqwest::Client,
         base_url: &str,
@@ -154,8 +147,8 @@ impl OrganisationAPIClient {
     ) -> Result<AccessTokenResponse, &'static str> {
         let mut params = HashMap::new();
         params.insert("grant_type", "client_credentials");
-        params.insert("scope", "api"); // Need to use a user token because vaultwarden does
-        // not support organization api keys fully
+        params.insert("scope", "api");
+        // ^ Need to use a user token because vaultwarden does not support organization api keys fully
         params.insert("client_id", client_id);
         params.insert("client_secret", client_secret);
         params.insert("device_identifier", USER_AGENT);
@@ -169,14 +162,14 @@ impl OrganisationAPIClient {
             .await
             .and_then(reqwest::Response::error_for_status)
             .map_err(|e| {
-                log::error!("Organisation API failed to get access token: {e}");
+                error!("Organisation API failed to get access token: {e}");
 
                 "Failed to get access token"
             })?
             .json()
             .await
             .map_err(|e| {
-                log::error!("Organisation API failed to decode access token JSON: {e}");
+                error!("Organisation API failed to decode access token JSON: {e}");
 
                 "Failed to decode access token JSON"
             })?;
@@ -207,18 +200,19 @@ impl OrganisationAPIClient {
             .await
             .and_then(reqwest::Response::error_for_status)
             .map_err(|e| {
-                log::error!("Organisation API failed to execute request ({url}): {e:?}");
-                log::error!("Sent body: {body:?}");
+                error!("Organisation API failed to execute request ({url}): {e:?}");
+                error!("Sent body: {body:?}");
 
                 error_message
             })?;
 
+        // We don't care about the response body except when we do a get
         if method != reqwest::Method::GET {
             return Ok(None);
         }
 
         let decoded = response.json().await.map_err(|e| {
-            log::error!("Organisation API failed to decode response JSON ({url}): {e:?}");
+            error!("Organisation API failed to decode response JSON ({url}): {e:?}");
 
             "Failed to decode response JSON"
         })?;

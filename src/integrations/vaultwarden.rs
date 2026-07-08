@@ -77,7 +77,7 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| {
         tags: &[
             super::Tag {
                 id: "sync",
-                description: "Entity whoes member should be sync'd to Vaultwarden",
+                description: "Entity that should be sync'd to Vaultwarden",
                 has_content: false,
                 supports_groups: true,
                 supports_users: false,
@@ -102,7 +102,7 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| {
             },
             super::Task {
                 id: "sync-groups-to-vaultwarden",
-                schedule: "0 0 * * * *",
+                schedule: "0 0 0,12 * * *", // twise a day
                 func: |mon, settings, resolver, db| {
                     Box::pin(sync_groups(mon, settings, resolver, db))
                 },

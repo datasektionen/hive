@@ -1392,7 +1392,7 @@ user.settings.field.integration_gworkspace_personal-email.tip:
     externa medlemmar.
 user.settings.field.integration_vaultwarden_access.label:
   en: Vaultwarden Access
-  sv: Vaultwarden Tillgång
+  sv: Vaultwarden åtkomst
 user.settings.title:
   en: My Settings
   sv: Mina inställningar
