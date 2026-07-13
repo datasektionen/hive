@@ -514,6 +514,9 @@ groups.members.list.icon.expand:
 groups.members.list.icon.future:
   en: Future Member
   sv: Framtida Medlem
+groups.members.list.icon.past:
+  en: Past Member
+  sv: Tidigare Medlem
 groups.members.list.icon.group:
   en: Subgroup
   sv: Undergrupp

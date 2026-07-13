@@ -21,6 +21,14 @@
     <span class="material-icons" data-tooltip='{{ ctx.t("groups.members.list.icon.future") }}'>
         schedule
     </span>
+    {% else if is_past_member %}
+    <s>
+        <a class="secondary reset-color" href="/user/{{ member.username }}">
+            <samp>{{ member.username }}</samp></a>
+    </s>
+    <span class="material-icons" data-tooltip='{{ ctx.t("groups.members.list.icon.past") }}'>
+        schedule
+    </span>
     {% else %}
     <strong>
         <a class="secondary reset-color" href="/user/{{ member.username }}">
@@ -39,15 +47,23 @@
     </span>
     {% endif %}
 </td>
+
 <td style="font-weight: bold">
     {{ member.display_name.as_deref().unwrap_or("?") }}
 </td>
+
 {% if is_future_member %}
 <td class="blue">{{ member.from }}</td>
 {% else %}
 <td>{{ member.from }}</td>
 {% endif %}
+
+{% if is_past_member %}
+<td class="red">{{ member.until }}</td>
+{% else %}
 <td>{{ member.until }}</td>
+{% endif %}
+
 {% if can_manage && !show_indirect %}
 <td>
     {% if let Some(id) = member.id %}
