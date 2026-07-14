@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use chrono::{Datelike, Days, Local, NaiveDate};
+use chrono::Local;
 use log::*;
 use rinja::Template;
 use rocket::{
@@ -160,7 +160,7 @@ pub async fn list_members(
                 id,
                 domain,
                 true,
-                Some(chrono::Days::new(30)), // To show resently expired memberships
+                Some(chrono::Months::new(1)), // To show resently expired memberships
                 db.inner(),
                 resolver.as_ref().as_ref(),
             )
