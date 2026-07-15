@@ -6,11 +6,12 @@ use crate::{models::BasePermissionAssignment, routing::RouteTree};
 mod tagged;
 mod token;
 mod user;
+mod webhook;
 
 pub fn tree() -> RouteTree {
     with_api_docs!(
         "v1",
-        RouteTree::Branch(vec![tagged::routes(), token::routes(), user::routes()])
+        RouteTree::Branch(vec![tagged::routes(), token::routes(), user::routes(), webhook::routes()])
     )
 }
 

@@ -26,6 +26,9 @@ pub struct Config {
     #[serde(default)]
     pub identity_resolver_endpoint: Option<String>,
 
+    #[serde(default)]
+    pub darkmode_endpoint: Option<String>,
+
     // no default! must be specified in some way
     pub db_url: String,
     pub secret_key: String,

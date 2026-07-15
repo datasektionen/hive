@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashSet};
 
 use rocket::{State, serde::json::Json};
 use serde::Serialize;
@@ -6,6 +6,7 @@ use sqlx::PgPool;
 
 use crate::{
     api::HiveApiPermission,
+    darkmode::DarkmodeClient,
     errors::{AppError, AppResult},
     guards::{api::consumer::ApiConsumer, lang::Language},
     models::AffiliatedTagAssignment,
@@ -96,17 +97,61 @@ async fn tagged_groups(
 async fn tagged_users(
     tag_id: &str,
     consumer: ApiConsumer,
+    darkmode: &State<Option<DarkmodeClient>>,
     db: &State<PgPool>,
 ) -> AppResult<Json<BTreeSet<TaggedUser>>> {
     consumer
         .require(HiveApiPermission::ListTagged, db.inner())
         .await?;
 
+    let hidden_users = if let Some(darkmode) = darkmode.as_ref()
+        && darkmode.get_state()
+    {
+        let groups: Vec<_> = tags::list_group_assignments("hive", "darkmode", None, None, db.inner(), None, false)
+            .await?
+            .into_iter()
+            .filter_map(|tag| {
+                if let Some(group_id) = tag.group_id
+                    && let Some(group_domain) = tag.group_domain
+                {
+                    Some((group_id, group_domain))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        let mut users = HashSet::new();
+
+        for (id, domain) in groups {
+            let members: Vec<_> =
+                groups::members::get_all_members(&id, &domain, db.inner(), None)
+                    .await?
+                    .into_iter()
+                    .map(|member| member.username)
+                    .collect();
+
+            users.extend(members);
+        }
+
+        users
+    } else {
+        HashSet::new()
+    };
+
     let assignments =
         tags::list_user_assignments(&consumer.system_id, tag_id, db.inner(), None, None)
             .await?
             .into_iter()
-            .map(Into::into)
+            .filter_map(|tag| {
+                if let Some(ref username) = tag.username
+                    && hidden_users.get(username).is_none()
+                {
+                    Some(tag.into())
+                } else {
+                    None
+                }
+            })
             .collect(); // BTreeSet orders and removes duplicates
 
     Ok(Json(assignments))
@@ -149,6 +194,7 @@ async fn tagged_group_members(
     group_id: &str,
     group_domain: &str,
     consumer: ApiConsumer,
+    darkmode: &State<Option<DarkmodeClient>>,
     db: &State<PgPool>,
 ) -> AppResult<Json<BTreeSet<String>>> {
     consumer
@@ -162,10 +208,51 @@ async fn tagged_group_members(
         return Err(AppError::NotAllowed(HivePermission::ApiListTagged));
     }
 
+    let hidden_users = if let Some(darkmode) = darkmode.as_ref()
+        && darkmode.get_state()
+    {
+        let groups: Vec<_> = tags::list_group_assignments("hive", "darkmode", None, None, db.inner(), None, false)
+            .await?
+            .into_iter()
+            .filter_map(|tag| {
+                if let Some(group_id) = tag.group_id
+                    && let Some(group_domain) = tag.group_domain
+                {
+                    Some((group_id, group_domain))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        let mut users = HashSet::new();
+
+        for (id, domain) in groups {
+            let members: Vec<_> =
+                groups::members::get_all_members(&id, &domain, db.inner(), None)
+                    .await?
+                    .into_iter()
+                    .map(|member| member.username)
+                    .collect();
+
+            users.extend(members);
+        }
+
+        users
+    } else {
+        HashSet::new()
+    };
+
     let members = groups::members::get_all_members(group_id, group_domain, db.inner(), None)
         .await?
         .into_iter()
-        .map(|member| member.username)
+        .filter_map(|member| {
+            if hidden_users.get(&member.username).is_none() {
+                Some(member.username)
+            } else {
+                None
+            }
+        })
         .collect(); // BTreeSet orders and removes duplicates
 
     Ok(Json(members))

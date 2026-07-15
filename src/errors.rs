@@ -40,6 +40,8 @@ pub enum AppError {
     IdentityResolutionError(#[source] reqwest::Error),
     #[error("failed to get the identity resolver")]
     MissingIdentityResolver,
+    #[error("failed to get current darkmode state: {0}")]
+    DarkmodeError(#[source] reqwest::Error),
     #[error("failed to decode error while generating error page from JSON")]
     ErrorDecodeFailure,
 
@@ -129,6 +131,7 @@ impl AppError {
             AppError::StateSerializationError(..) => Status::InternalServerError,
             AppError::StateDeserializationError(..) => Status::InternalServerError,
             AppError::IdentityResolutionError(..) => Status::InternalServerError,
+            AppError::DarkmodeError(..) => Status::InternalServerError,
             AppError::MissingIdentityResolver => Status::InternalServerError,
             AppError::ErrorDecodeFailure => Status::InternalServerError,
             AppError::NotAllowed(..) => Status::Forbidden,

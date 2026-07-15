@@ -8,9 +8,12 @@ use rocket::fs::FileServer;
 use routing::cors::Cors;
 use sqlx::PgPool;
 
+use crate::darkmode::DarkmodeClient;
+
 mod api;
 mod auth;
 mod config;
+mod darkmode;
 mod dto;
 mod errors;
 mod guards;
@@ -66,6 +69,11 @@ async fn rocket() -> _ {
         config.identity_resolver_endpoint.clone(),
     ));
 
+    let darkmode = DarkmodeClient::new(config.darkmode_endpoint.clone())
+        .await
+        .ok()
+        .flatten();
+
     #[cfg(feature = "integrations")]
     {
         let db = db.clone(); // cloning is cheap (Arc)
@@ -82,6 +90,7 @@ async fn rocket() -> _ {
         .manage(db)
         .manage(oidc_client)
         .manage(resolver)
+        .manage(darkmode)
         .attach(ErrorPageGenerator)
         .attach(Cors)
         .mount("/", &web::tree())
