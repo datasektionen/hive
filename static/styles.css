@@ -23,12 +23,17 @@
   --pico-color: #01aaff;
 }
 
+.red {
+  --pico-color: #F06048;
+}
+
 .primary,
 .secondary,
 .contrast,
 .success,
 .error,
-.blue {
+.blue
+.red {
   color: var(--pico-color);
 }
 

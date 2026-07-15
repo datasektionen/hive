@@ -41,14 +41,15 @@
         {% endfor %}
         {% for member in members %}
             {% let is_future_member = member.from > chrono::Local::now().date_naive() %}
+            {% let is_past_member = member.until < chrono::Local::now().date_naive() %}
             {% if let Some(id) = member.id %}
-                {% if is_future_member %}
+                {% if is_future_member || is_past_member %}
                     <tr id=member-{{ id }} class="secondary">
                 {% else %}
                     <tr id=member-{{ id }}>
                 {% endif %}
             {% else %}
-                {% if is_future_member %}
+                {% if is_future_member || is_past_member %}
                     <tr class="secondary">
                 {% else %}
                     <tr>

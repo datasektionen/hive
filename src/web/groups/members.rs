@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use chrono::{Datelike, Local, NaiveDate};
+use chrono::Local;
 use log::*;
 use rinja::Template;
 use rocket::{
@@ -106,6 +106,7 @@ struct MemberEditedView<'r> {
     show_indirect: bool,
     can_manage: bool,
     is_future_member: bool,
+    is_past_member: bool,
 }
 
 #[derive(Responder)]
@@ -159,7 +160,7 @@ pub async fn list_members(
                 id,
                 domain,
                 true,
-                None::<chrono::Days>,
+                Some(chrono::Months::new(1)), // To show resently expired memberships
                 db.inner(),
                 resolver.as_ref().as_ref(),
             )
@@ -515,6 +516,7 @@ async fn edit_member<'v>(
             }
 
             let is_future_member = changed.from > Local::now().date_naive();
+            let is_past_member = changed.until < Local::now().date_naive();
 
             let template = MemberEditedView {
                 ctx,
@@ -523,6 +525,7 @@ async fn edit_member<'v>(
                 member: changed,
                 show_indirect,
                 is_future_member,
+                is_past_member,
                 can_manage: authority >= AuthorityInGroup::ManageMembers,
             };
 
