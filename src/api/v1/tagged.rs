@@ -1,4 +1,4 @@
-use std::collections::{BTreeSet, HashSet};
+use std::collections::BTreeSet;
 
 use rocket::{State, serde::json::Json};
 use serde::Serialize;
@@ -104,40 +104,7 @@ async fn tagged_users(
         .require(HiveApiPermission::ListTagged, db.inner())
         .await?;
 
-    let hidden_users = if let Some(darkmode) = darkmode.as_ref()
-        && darkmode.get_state()
-    {
-        let groups: Vec<_> = tags::list_group_assignments("hive", "darkmode", None, None, db.inner(), None, false)
-            .await?
-            .into_iter()
-            .filter_map(|tag| {
-                if let Some(group_id) = tag.group_id
-                    && let Some(group_domain) = tag.group_domain
-                {
-                    Some((group_id, group_domain))
-                } else {
-                    None
-                }
-            })
-            .collect();
-
-        let mut users = HashSet::new();
-
-        for (id, domain) in groups {
-            let members: Vec<_> =
-                groups::members::get_all_members(&id, &domain, db.inner(), None)
-                    .await?
-                    .into_iter()
-                    .map(|member| member.username)
-                    .collect();
-
-            users.extend(members);
-        }
-
-        users
-    } else {
-        HashSet::new()
-    };
+    let hidden_users = groups::members::get_hidden_members(darkmode, db.inner()).await?;
 
     let assignments =
         tags::list_user_assignments(&consumer.system_id, tag_id, db.inner(), None, None)
@@ -208,40 +175,7 @@ async fn tagged_group_members(
         return Err(AppError::NotAllowed(HivePermission::ApiListTagged));
     }
 
-    let hidden_users = if let Some(darkmode) = darkmode.as_ref()
-        && darkmode.get_state()
-    {
-        let groups: Vec<_> = tags::list_group_assignments("hive", "darkmode", None, None, db.inner(), None, false)
-            .await?
-            .into_iter()
-            .filter_map(|tag| {
-                if let Some(group_id) = tag.group_id
-                    && let Some(group_domain) = tag.group_domain
-                {
-                    Some((group_id, group_domain))
-                } else {
-                    None
-                }
-            })
-            .collect();
-
-        let mut users = HashSet::new();
-
-        for (id, domain) in groups {
-            let members: Vec<_> =
-                groups::members::get_all_members(&id, &domain, db.inner(), None)
-                    .await?
-                    .into_iter()
-                    .map(|member| member.username)
-                    .collect();
-
-            users.extend(members);
-        }
-
-        users
-    } else {
-        HashSet::new()
-    };
+    let hidden_users = groups::members::get_hidden_members(darkmode, db.inner()).await?;
 
     let members = groups::members::get_all_members(group_id, group_domain, db.inner(), None)
         .await?
