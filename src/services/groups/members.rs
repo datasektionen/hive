@@ -1,13 +1,14 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use chrono::{Date, Datelike, Local, NaiveDate};
 use log::*;
 use rocket::form::Contextual;
 use serde_json::json;
-use sqlx::Row;
+use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
 use crate::{
+    darkmode::DarkmodeClient,
     dto::{
         datetime::BrowserDateDto,
         groups::{AddMemberDto, AddSubgroupDto, EditMemberDto},
@@ -17,7 +18,7 @@ use crate::{
     models::{ActionKind, GroupMember, Subgroup, TargetKind},
     perms::{HivePermission, UpperBoundScope},
     resolver::IdentityResolver,
-    services::{audit_log_details_for_update, audit_logs, groups, update_if_changed},
+    services::{audit_log_details_for_update, audit_logs, groups, tags, update_if_changed},
 };
 
 pub async fn get_one<'x, X>(membership_id: &Uuid, db: X) -> AppResult<Option<GroupMember>>
@@ -747,4 +748,44 @@ async fn populate_member_identities(
     }
 
     Ok(())
+}
+
+pub async fn get_hidden_members(
+    darkmode: &Option<DarkmodeClient>,
+    db: &PgPool,
+) -> AppResult<HashSet<String>> {
+    if let Some(darkmode) = darkmode.as_ref()
+        && darkmode.get_state()
+    {
+        let groups: Vec<_> =
+            tags::list_group_assignments("hive", "darkmode", None, None, db, None, false)
+                .await?
+                .into_iter()
+                .filter_map(|tag| {
+                    if let Some(group_id) = tag.group_id
+                        && let Some(group_domain) = tag.group_domain
+                    {
+                        Some((group_id, group_domain))
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+
+        let mut users = HashSet::new();
+
+        for (id, domain) in groups {
+            let members: Vec<_> = groups::members::get_all_members(&id, &domain, db, None)
+                .await?
+                .into_iter()
+                .map(|member| member.username)
+                .collect();
+
+            users.extend(members);
+        }
+
+        Ok(users)
+    } else {
+        Ok(HashSet::new())
+    }
 }

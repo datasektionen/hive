@@ -6,6 +6,7 @@ use sqlx::PgPool;
 
 use crate::{
     api::HiveApiPermission,
+    darkmode::DarkmodeClient,
     errors::{AppError, AppResult},
     guards::{api::consumer::ApiConsumer, lang::Language},
     models::AffiliatedTagAssignment,
@@ -96,17 +97,28 @@ async fn tagged_groups(
 async fn tagged_users(
     tag_id: &str,
     consumer: ApiConsumer,
+    darkmode: &State<Option<DarkmodeClient>>,
     db: &State<PgPool>,
 ) -> AppResult<Json<BTreeSet<TaggedUser>>> {
     consumer
         .require(HiveApiPermission::ListTagged, db.inner())
         .await?;
 
+    let hidden_users = groups::members::get_hidden_members(darkmode, db.inner()).await?;
+
     let assignments =
         tags::list_user_assignments(&consumer.system_id, tag_id, db.inner(), None, None)
             .await?
             .into_iter()
-            .map(Into::into)
+            .filter_map(|tag| {
+                if let Some(ref username) = tag.username
+                    && hidden_users.get(username).is_none()
+                {
+                    Some(tag.into())
+                } else {
+                    None
+                }
+            })
             .collect(); // BTreeSet orders and removes duplicates
 
     Ok(Json(assignments))
@@ -149,6 +161,7 @@ async fn tagged_group_members(
     group_id: &str,
     group_domain: &str,
     consumer: ApiConsumer,
+    darkmode: &State<Option<DarkmodeClient>>,
     db: &State<PgPool>,
 ) -> AppResult<Json<BTreeSet<String>>> {
     consumer
@@ -162,10 +175,18 @@ async fn tagged_group_members(
         return Err(AppError::NotAllowed(HivePermission::ApiListTagged));
     }
 
+    let hidden_users = groups::members::get_hidden_members(darkmode, db.inner()).await?;
+
     let members = groups::members::get_all_members(group_id, group_domain, db.inner(), None)
         .await?
         .into_iter()
-        .map(|member| member.username)
+        .filter_map(|member| {
+            if hidden_users.get(&member.username).is_none() {
+                Some(member.username)
+            } else {
+                None
+            }
+        })
         .collect(); // BTreeSet orders and removes duplicates
 
     Ok(Json(members))
