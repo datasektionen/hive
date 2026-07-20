@@ -38,7 +38,7 @@ impl IdentityResolver {
 
         let entries: HashMap<String, ResolvedEntry> = self
             .client
-            .get(&self.endpoint)
+            .get(&format!("{}/api/users", self.endpoint))
             .query(&[("format", "map")])
             .query(&params)
             .send()
@@ -68,7 +68,7 @@ impl IdentityResolver {
 
         let entries: HashMap<String, ResolvedEntry> = self
             .client
-            .get(&self.endpoint)
+            .get(&format!("{}/api/users", self.endpoint))
             .query(&[("format", "map")])
             .query(&params)
             .send()
@@ -93,7 +93,7 @@ impl IdentityResolver {
 
         let entries: HashMap<String, ResolvedEntry> = self
             .client
-            .get(&self.endpoint)
+            .get(&format!("{}/api/users", self.endpoint))
             .query(&[("format", "map")])
             .query(&params)
             .send()
@@ -110,7 +110,7 @@ impl IdentityResolver {
     pub async fn resolve_one(&self, username: &str) -> AppResult<Option<String>> {
         let result = self
             .client
-            .get(&self.endpoint)
+            .get(&format!("{}/api/users", self.endpoint))
             .query(&[("format", "single"), ("u", username)])
             .send()
             .await;
@@ -153,14 +153,32 @@ impl IdentityResolver {
 
         Ok(())
     }
+
+    pub async fn list_users_year(&self, year: &str) -> AppResult<Vec<ResolvedEntry>> {
+        let entries: Vec<ResolvedEntry> = self
+            .client
+            .get(&format!("{}/api/search", self.endpoint))
+            .query(&[("year", year)])
+            .query(&[("limit", 300)]) // There should never be more than 300 members
+            // during a year
+            .send()
+            .await
+            .and_then(reqwest::Response::error_for_status)
+            .map_err(AppError::IdentityResolutionError)?
+            .json()
+            .await
+            .map_err(AppError::IdentityResolutionError)?;
+
+        Ok(entries)
+    }
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct ResolvedEntry {
-    first_name: String,
-    family_name: String,
-    email: String,
+pub struct ResolvedEntry {
+    pub first_name: String,
+    pub family_name: String,
+    pub email: String,
 }
 
 impl ResolvedEntry {

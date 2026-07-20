@@ -54,7 +54,7 @@ HIVE_OIDC_CLIENT_ID={{ .oidc_client_id }}
 HIVE_OIDC_CLIENT_SECRET={{ .oidc_client_secret }}
 {{ end }}
 HIVE_OIDC_ISSUER_URL=https://sso.datasektionen.se/op
-HIVE_IDENTITY_RESOLVER_ENDPOINT=http://sso.nomad.dsekt.internal/api/users
+HIVE_IDENTITY_RESOLVER_ENDPOINT=http://sso.nomad.dsekt.internal
 HIVE_DARKMODE_ENDPOINT=https://darkmode.datasektionen.se
 TZ=Europe/Stockholm
 ENV
