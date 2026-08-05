@@ -49,7 +49,7 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| {
         tags: &[],
         tasks: &[super::Task {
             id: "share-albums",
-            schedule: "0 0 * * * *", // every hour
+            schedule: "0 0 0,12 * * *", // Every 12 hours
             func: |mon, settings, resolver, db| Box::pin(share_albums(mon, settings, resolver, db)),
         }],
     }
