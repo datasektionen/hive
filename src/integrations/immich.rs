@@ -1,18 +1,23 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     sync::{Arc, LazyLock},
 };
 
 use chrono::{Datelike, Local};
+use iter_tools::Itertools;
 use sqlx::PgPool;
 
 use crate::{
     errors::AppResult,
     integrations::{
         Mode, fallible,
-        immich::immich::{AddUsersToAlbumDto, AlbumUserAddDto, AlbumUserRole, UserResponseDto},
+        immich::immich::{
+            AddUsersToAlbumDto, AlbumResponseDto, AlbumUserAddDto, AlbumUserRole, ImmichAPIClient,
+            UserResponseDto,
+        },
     },
     resolver::IdentityResolver,
+    services::groups,
 };
 
 mod immich;
@@ -46,16 +51,148 @@ pub static MANIFEST: LazyLock<super::Manifest> = LazyLock::new(|| {
             },
         ],
         permissions: &[],
-        tags: &[],
-        tasks: &[super::Task {
-            id: "share-albums",
-            schedule: "0 0 0,12 * * *", // Every 12 hours
-            func: |mon, settings, resolver, db| Box::pin(share_albums(mon, settings, resolver, db)),
+        tags: &[super::Tag {
+            id: "share",
+            description: "Share albums with the prefix based on the members when the pictures where taken",
+            has_content: true,
+            supports_groups: true,
+            supports_users: false,
+            self_service: false,
         }],
+        tasks: &[
+            super::Task {
+                id: "share-n0llan",
+                schedule: "0 0 0,12 * * *", // Every 12 hours
+                func: |mon, settings, resolver, db| {
+                    Box::pin(share_n0llan(mon, settings, resolver, db))
+                },
+            },
+            super::Task {
+                id: "share-group",
+                schedule: "0 0 0 * * *", // Every day
+                func: |mon, settings, resolver, db| {
+                    Box::pin(share_group(mon, settings, resolver, db))
+                },
+            },
+        ],
     }
 });
 
-async fn share_albums(
+async fn share_group(
+    mon: &mut super::TaskRunMonitor,
+    settings: super::SettingsValues,
+    resolver: Arc<Option<IdentityResolver>>,
+    db: PgPool,
+) -> AppResult<()> {
+    let mode: Mode = super::require_serde_setting!(mon, settings, "mode");
+
+    let api_key = super::require_string_setting!(mon, settings, "api-key");
+
+    let immich_url = super::require_string_setting!(mon, settings, "immich-url");
+
+    let api_client = fallible!(
+        mon,
+        immich::ImmichAPIClient::new(immich_url.to_string(), api_key.to_string())
+    );
+
+    mon.warn(mode.informational_message());
+
+    let immich_users: HashMap<String, UserResponseDto> =
+        fallible!(mon, api_client.list_users().await)
+            .into_iter()
+            .map(|user| (user.email.clone(), user))
+            .collect();
+
+    let albums = fallible!(mon, api_client.list_albums().await);
+
+    let album_prefixes: HashMap<String, Vec<(String, String)>> = sqlx::query_as(
+        "SELECT gs.id, gs.domain, ta.content
+            FROM all_tag_assignments ta
+            JOIN groups gs
+                ON gs.id = ta.group_id
+                    AND gs.domain = ta.group_domain
+            WHERE ta.system_id = 'immich'
+                AND ta.tag_id = 'share'
+            ORDER BY gs.domain, gs.id",
+    )
+    .fetch_all(&db)
+    .await?
+    .into_iter()
+    .map(|(id, domain, album_prefix)| (album_prefix, (id, domain)))
+    .into_group_map();
+
+    // There is an edgecase where multiple prefixes point to the same album which could cause a
+    // problem
+    for (album_prefix, groups) in album_prefixes {
+        let albums: Vec<_> = albums
+            .iter()
+            .filter(|album| album.album_name.starts_with(&album_prefix))
+            .collect();
+
+        for album in albums {
+            mon.info(format!("Sharing album `{}`", album.album_name));
+
+            let mut usernames: HashSet<String> = HashSet::new();
+
+            // Get all users who were members of the group any time in the timespan of the album
+            for (id, domain) in &groups {
+                let usernames_temp = sqlx::query_scalar(
+                    r#"
+                    -- direct members
+                    SELECT
+                        dm.username,
+                        ARRAY[(dm.group_id, dm.group_domain)::GROUP_REF] AS path
+                    FROM direct_memberships dm
+                    WHERE dm.group_id = $1
+                        AND dm.group_domain = $2
+                        AND (dm.from, dm.until) OVERLAPS ($3, $4)
+
+                    UNION -- removes duplicates (vs. UNION ALL)
+
+                    -- indirect members
+                    SELECT
+                        dm.username,
+                        sg.path || ($1, $2)::GROUP_REF AS path
+                    FROM all_subgroups_of($1, $2) sg
+                    JOIN direct_memberships dm
+                        ON dm.group_id = sg.child_id
+                        AND dm.group_domain = sg.child_domain
+                        AND (dm.from, dm.until) OVERLAPS ($3, $4)
+                "#,
+                )
+                .bind(&id)
+                .bind(&domain)
+                .bind(album.start_date)
+                .bind(album.end_date)
+                .fetch_all(&db)
+                .await?;
+
+                usernames.extend(usernames_temp);
+            }
+
+            let emails = if let Some(resolver) = resolver.as_ref() {
+                resolver
+                    .resolve_emails(usernames.iter().map(|s| s.as_str()))
+                    .await?
+            } else {
+                continue;
+            };
+
+            let users: Vec<_> = emails
+                .into_iter()
+                .filter_map(|(_, email)| immich_users.get(&email))
+                .collect();
+
+            share_album(album, users, &api_client, mode, mon).await?;
+        }
+    }
+
+    mon.info(format!("Shared {} albums!", albums.len()));
+
+    Ok(())
+}
+
+async fn share_n0llan(
     mon: &mut super::TaskRunMonitor,
     settings: super::SettingsValues,
     resolver: Arc<Option<IdentityResolver>>,
@@ -88,7 +225,7 @@ async fn share_albums(
         .collect();
 
     for album in reception_albums.iter() {
-        mon.info(format!("Syncing album `{}`", album.album_name));
+        mon.info(format!("Sharing album `{}`", album.album_name));
 
         // Extract the year from the album name
         let mut year = album.album_name.split_whitespace();
@@ -131,68 +268,80 @@ async fn share_albums(
             continue;
         };
 
-        let mut album_users = album.album_users.clone();
+        share_album(album, users, &api_client, mode, mon).await?;
+    }
 
-        album_users.sort_unstable_by_key(|value| value.user.id.clone());
+    mon.info(format!("Shared {} albums!", reception_albums.len()));
 
-        for album_user in album_users.iter() {
-            // Only remove viewers other roles are handled manualy
-            if album_user.role != AlbumUserRole::Viewer {
-                continue;
-            }
+    Ok(())
+}
 
-            if users
-                .binary_search_by_key(&album_user.user.id, |value| value.id.clone())
-                .is_err()
-            {
-                mon.info(format!(
-                    "Removing `{}` from `{}`",
-                    album_user.user.name, album.album_name
-                ));
+async fn share_album(
+    album: &AlbumResponseDto,
+    users: Vec<&UserResponseDto>,
+    api_client: &ImmichAPIClient,
+    mode: Mode,
+    mon: &mut super::TaskRunMonitor,
+) -> AppResult<()> {
+    let mut album_users = album.album_users.clone();
 
-                if mode.should_delete() {
-                    fallible!(
-                        mon,
-                        api_client.remove_user(&album.id, &album_user.user.id).await
-                    );
-                }
-            }
+    album_users.sort_unstable_by_key(|value| value.user.id.clone());
+
+    for album_user in album_users.iter() {
+        // Only remove viewers other roles are handled manualy
+        if album_user.role != AlbumUserRole::Viewer {
+            continue;
         }
 
-        let users_to_add: Vec<_> = users
-            .into_iter()
-            .filter(|user| {
-                album_users
-                    .binary_search_by_key(&user.id, |value| value.user.id.clone())
-                    .is_err()
-            })
-            .collect();
-
-        for user in users_to_add.iter() {
+        if users
+            .binary_search_by_key(&album_user.user.id, |value| value.id.clone())
+            .is_err()
+        {
             mon.info(format!(
-                "Sharing `{}` with `{}`",
-                album.album_name, user.name
+                "Removing `{}` from `{}`",
+                album_user.user.name, album.album_name
             ));
-        }
 
-        let users_to_add: Vec<_> = users_to_add
-            .into_iter()
-            .map(|value| AlbumUserAddDto {
-                role: AlbumUserRole::Viewer,
-                user_id: value.id.clone(),
-            })
-            .collect();
-
-        let body = AddUsersToAlbumDto {
-            album_users: users_to_add,
-        };
-
-        if mode.should_insert() && body.album_users.len() > 0 {
-            fallible!(mon, api_client.share_album(&album.id, body).await);
+            if mode.should_delete() {
+                fallible!(
+                    mon,
+                    api_client.remove_user(&album.id, &album_user.user.id).await
+                );
+            }
         }
     }
 
-    mon.info(format!("Synchronized {} albums!", reception_albums.len()));
+    let users_to_add: Vec<_> = users
+        .into_iter()
+        .filter(|user| {
+            album_users
+                .binary_search_by_key(&user.id, |value| value.user.id.clone())
+                .is_err()
+        })
+        .collect();
+
+    for user in users_to_add.iter() {
+        mon.info(format!(
+            "Sharing `{}` with `{}`",
+            album.album_name, user.name
+        ));
+    }
+
+    let users_to_add: Vec<_> = users_to_add
+        .into_iter()
+        .map(|value| AlbumUserAddDto {
+            role: AlbumUserRole::Viewer,
+            user_id: value.id.clone(),
+        })
+        .collect();
+
+    let body = AddUsersToAlbumDto {
+        album_users: users_to_add,
+    };
+
+    if mode.should_insert() && body.album_users.len() > 0 {
+        fallible!(mon, api_client.share_album(&album.id, body).await);
+    }
 
     Ok(())
 }

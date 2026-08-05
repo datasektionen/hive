@@ -1,5 +1,6 @@
 use std::fmt;
 
+use chrono::{DateTime, Local};
 use log::*;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
@@ -129,6 +130,8 @@ pub struct AlbumResponseDto {
     pub id: String,
     pub album_name: String,
     pub album_users: Vec<AlbumUserResponseDto>,
+    pub start_date: DateTime<Local>,
+    pub end_date: DateTime<Local>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
