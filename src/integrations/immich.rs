@@ -7,6 +7,8 @@ use chrono::{Datelike, Local};
 use iter_tools::Itertools;
 use sqlx::PgPool;
 
+use log::*;
+
 use crate::{
     errors::AppResult,
     integrations::{
@@ -237,11 +239,11 @@ async fn share_n0llan(
         };
 
         // Get the users from sso with the corresponding year tag, for the current year also look up
-        // n0llan
+        // nØllan
         let users = if let Some(resolver) = resolver.as_ref() {
             let mut nollan = if Local::now().year().to_string() == year {
                 resolver
-                    .list_users_year("n0llan")
+                    .list_users_year("nØllan")
                     .await?
                     .into_iter()
                     .filter_map(|user| immich_users.get(&user.email))
