@@ -15,16 +15,18 @@ api-docs = []
 integrations = [ # the underlying control mechanism
     "dep:tokio-cron-scheduler",
 ]
-default-integrations = ["integration-gworkspace", "integration-grafana", "integration-vaultwarden"]
+default-integrations = ["integration-gworkspace", "integration-grafana", "integration-vaultwarden", "integration-immich"]
 integration-gworkspace = ["integrations", "dep:jsonwebtoken"]
 integration-grafana = ["integrations"]
 integration-vaultwarden = ["integrations"]
+integration-immich = ["integrations"]
 
 [dependencies]
 chrono = { version = "0.4.39", features = ["serde"] }
 clap = { version = "4.5.30", features = ["derive"] }
 figment = { version = "0.10.19", features = ["env", "toml"] }
 hex = "0.4.3"
+iter_tools = "0.50.0"
 jsonwebtoken = { version = "10.3.0", optional = true, features = ["rust_crypto"]}
 log = "0.4.25"
 openidconnect = { version = "4.0.0", features = [

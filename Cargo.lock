@@ -434,6 +434,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c8d4a3bb8b1e0c1050499d1815f5ab16d04f0959b233085fb31653fbfc9d98f9"
 
 [[package]]
+name = "clone_dyn_types"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5226d8fe69efe07200ea831d71b9d8fbfb1a894945fc4a44f41df17575de099f"
+
+[[package]]
 name = "cmake"
 version = "0.1.58"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1337,6 +1343,7 @@ dependencies = [
  "clap",
  "figment",
  "hex",
+ "iter_tools",
  "jsonwebtoken",
  "log",
  "openidconnect",
@@ -1776,6 +1783,16 @@ name = "is_terminal_polyfill"
 version = "1.70.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a6cb138bb79a146c1bd460005623e142ef0181e3d0219cb493e02f7d08a35695"
+
+[[package]]
+name = "iter_tools"
+version = "0.50.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "32403e96b23e11832956d1e989f5f9c0f2aa43bd8324c24f586dc0c8ccb1010e"
+dependencies = [
+ "clone_dyn_types",
+ "itertools 0.11.0",
+]
 
 [[package]]
 name = "itertools"
