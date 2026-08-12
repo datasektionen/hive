@@ -224,24 +224,32 @@ async fn share_n0llan(
     let reception_albums: Vec<_> = albums
         .iter()
         .filter(|album| album.album_name.starts_with("Mottagningen "))
+        .filter_map(|album| {
+            // Extract the year from the album name
+            let mut year = album.album_name.split_whitespace();
+            year.next()
+                .expect("already verified one word ending with space");
+
+            let Some(year) = year.next() else {
+                return None;
+            };
+
+            let Ok(year) = year.parse::<i32>() else {
+                return None;
+            };
+
+            // format year for D-XX
+            Some((year % 100, album))
+        })
         .collect();
 
-    for album in reception_albums.iter() {
+    for (year, album) in reception_albums.iter() {
         mon.info(format!("Sharing album `{}`", album.album_name));
-
-        // Extract the year from the album name
-        let mut year = album.album_name.split_whitespace();
-        year.next()
-            .expect("already verified one word ending with space");
-
-        let Some(year) = year.next() else {
-            continue;
-        };
 
         // Get the users from sso with the corresponding year tag, for the current year also look up
         // nØllan
         let users = if let Some(resolver) = resolver.as_ref() {
-            let mut nollan = if Local::now().year().to_string() == year {
+            let mut nollan = if Local::now().year() % 100 == *year {
                 resolver
                     .list_users_year("nØllan")
                     .await?
@@ -253,7 +261,7 @@ async fn share_n0llan(
             };
 
             let mut regular: Vec<_> = resolver
-                .list_users_year(&format!("D-{}", year[2..].to_string()))
+                .list_users_year(&format!("D-{}", year))
                 .await?
                 .into_iter()
                 .filter_map(|user| immich_users.get(&user.email))
@@ -280,14 +288,16 @@ async fn share_n0llan(
 
 async fn share_album(
     album: &AlbumResponseDto,
-    users: Vec<&UserResponseDto>,
+    mut users: Vec<&UserResponseDto>,
     api_client: &ImmichAPIClient,
     mode: Mode,
     mon: &mut super::TaskRunMonitor,
 ) -> AppResult<()> {
     let mut album_users = album.album_users.clone();
 
+    // Sort both list so that binary search works
     album_users.sort_unstable_by_key(|value| value.user.id.clone());
+    users.sort_unstable_by_key(|value| value.id.clone());
 
     for album_user in album_users.iter() {
         // Only remove viewers other roles are handled manualy
