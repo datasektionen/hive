@@ -268,7 +268,12 @@ async fn sync_to_directory(
             create_group(&key, group, &client, mode, mon).await?;
         }
 
-        sync_group_settings(&key, group, &client, mode, mon).await?;
+        // Mainly for roles that handle confidential information
+        let is_sensitive: bool =
+            groups::tags::is_tagged_with(&group.id, &group.domain, "gworkspace", "sensitive", &db)
+                .await?;
+
+        sync_group_settings(&key, group, is_sensitive, &client, mode, mon).await?;
 
         let subgroup_emails_owned: Vec<_> =
             groups::members::get_direct_subgroups(&group.id, &group.domain, &db)
@@ -305,11 +310,6 @@ async fn sync_to_directory(
             &db,
         )
         .await?;
-
-        // Mainly for roles that handle confidential information
-        let is_sensitive: bool =
-            groups::tags::is_tagged_with(&group.id, &group.domain, "gworkspace", "sensitive", &db)
-                .await?;
 
         let grace_period = if has_grace_period && !is_sensitive {
             // 2025-03-01 becomes 2025-02-01, etc.
@@ -436,6 +436,7 @@ async fn create_group(
 async fn sync_group_settings(
     key: &str,
     group: &models::Group,
+    is_sensitive: bool,
     client: &DirectoryApiClient,
     mode: Mode,
     mon: &mut super::TaskRunMonitor,
@@ -470,7 +471,8 @@ async fn sync_group_settings(
         allow_external_members: false.into(),
         is_archived: true.into(),
         members_can_post_as_the_group: false.into(),
-        enable_collaborative_inbox: true.into(),
+        enable_collaborative_inbox: google::PoorMansBoolean::from(!is_sensitive), 
+        // ^ Allow disabeling history for sensitive groups
         message_moderation_level: google::GroupMessageModerationLevel::ModerateNone,
         spam_moderation_level: google::GroupSpamModerationLevel::Moderate,
         default_sender: google::GroupDefaultSender::DefaultSelf,
