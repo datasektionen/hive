@@ -61,6 +61,10 @@ ENV
         destination = "local/.env"
         env         = true
       }
+
+      resource {
+        memory = 64
+      }
     }
 
     task "bitwarden-cli" {
@@ -83,6 +87,10 @@ BW_PORT=8087
 ENV
         destination = "local/.env"
         env         = true
+      }
+
+      resources {
+        memory = 128
       }
     }
   }
