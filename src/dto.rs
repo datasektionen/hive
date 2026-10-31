@@ -5,7 +5,7 @@ use std::{
 
 use regex::Regex;
 use rocket::form::{self, FromFormField};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 pub mod api_tokens;
 pub mod datetime;
@@ -16,7 +16,7 @@ pub mod permissions;
 pub mod systems;
 pub mod tags;
 
-#[derive(sqlx::Type, Serialize, Clone, Copy)]
+#[derive(sqlx::Type, Serialize, Deserialize, Clone, Copy)]
 #[sqlx(transparent)]
 #[serde(transparent)]
 pub struct TrimmedStr<'v>(&'v str);
@@ -33,6 +33,12 @@ impl<'v> Deref for TrimmedStr<'v> {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl<'v> From<&'v str> for TrimmedStr<'v> {
+    fn from(value: &'v str) -> Self {
+        Self(value.trim())
     }
 }
 

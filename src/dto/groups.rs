@@ -2,6 +2,7 @@ use rocket::{
     FromForm,
     form::{self, FromFormField},
 };
+use serde::Deserialize;
 
 use super::{TrimmedStr, datetime::BrowserDateDto};
 
@@ -61,8 +62,9 @@ impl<'v> FromFormField<'v> for GroupRefDto<'v> {
     }
 }
 
-#[derive(FromForm)]
+#[derive(FromForm, Deserialize)]
 pub struct AddMemberDto<'v> {
+    #[serde(borrow)]
     #[field(validate = super::valid_username())]
     pub username: TrimmedStr<'v>,
     pub from: BrowserDateDto,

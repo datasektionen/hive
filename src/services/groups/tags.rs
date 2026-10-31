@@ -291,3 +291,32 @@ where
 
     Ok(result)
 }
+
+pub async fn list_tagged_content<'x, X>(
+    group_id: &str,
+    group_domain: &str,
+    system_id: &str,
+    tag_id: &str,
+    db: X,
+) -> AppResult<Vec<String>>
+where
+    X: sqlx::Executor<'x, Database = sqlx::Postgres>,
+{
+    let result = sqlx::query_scalar(
+        "SELECT content
+            FROM all_tag_assignments
+            WHERE group_id = $1
+                AND group_domain = $2
+                AND system_id = $3
+                AND tag_id = $4
+        )",
+    )
+    .bind(group_id)
+    .bind(group_domain)
+    .bind(system_id)
+    .bind(tag_id)
+    .fetch_all(db)
+    .await?;
+
+    Ok(result)
+}
