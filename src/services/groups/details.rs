@@ -6,7 +6,7 @@ use super::{GroupRelevance, RoleInGroup};
 use crate::{
     HIVE_SYSTEM_ID,
     errors::{AppError, AppResult},
-    guards::{perms::PermsEvaluator, user::User},
+    guards::{actor::Actor, perms::PermsEvaluator, user::User},
     models::{GroupModel, GroupRef},
     perms::{GroupsScope, HivePermission, TagContent},
     services::{groups::AuthorityInGroup, pg_args},
@@ -57,12 +57,16 @@ pub async fn require_authority<'x, X>(
     domain: &str,
     db: X,
     perms: &PermsEvaluator,
-    user: &User,
+    actor: &Actor,
 ) -> AppResult<AuthorityInGroup>
 where
     X: sqlx::Executor<'x, Database = sqlx::Postgres> + Copy,
 {
-    let role = get_role_in_group(user.username(), id, domain, db).await?;
+    let role = match actor {
+        Actor::User(user) => get_role_in_group(user.username(), id, domain, db).await?,
+        Actor::Api(_) => None,
+    };
+
     let authority = get_authority_from_permissions(id, domain, db, perms).await? + &role;
 
     authority.require(min).map(|_| authority)
@@ -165,7 +169,7 @@ where
     Ok(())
 }
 
-async fn has_any_tag<'x, X>(
+pub async fn has_any_tag<'x, X>(
     id: &str,
     domain: &str,
     tags: &[(String, Option<TagContent>)],

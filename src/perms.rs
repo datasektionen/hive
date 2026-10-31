@@ -2,8 +2,12 @@ use std::{cmp::Ordering, fmt};
 
 use chrono::Local;
 use sqlx::PgPool;
+use uuid::Uuid;
 
-use crate::{errors::AppResult, models::BasePermissionAssignment};
+use crate::{
+    errors::AppResult,
+    models::BasePermissionAssignment,
+};
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum HivePermission {
@@ -378,7 +382,7 @@ impl PartialOrd for UpperBoundScope {
     }
 }
 
-pub async fn get_assignments(
+pub async fn get_user_assignments(
     username: &str,
     system_id: &str,
     perm_id: &str,
@@ -399,6 +403,34 @@ pub async fn get_assignments(
     .bind(username)
     .bind(today)
     .bind(system_id)
+    .bind(perm_id)
+    .fetch_all(db)
+    .await?;
+
+    // can't use `fetch` instead of `fetch_all` (which would avoid deserializing
+    // unless needed) because we want to cache *all* permission assignments;
+    // this is fine under the assumption that there will be very few assignments
+    // for the same (user, system, perm) triplet -- i.e., different scopes
+
+    Ok(assignments)
+}
+
+pub async fn get_api_assignments(
+    api_token_id: Uuid,
+    system_id: &str,
+    perm_id: &str,
+    db: &PgPool,
+) -> AppResult<Vec<BasePermissionAssignment>> {
+    let assignments = sqlx::query_as::<_, BasePermissionAssignment>(
+        "
+        SELECT *
+        FROM permission_assignments pa
+        WHERE pa.system_id = $1
+        AND pa.api_token_id = $2
+        AND pa.perm_id = $3",
+    )
+    .bind(system_id)
+    .bind(api_token_id)
     .bind(perm_id)
     .fetch_all(db)
     .await?;

@@ -9,6 +9,7 @@ use rocket::{
 use super::Infallible;
 use crate::auth;
 
+#[derive(Clone)]
 pub struct User(Arc<auth::Session>);
 
 impl User {

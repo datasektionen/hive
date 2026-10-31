@@ -7,7 +7,7 @@ use super::{audit_logs, pg_args};
 use crate::{
     dto::tags::{AssignTagToGroupDto, AssignTagToUserDto, CreateSubtagDto, CreateTagDto},
     errors::{AppError, AppResult},
-    guards::{lang::Language, perms::PermsEvaluator, user::User},
+    guards::{actor::Actor, lang::Language, perms::PermsEvaluator, user::User},
     models::{ActionKind, AffiliatedTagAssignment, Tag, TagMorphology, TargetKind},
     perms::{HivePermission, SystemsScope},
     resolver::IdentityResolver,
@@ -263,7 +263,7 @@ where
     Ok(tag)
 }
 
-pub async fn delete<'x, X>(system_id: &str, tag_id: &str, db: X, user: &User) -> AppResult<()>
+pub async fn delete<'x, X>(system_id: &str, tag_id: &str, db: X, actor: &Actor) -> AppResult<()>
 where
     X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
 {
@@ -276,7 +276,7 @@ where
         warn!(
             "Disallowing tag deletion for integration system {} from {}",
             system_id,
-            user.username()
+            actor.key()
         );
         return Err(AppError::SelfPreservation);
     }
@@ -299,7 +299,7 @@ where
         ActionKind::Delete,
         TargetKind::Tag,
         old.key(),
-        user.username(),
+        &actor.key(),
         json!({
             "old": {
                 "supports_groups": old.supports_groups,
@@ -323,7 +323,7 @@ pub async fn assign_to_group<'v, 'x, X>(
     dto: &AssignTagToGroupDto<'v>,
     label_lang: Option<&Language>,
     db: X,
-    user: &User,
+    actor: &Actor,
 ) -> AppResult<AffiliatedTagAssignment>
 where
     X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
@@ -383,7 +383,7 @@ where
         ActionKind::Create,
         TargetKind::TagAssignment,
         assignment.key(),
-        user.username(),
+        &actor.key(),
         json!({
             "new": {
                 "entity_type": "group",
