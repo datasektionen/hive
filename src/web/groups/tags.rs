@@ -9,7 +9,16 @@ use rocket::{
 use sqlx::PgPool;
 
 use crate::{
-    dto::tags::{AssignTagDto, BulkTagGroupsDto}, errors::AppResult, guards::{actor::Actor, context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User}, models::{SimpleGroup, Tag, TagAssignment}, perms::{HivePermission, SystemsScope}, routing::RouteTree, services::groups::{self, AuthorityInGroup}, web::{
+    dto::tags::{AssignTagDto, BulkTagGroupsDto},
+    errors::AppResult,
+    guards::{
+        actor::Actor, context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User,
+    },
+    models::{SimpleGroup, Tag, TagAssignment},
+    perms::{HivePermission, SystemsScope},
+    routing::RouteTree,
+    services::groups::{self, AuthorityInGroup},
+    web::{
         self, Either, RenderedTemplate,
         groups::{ListGroupsLayout, ListGroupsSort},
     },

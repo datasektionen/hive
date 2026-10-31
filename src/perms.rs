@@ -4,10 +4,7 @@ use chrono::Local;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::{
-    errors::AppResult,
-    models::BasePermissionAssignment,
-};
+use crate::{errors::AppResult, models::BasePermissionAssignment};
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum HivePermission {
