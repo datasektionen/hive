@@ -273,7 +273,16 @@ async fn sync_to_directory(
             groups::tags::is_tagged_with(&group.id, &group.domain, "gworkspace", "sensitive", &db)
                 .await?;
 
-        sync_group_settings(&key, group, is_sensitive, &client, mode, mon).await?;
+        sync_group_settings(
+            &key,
+            group,
+            is_sensitive,
+            allow_external,
+            &client,
+            mode,
+            mon,
+        )
+        .await?;
 
         let subgroup_emails_owned: Vec<_> =
             groups::members::get_direct_subgroups(&group.id, &group.domain, &db)
@@ -437,6 +446,7 @@ async fn sync_group_settings(
     key: &str,
     group: &models::Group,
     is_sensitive: bool,
+    allow_external: bool,
     client: &DirectoryApiClient,
     mode: Mode,
     mon: &mut super::TaskRunMonitor,
@@ -468,7 +478,7 @@ async fn sync_group_settings(
         who_can_moderate_content: google::GroupModerationPermission::OwnersAndManagers,
         who_can_assist_content: google::GroupModerationPermission::AllMembers,
         allow_web_posting: true.into(),
-        allow_external_members: false.into(),
+        allow_external_members: allow_external.into(),
         is_archived: true.into(),
         members_can_post_as_the_group: false.into(),
         enable_collaborative_inbox: (!is_sensitive).into(),
