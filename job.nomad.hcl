@@ -62,7 +62,7 @@ ENV
         env         = true
       }
 
-      resource {
+      resources {
         memory = 64
       }
     }
