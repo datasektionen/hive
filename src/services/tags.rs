@@ -559,7 +559,7 @@ where
             AND group_domain = $2
             AND system_id = $3
             AND tag_id = $4
-            AND tag_content = $5
+            AND content = $5
         RETURNING *",
     )
     .bind(group_id)

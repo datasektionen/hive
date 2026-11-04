@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use chrono::NaiveDate;
+use chrono::{Months, NaiveDate};
 use rocket::{State, serde::json::Json};
 use serde::Serialize;
 use sqlx::PgPool;
@@ -250,8 +250,36 @@ async fn tagged_group_members_detailed(
 
     let hidden_users = groups::members::get_hidden_members(darkmode, db.inner()).await?;
 
-    let members = groups::members::get_all_members(group_id, group_domain, db.inner(), None)
-        .await?
+    let mut direct_members = groups::members::get_direct_members(
+        group_id,
+        group_domain,
+        false,
+        None::<Months>,
+        db.inner(),
+        None,
+    )
+    .await?;
+
+    let sub_groups =
+        groups::members::get_direct_subgroups(group_id, group_domain, db.inner()).await?;
+
+    let mut indirect_members = Vec::new();
+
+    for sub_group in sub_groups {
+        let mut sub_members = groups::members::get_all_members(
+            &sub_group.group.id,
+            &sub_group.group.domain,
+            db.inner(),
+            None,
+        )
+        .await?;
+
+        indirect_members.append(&mut sub_members);
+    }
+
+    direct_members.append(&mut indirect_members);
+
+    let members = direct_members
         .into_iter()
         .filter_map(|member| {
             if hidden_users.get(&member.username).is_none() {

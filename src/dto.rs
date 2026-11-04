@@ -16,7 +16,7 @@ pub mod permissions;
 pub mod systems;
 pub mod tags;
 
-#[derive(sqlx::Type, Serialize, Deserialize, Clone, Copy)]
+#[derive(Debug, sqlx::Type, Serialize, Deserialize, Clone, Copy)]
 #[sqlx(transparent)]
 #[serde(transparent)]
 pub struct TrimmedStr<'v>(&'v str);

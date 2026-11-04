@@ -62,7 +62,7 @@ impl<'v> FromFormField<'v> for GroupRefDto<'v> {
     }
 }
 
-#[derive(FromForm, Deserialize)]
+#[derive(Debug, FromForm, Deserialize)]
 pub struct AddMemberDto<'v> {
     #[serde(borrow)]
     #[field(validate = super::valid_username())]

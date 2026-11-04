@@ -304,12 +304,12 @@ where
 {
     let result = sqlx::query_scalar(
         "SELECT content
-            FROM all_tag_assignments
-            WHERE group_id = $1
-                AND group_domain = $2
-                AND system_id = $3
-                AND tag_id = $4
-        )",
+         FROM all_tag_assignments
+         WHERE group_id = $1
+            AND group_domain = $2
+            AND system_id = $3
+            AND tag_id = $4
+        ",
     )
     .bind(group_id)
     .bind(group_domain)
