@@ -11,7 +11,9 @@ use sqlx::PgPool;
 use crate::{
     dto::tags::{AssignTagDto, BulkTagGroupsDto},
     errors::AppResult,
-    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
+    guards::{
+        actor::Actor, context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User,
+    },
     models::{SimpleGroup, Tag, TagAssignment},
     perms::{HivePermission, SystemsScope},
     routing::RouteTree,
@@ -51,7 +53,7 @@ pub async fn list_tag_assignments(
     db: &State<PgPool>,
     ctx: PageContext,
     perms: &PermsEvaluator,
-    user: User,
+    actor: Actor,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<Either<RenderedTemplate, Redirect>> {
     if partial.is_none() {
@@ -68,7 +70,7 @@ pub async fn list_tag_assignments(
         domain,
         db.inner(),
         perms,
-        &user,
+        &actor,
     )
     .await?;
 

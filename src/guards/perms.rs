@@ -9,15 +9,16 @@ use rocket::{
 };
 use sqlx::PgPool;
 
-use super::{Infallible, user::User};
+use super::Infallible;
 use crate::{
     HIVE_SYSTEM_ID,
     errors::{AppError, AppResult},
+    guards::actor::Actor,
     perms::{self, HivePermission},
 };
 
 pub struct PermsEvaluator {
-    user: User,
+    actor: Actor,
     db: PgPool, // cloning Pool is cheap (just an Arc)
     cache: Mutex<HivePermissionsCache>,
     // ^ Mutex is needed for internal mutability since Rocket can't give us a
@@ -68,9 +69,9 @@ impl HivePermissionsCache {
 }
 
 impl PermsEvaluator {
-    fn new(user: User, db: PgPool) -> Self {
+    fn new(actor: Actor, db: PgPool) -> Self {
         Self {
-            user,
+            actor,
             db,
             cache: Mutex::new(HivePermissionsCache::new()),
         }
@@ -81,8 +82,16 @@ impl PermsEvaluator {
         cache: &mut MutexGuard<'_, HivePermissionsCache>,
         key: &'static str,
     ) -> AppResult<Vec<HivePermission>> {
-        let perms = perms::get_assignments(self.user.username(), HIVE_SYSTEM_ID, key, &self.db)
-            .await?
+        let results = match &self.actor {
+            Actor::User(user) => {
+                perms::get_user_assignments(user.username(), HIVE_SYSTEM_ID, key, &self.db).await
+            }
+            Actor::Api(api) => {
+                perms::get_api_assignments(api.api_token_id, HIVE_SYSTEM_ID, key, &self.db).await
+            }
+        };
+
+        let perms = results?
             .into_iter()
             .map(HivePermission::try_from)
             .inspect(|r| {
@@ -167,10 +176,10 @@ impl<'r> FromRequest<'r> for &'r PermsEvaluator {
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         let result = req
             .local_cache_async(async {
-                if let Outcome::Success(user) = req.guard::<User>().await {
+                if let Outcome::Success(actor) = req.guard::<Actor>().await {
                     let pool = req.guard::<&State<PgPool>>().await.unwrap();
 
-                    Some(PermsEvaluator::new(user, pool.inner().clone()))
+                    Some(PermsEvaluator::new(actor, pool.inner().clone()))
                 } else {
                     None
                 }

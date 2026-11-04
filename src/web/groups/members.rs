@@ -16,9 +16,10 @@ use uuid::Uuid;
 use crate::{
     dto::groups::{AddMemberDto, AddSubgroupDto, EditMemberDto},
     errors::{AppError, AppResult},
-    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
+    guards::{
+        actor::Actor, context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User,
+    },
     models::{GroupMember, GroupRef, SimpleGroup, Subgroup},
-    perms::{HivePermission, UpperBoundScope},
     resolver::IdentityResolver,
     routing::RouteTree,
     services::groups::{self, AuthorityInGroup},
@@ -126,7 +127,7 @@ pub async fn list_members(
     resolver: &State<Arc<Option<IdentityResolver>>>,
     ctx: PageContext,
     perms: &PermsEvaluator,
-    user: User,
+    actor: Actor,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<Either<RenderedTemplate, Redirect>> {
     if partial.is_none() {
@@ -143,7 +144,7 @@ pub async fn list_members(
         domain,
         db.inner(),
         perms,
-        &user,
+        &actor,
     )
     .await?;
 
@@ -191,6 +192,7 @@ async fn add_subgroup<'v>(
     ctx: PageContext,
     perms: &PermsEvaluator,
     user: User,
+    actor: Actor,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<Either<RenderedTemplate, Redirect>> {
     groups::details::require_authority(
@@ -199,7 +201,7 @@ async fn add_subgroup<'v>(
         domain,
         db.inner(),
         perms,
-        &user,
+        &actor,
     )
     .await?;
 
@@ -224,7 +226,7 @@ async fn add_subgroup<'v>(
             dto.child.domain,
             db.inner(),
             perms,
-            &user,
+            &actor,
         )
         .await?;
 
@@ -291,7 +293,7 @@ async fn add_member<'v>(
     resolver: &State<Arc<Option<IdentityResolver>>>,
     ctx: PageContext,
     perms: &PermsEvaluator,
-    user: User,
+    actor: Actor,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<Either<RenderedTemplate, Redirect>> {
     groups::details::require_authority(
@@ -300,7 +302,7 @@ async fn add_member<'v>(
         domain,
         db.inner(),
         perms,
-        &user,
+        &actor,
     )
     .await?;
 
@@ -328,7 +330,7 @@ async fn add_member<'v>(
             dto,
             db.inner(),
             resolver.as_ref().as_ref(),
-            &user,
+            &actor,
         )
         .await?;
 
@@ -383,6 +385,7 @@ async fn remove_subgroup<'v>(
     db: &State<PgPool>,
     perms: &PermsEvaluator,
     user: User,
+    actor: Actor,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<Either<(), Redirect>> {
     groups::details::require_authority(
@@ -391,7 +394,7 @@ async fn remove_subgroup<'v>(
         parent_domain,
         db.inner(),
         perms,
-        &user,
+        &actor,
     )
     .await?;
 
@@ -422,7 +425,7 @@ async fn edit_member_form<'v>(
     db: &State<PgPool>,
     ctx: PageContext,
     perms: &PermsEvaluator,
-    user: User,
+    actor: Actor,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<Either<RenderedTemplate, Redirect>> {
     let (group_id, group_domain) = groups::members::get_membership_group(&id, db.inner())
@@ -443,7 +446,7 @@ async fn edit_member_form<'v>(
         &group_domain,
         db.inner(),
         perms,
-        &user,
+        &actor,
     )
     .await?;
 
@@ -471,6 +474,7 @@ async fn edit_member<'v>(
     ctx: PageContext,
     perms: &PermsEvaluator,
     user: User,
+    actor: Actor,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<EditMemberResponse> {
     let (group_id, group_domain) = groups::members::get_membership_group(&id, db.inner())
@@ -483,7 +487,7 @@ async fn edit_member<'v>(
         &group_domain,
         db.inner(),
         perms,
-        &user,
+        &actor,
     )
     .await?;
 
@@ -601,7 +605,7 @@ async fn remove_member<'v>(
     id: Uuid,
     db: &State<PgPool>,
     perms: &PermsEvaluator,
-    user: User,
+    actor: Actor,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<Either<(), Redirect>> {
     // cannot check perms yet, with only this information
@@ -620,7 +624,7 @@ async fn remove_member<'v>(
         group_domain.as_str(),
         db.inner(),
         perms,
-        &user,
+        &actor,
     )
     .await?;
 
@@ -629,7 +633,7 @@ async fn remove_member<'v>(
         group_id.as_str(),
         group_domain.as_str(),
         db.inner(),
-        &user,
+        &actor,
     )
     .await?;
 
@@ -650,7 +654,7 @@ pub async fn get_membership_details(
     db: &State<PgPool>,
     ctx: PageContext,
     perms: &PermsEvaluator,
-    user: User,
+    actor: Actor,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<Either<RenderedTemplate, Redirect>> {
     if partial.is_none() {
@@ -667,7 +671,7 @@ pub async fn get_membership_details(
         domain,
         db.inner(),
         perms,
-        &user,
+        &actor,
     )
     .await?;
 

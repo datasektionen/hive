@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use log::*;
 use rinja::Template;
@@ -9,7 +9,6 @@ use rocket::{
     response::{Redirect, content::RawHtml},
     uri,
 };
-use serde_json::Value;
 use sqlx::PgPool;
 
 use super::{Either, GracefulRedirect, RenderedTemplate, filters};

@@ -1,6 +1,5 @@
 use std::{collections::HashSet, iter, sync::LazyLock};
 
-use serde::Deserialize;
 use sqlx::PgPool;
 
 use crate::{

@@ -3,12 +3,11 @@ use std::sync::{Arc, LazyLock};
 use sqlx::PgPool;
 
 use crate::{
-    errors::{AppError, AppResult},
+    errors::AppResult,
     integrations::{
         Mode, fallible,
-        grafana::grafana_labs::{CreateTeam, GrafanaApiClient, UpdateTeamMembers},
+        grafana::grafana_labs::{CreateTeam, UpdateTeamMembers},
     },
-    models,
     resolver::IdentityResolver,
     services::groups,
 };
@@ -182,22 +181,29 @@ async fn sync_to_grafana(
                 .filter(|email| org_members.contains(email))
                 .collect();
 
-        let mut current_members: Vec<String> = fallible!(mon, client.list_team_members(team.id).await)
-            .into_iter()
-            .map(|m| m.email)
-            .collect();
+        let mut current_members: Vec<String> =
+            fallible!(mon, client.list_team_members(team.id).await)
+                .into_iter()
+                .map(|m| m.email)
+                .collect();
 
         current_members.sort_unstable();
 
         for member in &current_members {
             if members.binary_search(&member).is_err() {
-                mon.info(format!("Removing member `{}` from team `{}`", member, team.name));
+                mon.info(format!(
+                    "Removing member `{}` from team `{}`",
+                    member, team.name
+                ));
             }
         }
 
         for member in &members {
             if current_members.binary_search(&member).is_err() {
-                mon.info(format!("Adding member `{}` to team `{}`", member, team.name));
+                mon.info(format!(
+                    "Adding member `{}` to team `{}`",
+                    member, team.name
+                ));
             }
         }
 
@@ -208,7 +214,10 @@ async fn sync_to_grafana(
                                      * admins in grafana */
             };
 
-            fallible!(mon, client.sync_team_members(team.id, update_team_members).await);
+            fallible!(
+                mon,
+                client.sync_team_members(team.id, update_team_members).await
+            );
         }
     }
 

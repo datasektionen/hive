@@ -1,3 +1,4 @@
+pub mod actor;
 pub mod api;
 pub mod context;
 pub mod cors;

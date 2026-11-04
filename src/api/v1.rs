@@ -11,7 +11,12 @@ mod webhook;
 pub fn tree() -> RouteTree {
     with_api_docs!(
         "v1",
-        RouteTree::Branch(vec![tagged::routes(), token::routes(), user::routes(), webhook::routes()])
+        RouteTree::Branch(vec![
+            tagged::routes(),
+            token::routes(),
+            user::routes(),
+            webhook::routes()
+        ])
     )
 }
 

@@ -17,7 +17,7 @@ use crate::{
 
 const IMPERSONATION_HEADER: &str = "X-Hive-Impersonate-System";
 
-#[derive(FromRow)]
+#[derive(FromRow, Clone)]
 pub struct ApiConsumer {
     pub api_token_id: Uuid,
     pub system_id: String,
