@@ -2,6 +2,7 @@ use rocket::{
     FromForm,
     form::{self, FromFormField},
 };
+use serde::Deserialize;
 
 use super::{TrimmedStr, groups::GroupRefDto};
 
@@ -38,6 +39,14 @@ pub struct AssignTagToUserDto<'v> {
     pub user: TrimmedStr<'v>,
     #[field(validate = super::option_len(1..))]
     pub content: Option<TrimmedStr<'v>>,
+}
+
+#[derive(FromForm, Deserialize)]
+pub struct AssignTagWithApiDto<'v> {
+    #[serde(borrow)]
+    pub tag: TrimmedStr<'v>,
+    #[field(validate = super::option_len(1..))]
+    pub content: Option<TrimmedStr<'v>>
 }
 
 #[derive(FromForm)]

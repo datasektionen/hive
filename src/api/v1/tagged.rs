@@ -10,9 +10,8 @@ use crate::{
     api::HiveApiPermission,
     darkmode::DarkmodeClient,
     dto::{
-        TrimmedStr,
         groups::{AddMemberDto, GroupRefDto},
-        tags::AssignTagToGroupDto,
+        tags::{AssignTagToGroupDto, AssignTagWithApiDto},
     },
     errors::{AppError, AppResult},
     guards::{actor::Actor, api::consumer::ApiConsumer, lang::Language, perms::PermsEvaluator},
@@ -302,7 +301,7 @@ async fn add_tagged_member<'v>(
     actor: Actor,
     perms: &PermsEvaluator,
     db: &State<PgPool>,
-) -> AppResult<Json<GroupMember>> {
+) -> AppResult<Json<DetailedMember>> {
     groups::details::require_authority(
         AuthorityInGroup::ManageMembers,
         group_id,
@@ -316,7 +315,7 @@ async fn add_tagged_member<'v>(
     let result =
         groups::members::add_member(group_id, group_domain, &dto, db.inner(), None, &actor).await?;
 
-    Ok(Json(result))
+    Ok(Json(result.into()))
 }
 
 #[rocket::delete("/group/<group_domain>/<group_id>/members/<membership_id>")]
@@ -357,7 +356,7 @@ async fn tagged_group_content(
     tag_id: &str,
     consumer: ApiConsumer,
     db: &State<PgPool>,
-) -> AppResult<Json<Vec<String>>> {
+) -> AppResult<Json<BTreeSet<String>>> {
     consumer
         .require(HiveApiPermission::ListTagged, db.inner())
         .await?;
@@ -369,17 +368,18 @@ async fn tagged_group_content(
         tag_id,
         db.inner(),
     )
-    .await?;
+    .await?
+    .into_iter()
+    .collect();
 
     Ok(Json(content))
 }
 
-#[rocket::post("/group/<group_domain>/<group_id>/tag/<tag_id>/content/<tag_content>?<lang>")]
+#[rocket::post("/group/<group_domain>/<group_id>/tag?<lang>", data = "<tag>")]
 async fn add_tagged_group_content<'v>(
     group_id: &str,
     group_domain: &str,
-    tag_id: &str,
-    tag_content: &str,
+    tag: Json<AssignTagWithApiDto<'v>>,
     lang: Option<Language>,
     consumer: ApiConsumer,
     actor: Actor,
@@ -389,19 +389,19 @@ async fn add_tagged_group_content<'v>(
     let min = HivePermission::AssignTags(SystemsScope::Id(consumer.system_id.to_string()));
     perms.require(min).await?;
 
-    let _ = tags::require_one(&consumer.system_id.to_string(), tag_id, db.inner()).await?;
+    let _ = tags::require_one(&consumer.system_id.to_string(), &tag.tag, db.inner()).await?;
 
     let dto = AssignTagToGroupDto {
         group: GroupRefDto {
             id: group_id,
             domain: group_domain,
         },
-        content: Some(TrimmedStr::from(tag_content)),
+        content: tag.content,
     };
 
     let assignment = tags::assign_to_group(
         &consumer.system_id.to_string(),
-        tag_id,
+        &tag.tag,
         &dto,
         lang.as_ref(),
         db.inner(),
@@ -411,6 +411,8 @@ async fn add_tagged_group_content<'v>(
 
     Ok(Json(assignment.into()))
 }
+
+// Should add an endpoint to remove tags without content
 
 #[rocket::delete("/group/<group_domain>/<group_id>/tag/<tag_id>/content/<tag_content>")]
 async fn delete_tagged_group_content(
