@@ -21,10 +21,10 @@ use crate::{
 mod grafana;
 #[cfg(feature = "integration-gworkspace")]
 mod gworkspace;
-#[cfg(feature = "integration-vaultwarden")]
-mod vaultwarden;
 #[cfg(feature = "integration-immich")]
 mod immich;
+#[cfg(feature = "integration-vaultwarden")]
+mod vaultwarden;
 
 // can't use const because it wouldn't support async fn pointers for tasks
 pub static MANIFESTS: LazyLock<Vec<&Manifest>> = LazyLock::new(|| {

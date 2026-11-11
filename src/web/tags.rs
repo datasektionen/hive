@@ -15,7 +15,9 @@ use super::{Either, GracefulRedirect, RenderedTemplate};
 use crate::{
     dto::tags::{AssignTagToGroupDto, AssignTagToUserDto, CreateSubtagDto, CreateTagDto},
     errors::AppResult,
-    guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User},
+    guards::{
+        actor::Actor, context::PageContext, headers::HxRequest, perms::PermsEvaluator, user::User,
+    },
     models::{AffiliatedTagAssignment, Tag},
     perms::{HivePermission, SystemsScope},
     resolver::IdentityResolver,
@@ -263,7 +265,7 @@ pub async fn delete_tag(
     tag_id: &str,
     db: &State<PgPool>,
     perms: &PermsEvaluator,
-    user: User,
+    actor: Actor,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<GracefulRedirect> {
     let min = HivePermission::ManageTags(SystemsScope::Id(system_id.to_owned()));
@@ -271,7 +273,7 @@ pub async fn delete_tag(
 
     // TODO: anti-CSRF(?), DELETE isn't a normal form method
 
-    tags::delete(system_id, tag_id, db.inner(), &user).await?;
+    tags::delete(system_id, tag_id, db.inner(), &actor).await?;
 
     // TODO: show visual confirmation of successful delete in tags list
     Ok(GracefulRedirect::to(
@@ -367,7 +369,7 @@ async fn assign_tag_to_group<'v>(
     db: &State<PgPool>,
     ctx: PageContext,
     perms: &PermsEvaluator,
-    user: User,
+    actor: Actor,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<Either<RenderedTemplate, Redirect>> {
     let min = HivePermission::AssignTags(SystemsScope::Id(system_id.to_string()));
@@ -381,7 +383,7 @@ async fn assign_tag_to_group<'v>(
         // validation passed
 
         let assignment =
-            tags::assign_to_group(system_id, tag_id, dto, Some(&ctx.lang), db.inner(), &user)
+            tags::assign_to_group(system_id, tag_id, dto, Some(&ctx.lang), db.inner(), &actor)
                 .await?;
 
         if partial.is_some() {

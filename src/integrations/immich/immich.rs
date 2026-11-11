@@ -165,5 +165,5 @@ pub struct AlbumUserAddDto {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AddUsersToAlbumDto {
-    pub album_users: Vec<AlbumUserAddDto>
+    pub album_users: Vec<AlbumUserAddDto>,
 }

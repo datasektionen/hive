@@ -7,7 +7,7 @@ use super::{audit_logs, pg_args};
 use crate::{
     dto::tags::{AssignTagToGroupDto, AssignTagToUserDto, CreateSubtagDto, CreateTagDto},
     errors::{AppError, AppResult},
-    guards::{lang::Language, perms::PermsEvaluator, user::User},
+    guards::{actor::Actor, lang::Language, perms::PermsEvaluator, user::User},
     models::{ActionKind, AffiliatedTagAssignment, Tag, TagMorphology, TargetKind},
     perms::{HivePermission, SystemsScope},
     resolver::IdentityResolver,
@@ -263,7 +263,7 @@ where
     Ok(tag)
 }
 
-pub async fn delete<'x, X>(system_id: &str, tag_id: &str, db: X, user: &User) -> AppResult<()>
+pub async fn delete<'x, X>(system_id: &str, tag_id: &str, db: X, actor: &Actor) -> AppResult<()>
 where
     X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
 {
@@ -276,7 +276,7 @@ where
         warn!(
             "Disallowing tag deletion for integration system {} from {}",
             system_id,
-            user.username()
+            actor.key()
         );
         return Err(AppError::SelfPreservation);
     }
@@ -299,7 +299,7 @@ where
         ActionKind::Delete,
         TargetKind::Tag,
         old.key(),
-        user.username(),
+        &actor.key(),
         json!({
             "old": {
                 "supports_groups": old.supports_groups,
@@ -323,7 +323,7 @@ pub async fn assign_to_group<'v, 'x, X>(
     dto: &AssignTagToGroupDto<'v>,
     label_lang: Option<&Language>,
     db: X,
-    user: &User,
+    actor: &Actor,
 ) -> AppResult<AffiliatedTagAssignment>
 where
     X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
@@ -383,7 +383,7 @@ where
         ActionKind::Create,
         TargetKind::TagAssignment,
         assignment.key(),
-        user.username(),
+        &actor.key(),
         json!({
             "new": {
                 "entity_type": "group",
@@ -528,6 +528,84 @@ where
         // FIXME: consider using assignment_id as target_id
         old.key(),
         user.username(),
+        details,
+        &mut *txn,
+    )
+    .await?;
+
+    txn.commit().await?;
+
+    Ok(old)
+}
+
+pub async fn unassign_with_content<'x, X>(
+    group_id: &str,
+    group_domain: &str,
+    system_id: &str,
+    tag_id: &str,
+    tag_content: &str,
+    db: X,
+    perms: &PermsEvaluator,
+    actor: &Actor,
+) -> AppResult<AffiliatedTagAssignment>
+where
+    X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
+{
+    let mut txn = db.begin().await?;
+
+    let old: AffiliatedTagAssignment = sqlx::query_as(
+        "DELETE FROM tag_assignments
+        WHERE group_id = $1
+            AND group_domain = $2
+            AND system_id = $3
+            AND tag_id = $4
+            AND content = $5
+        RETURNING *",
+    )
+    .bind(group_id)
+    .bind(group_domain)
+    .bind(system_id)
+    .bind(tag_id)
+    .bind(tag_content)
+    .fetch_optional(&mut *txn)
+    .await?
+    .ok_or_else(|| AppError::NotAllowed(HivePermission::AssignTags(SystemsScope::Wildcard)))?;
+    // ^ not a permissions problem, but prevents enumeration (we haven't checked
+    // permissions yet)
+
+    let min = HivePermission::AssignTags(SystemsScope::Id(old.system_id.clone()));
+    perms.require(min).await?;
+
+    let details = if let Some(ref username) = old.username {
+        json!({
+            "old": {
+                "entity_type": "user",
+                "id": &old.id,
+                "username": username,
+                "content": old.content,
+            }
+        })
+    } else {
+        let group_id = old.group_id.as_ref().expect("group id");
+        let group_domain = old.group_domain.as_ref().expect("group domain");
+
+        json!({
+            "old": {
+                "entity_type": "group",
+                "id": &old.id,
+                "group_id": group_id,
+                "group_domain": group_domain,
+                "content": old.content,
+            }
+        })
+    };
+
+    audit_logs::add_entry(
+        ActionKind::Delete,
+        TargetKind::TagAssignment,
+        // FIXME: consider using assignment_id as target_id
+        old.key(),
+        &actor.key(),
         details,
         &mut *txn,
     )

@@ -1,8 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
-use chrono::{Date, Datelike, Local, NaiveDate};
+use chrono::{Datelike, Local, NaiveDate};
 use log::*;
-use rocket::form::Contextual;
 use serde_json::json;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
@@ -14,7 +13,7 @@ use crate::{
         groups::{AddMemberDto, AddSubgroupDto, EditMemberDto},
     },
     errors::{AppError, AppResult},
-    guards::{perms::PermsEvaluator, user::User},
+    guards::{actor::Actor, perms::PermsEvaluator, user::User},
     models::{ActionKind, GroupMember, Subgroup, TargetKind},
     perms::{HivePermission, UpperBoundScope},
     resolver::IdentityResolver,
@@ -347,7 +346,7 @@ pub async fn add_member<'v, 'x, X>(
     dto: &AddMemberDto<'v>,
     db: X,
     resolver: Option<&IdentityResolver>,
-    user: &User,
+    actor: &Actor,
 ) -> AppResult<GroupMember>
 where
     X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
@@ -397,7 +396,7 @@ where
         TargetKind::Membership,
         // FIXME: consider using added.id as target_id
         format!("{}@{}", id, domain),
-        user.username(),
+        &actor.key(),
         json!({
             "new": {
                 "member_type": "member",
@@ -508,7 +507,7 @@ pub async fn remove_member<'x, X>(
     group_id: &str,
     group_domain: &str,
     db: X,
-    user: &User,
+    actor: &Actor,
 ) -> AppResult<()>
 where
     X: sqlx::Acquire<'x, Database = sqlx::Postgres>,
@@ -555,7 +554,7 @@ where
         // expires and we end up with no administrators anyway)
         warn!(
             "Disallowing last administrator removal from {}",
-            user.username()
+            actor.key()
         );
         return Err(AppError::SelfPreservation);
     };
@@ -565,7 +564,7 @@ where
         TargetKind::Membership,
         // FIXME: consider using membership_id as target_id
         format!("{}@{}", group_id, group_domain),
-        user.username(),
+        &actor.key(),
         json!({
             "old": {
                 "member_type": "member",

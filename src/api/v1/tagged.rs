@@ -1,65 +1,22 @@
 use std::collections::BTreeSet;
 
 use rocket::{State, serde::json::Json};
-use serde::Serialize;
 use sqlx::PgPool;
 
 use crate::{
-    api::HiveApiPermission,
+    api::{
+        HiveApiPermission,
+        v1::{TaggedGroup, TaggedUser},
+    },
     darkmode::DarkmodeClient,
-    errors::{AppError, AppResult},
+    errors::AppResult,
     guards::{api::consumer::ApiConsumer, lang::Language},
-    models::AffiliatedTagAssignment,
-    perms::HivePermission,
     routing::RouteTree,
     services::{groups, tags},
 };
 
 pub fn routes() -> RouteTree {
-    rocket::routes![
-        tagged_groups,
-        tagged_users,
-        tagged_user_memberships,
-        tagged_group_members,
-    ]
-    .into()
-}
-
-#[derive(Serialize, PartialEq, Eq, PartialOrd, Ord)]
-struct TaggedGroup {
-    group_name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    group_description: Option<String>,
-    group_domain: String, // should be ordered first since it's shown separately
-    group_id: String,
-    tag_content: Option<String>,
-}
-
-impl From<AffiliatedTagAssignment> for TaggedGroup {
-    fn from(assignment: AffiliatedTagAssignment) -> Self {
-        Self {
-            group_domain: assignment.group_domain.unwrap_or_default(),
-            group_id: assignment.group_id.unwrap_or_default(),
-            tag_content: assignment.content,
-            group_name: assignment.label.unwrap_or_default(),
-            group_description: assignment.description,
-        }
-    }
-}
-
-#[derive(Serialize, PartialEq, Eq, PartialOrd, Ord)]
-struct TaggedUser {
-    username: String,
-    tag_content: Option<String>,
-}
-
-impl From<AffiliatedTagAssignment> for TaggedUser {
-    fn from(assignment: AffiliatedTagAssignment) -> Self {
-        Self {
-            username: assignment.username.unwrap_or_default(),
-            tag_content: assignment.content,
-        }
-    }
+    rocket::routes![tagged_groups, tagged_users, tagged_user_memberships].into()
 }
 
 #[rocket::get("/tagged/<tag_id>/groups?<lang>&<description>")]
@@ -154,40 +111,4 @@ async fn tagged_user_memberships(
     .collect(); // BTreeSet orders and removes duplicates
 
     Ok(Json(assignments))
-}
-
-#[rocket::get("/group/<group_domain>/<group_id>/members")]
-async fn tagged_group_members(
-    group_id: &str,
-    group_domain: &str,
-    consumer: ApiConsumer,
-    darkmode: &State<Option<DarkmodeClient>>,
-    db: &State<PgPool>,
-) -> AppResult<Json<BTreeSet<String>>> {
-    consumer
-        .require(HiveApiPermission::ListTagged, db.inner())
-        .await?;
-
-    let tagged_for_system =
-        groups::tags::is_tagged_for_system(group_id, group_domain, &consumer.system_id, db.inner())
-            .await?;
-    if !tagged_for_system {
-        return Err(AppError::NotAllowed(HivePermission::ApiListTagged));
-    }
-
-    let hidden_users = groups::members::get_hidden_members(darkmode, db.inner()).await?;
-
-    let members = groups::members::get_all_members(group_id, group_domain, db.inner(), None)
-        .await?
-        .into_iter()
-        .filter_map(|member| {
-            if hidden_users.get(&member.username).is_none() {
-                Some(member.username)
-            } else {
-                None
-            }
-        })
-        .collect(); // BTreeSet orders and removes duplicates
-
-    Ok(Json(members))
 }

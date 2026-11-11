@@ -7,8 +7,6 @@ use chrono::{Datelike, Local};
 use iter_tools::Itertools;
 use sqlx::PgPool;
 
-use log::*;
-
 use crate::{
     errors::AppResult,
     integrations::{
@@ -19,7 +17,6 @@ use crate::{
         },
     },
     resolver::IdentityResolver,
-    services::groups,
 };
 
 mod immich;

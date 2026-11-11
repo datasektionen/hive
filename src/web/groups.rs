@@ -19,7 +19,8 @@ use crate::{
     dto::groups::{CreateGroupDto, EditGroupDto},
     errors::{AppError, AppResult},
     guards::{
-        context::PageContext, headers::HxRequest, lang::Language, perms::PermsEvaluator, user::User,
+        actor::Actor, context::PageContext, headers::HxRequest, lang::Language,
+        perms::PermsEvaluator, user::User,
     },
     models::{
         Group, GroupMember, Permission, PermissionAssignment, SimpleGroup, Subgroup, Tag,
@@ -411,6 +412,7 @@ pub async fn delete_group(
     db: &State<PgPool>,
     perms: &PermsEvaluator,
     user: User,
+    actor: Actor,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<GracefulRedirect> {
     groups::details::require_authority(
@@ -419,7 +421,7 @@ pub async fn delete_group(
         domain,
         db.inner(),
         perms,
-        &user,
+        &actor,
     )
     .await?;
 
@@ -456,6 +458,7 @@ pub async fn edit_group<'v>(
     ctx: PageContext,
     perms: &PermsEvaluator,
     user: User,
+    actor: Actor,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<EditGroupResponse> {
     groups::details::require_authority(
@@ -464,7 +467,7 @@ pub async fn edit_group<'v>(
         domain,
         db.inner(),
         perms,
-        &user,
+        &actor,
     )
     .await?;
 
@@ -558,7 +561,7 @@ async fn group_info_tooltip(
     db: &State<PgPool>,
     ctx: PageContext,
     perms: &PermsEvaluator,
-    user: User,
+    actor: Actor,
     partial: Option<HxRequest<'_>>,
 ) -> AppResult<Either<RenderedTemplate, Redirect>> {
     if partial.is_none() {
@@ -575,7 +578,7 @@ async fn group_info_tooltip(
         domain,
         db.inner(),
         perms,
-        &user,
+        &actor,
     )
     .await?;
 

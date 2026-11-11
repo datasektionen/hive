@@ -6,7 +6,8 @@ use std::{
 
 use chrono::{DateTime, Local, NaiveDate};
 use rocket::{Either, FromFormField, UriDisplayQuery};
-use sqlx::{FromRow, types::JsonValue};
+use serde::Serialize;
+use sqlx::FromRow;
 use uuid::Uuid;
 
 use crate::{
@@ -116,7 +117,7 @@ pub trait GroupModel: for<'r> sqlx::FromRow<'r, sqlx::postgres::PgRow> + Send + 
 impl GroupModel for Group {}
 impl GroupModel for SimpleGroup {}
 
-#[derive(FromRow, Debug)]
+#[derive(FromRow, Debug, Serialize)]
 pub struct GroupMember {
     #[sqlx(default)]
     pub id: Option<Uuid>, // only exists for direct memberships

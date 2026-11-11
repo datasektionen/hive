@@ -3,7 +3,7 @@ use rocket::{Either, State, response::content::RawHtml};
 use sqlx::PgPool;
 
 use crate::{
-    dto::{datetime::BrowserDateTimeDto, logs::LogsFilterDto},
+    dto::logs::LogsFilterDto,
     errors::AppResult,
     guards::{context::PageContext, headers::HxRequest, perms::PermsEvaluator},
     models::{ActionKind, AuditLog, TargetKind},

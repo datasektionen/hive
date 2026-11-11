@@ -2,7 +2,7 @@ use std::fmt;
 
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime};
 use rocket::form;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// Rocket only implements FromFormField for `time` types, not `chrono`,
 /// so we need to implement everything ourselves
@@ -42,7 +42,9 @@ impl<'f> form::FromFormField<'f> for BrowserDateTimeDto {
     }
 }
 
-#[derive(sqlx::Type, Serialize, PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Copy)]
+#[derive(
+    sqlx::Type, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Copy,
+)]
 #[sqlx(transparent)]
 #[serde(transparent)]
 pub struct BrowserDateDto(pub NaiveDate);

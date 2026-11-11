@@ -55,6 +55,8 @@ tags:
     description: Endpoints related to API token permissions
   - name: tagged
     description: Endpoints related to tagged entities
+  - name: group
+    description: Endpoints related to groups
 
 # if ever adding a new endpoint, consider using badges:
 # ```yaml
@@ -521,7 +523,11 @@ paths:
         - bearer: [$hive:api-list-tagged]
       responses:
         "200":
-          $ref: "#/components/responses/TaggedGroups"
+          description: The groups tagged with the specified tag.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaggedGroup"
         default:
           $ref: "#/components/responses/UnknownError"
   /tagged/{tag_id}/memberships/{username}:
@@ -668,7 +674,7 @@ paths:
 
         The returned array never contains any duplicates and its entries are
         ordered lexicographically.
-      tags: [tagged]
+      tags: [group]
       parameters:
         - name: group_id
           in: path
@@ -703,6 +709,276 @@ paths:
                 none:
                   summary: Group without members
                   value: []
+        default:
+          $ref: "#/components/responses/UnknownError"
+    post:
+      operationId: add_tagged_member
+      summary: Add a new member to a tagged group
+      description: |
+        Adds a new member to the group and returns all the info on the new 
+        assignment.
+
+        The group must be tagged (directly or indirectly) with at least one tag
+        associated with the system relevant to the API consumer (per
+        authentication), otherwise an error will be returned.
+      tags: [group]
+      parameters:
+        - name: group_id
+          in: path
+          description: The ID of the group to list members for
+          required: true
+          schema:
+            $ref: "#/components/schemas/GroupId"
+        - name: group_domain
+          in: path
+          description: The domain of the group to list members for
+          required: true
+          schema:
+            $ref: "#/components/schemas/GroupDomain"
+      requestBody:
+        description: The information about the new member
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddMemberDto"
+      security:
+        - bearer: [$hive:manage-members]
+      responses:
+        "200":
+          description: |
+            Detailed info about the member that was added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DetailedMember"
+        default:
+          $ref: "#/components/responses/UnknownError"
+  /group/{group_domain}/{group_id}/members/details:
+    get:
+      operationId: tagged_group_members_detailed
+      summary: List detailed information about all members in a given group
+      description: |
+        Returns an array with detailed information (id, form, until, manager) for all 
+        the users recognized to be (direct or indirect) members of a given group.
+
+        The group must be tagged (directly or indirectly) with at least one tag
+        associated with the system relevant to the API consumer (per
+        authentication), otherwise an error will be returned.
+
+        The returned array never contains any duplicates and its entries are
+        ordered by the id.
+      tags: [group]
+      parameters:
+        - name: group_id
+          in: path
+          description: The ID of the group to list members for
+          required: true
+          schema:
+            $ref: "#/components/schemas/GroupId"
+        - name: group_domain
+          in: path
+          description: The domain of the group to list members for
+          required: true
+          schema:
+            $ref: "#/components/schemas/GroupDomain"
+      security:
+        - bearer: [$hive:api-list-tagged]
+      responses:
+        "200":
+          description: |
+            A list of detailed information about all group members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DetailedMember"
+        default:
+          $ref: "#/components/responses/UnknownError"
+  /group/{group_domain}/{group_id}/members/{membership_id}:
+    delete:
+      operationId: delete_tagged_member
+      summary: Removes a direct member from a group
+      description: |
+        Removes a member from a group based on their direct membership id. 
+
+        The group must be tagged (directly or indirectly) with at least one tag
+        associated with the system relevant to the API consumer (per
+        authentication), otherwise an error will be returned.
+
+        The endpoint doesn't return any body on success, only a status code.
+      tags: [group]
+      parameters:
+        - name: group_id
+          in: path
+          description: The ID of the group to list members for
+          required: true
+          schema:
+            $ref: "#/components/schemas/GroupId"
+        - name: group_domain
+          in: path
+          description: The domain of the group to list members for
+          required: true
+          schema:
+            $ref: "#/components/schemas/GroupDomain"
+        - name: membership_id
+          in: path
+          description: The direct membership id of the user
+          required: true
+          schema:
+            type: string
+            format: uuid
+      security:
+        - bearer: [$hive:manage-members]
+      responses:
+        "200":
+          description: Member removed successfully
+        default:
+          $ref: "#/components/responses/UnknownError"
+  /group/{group_domain}/{group_id}/tag/{tag_id}:
+    get:
+      operationId: tagged_group_content
+      summary: List the content of every instance of a tag in a given group
+      description: |
+        Returns an array with the content of all of the specified tag id.
+
+        The group must be tagged (directly or indirectly) with at least one tag
+        associated with the system relevant to the API consumer (per
+        authentication), otherwise an error will be returned.
+
+        The returned array never contains any duplicates and its entries are
+        ordered lexicographically.
+      tags: [group]
+      parameters:
+        - name: group_id
+          in: path
+          description: The ID of the group to list members for
+          required: true
+          schema:
+            $ref: "#/components/schemas/GroupId"
+        - name: group_domain
+          in: path
+          description: The domain of the group to list members for
+          required: true
+          schema:
+            $ref: "#/components/schemas/GroupDomain"
+        - name: tag_id
+          in: path
+          description: The tag to get the content of
+          required: true
+          schema:
+            $ref: "#/components/schemas/TagId"
+      security:
+        - bearer: [$hive:api-list-tagged]
+      responses:
+        "200":
+          description: |
+            The content of all tags with the specified id on the specified group
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+              examples:
+                some:
+                  summary: Tag with content
+                  value:
+                    - turetek@kth.se
+                    - diadat@kth.se
+                none:
+                  summary: Tag without content
+                  value: []
+        default:
+          $ref: "#/components/responses/UnknownError"
+  /group/{group_domain}/{group_id}/tag:
+    post:
+      operationId: add_tagged_group_content
+      summary: Add a new tag with content to a group
+      description: |
+        Adds a new tag to the group and returns the assigned tag.
+
+        The group must be tagged (directly or indirectly) with at least one tag
+        associated with the system relevant to the API consumer (per
+        authentication), otherwise an error will be returned.
+      tags: [group]
+      parameters:
+        - name: group_id
+          in: path
+          description: The ID of the group to add a tag to
+          required: true
+          schema:
+            $ref: "#/components/schemas/GroupId"
+        - name: group_domain
+          in: path
+          description: The domain of the group to add a tag to
+          required: true
+          schema:
+            $ref: "#/components/schemas/GroupDomain"
+      requestBody:
+        description: The tag to be assigned
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignTagWithApiDto"
+      security:
+        - bearer: [$hive:assign-tags]
+      responses:
+        "200":
+          description: |
+            Info about the assigned tag
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaggedGroup"
+        default:
+          $ref: "#/components/responses/UnknownError"
+  /group/{group_domain}/{group_id}/tag/{tag_id}/content/{content}:
+    delete:
+      operationId: delete_tagged_group_content
+      summary: Removes an assigned tag from a group
+      description: |
+        Removes a tag from a group based on their content. 
+
+        The group must be tagged (directly or indirectly) with at least one tag
+        associated with the system relevant to the API consumer (per
+        authentication), otherwise an error will be returned.
+
+        The endpoint doesn't return any body on success, only a status code.
+      tags: [group]
+      parameters:
+        - name: group_id
+          in: path
+          description: The ID of the group to remove a tag from
+          required: true
+          schema:
+            $ref: "#/components/schemas/GroupId"
+        - name: group_domain
+          in: path
+          description: The domain of the group to remove a tag from
+          required: true
+          schema:
+            $ref: "#/components/schemas/GroupDomain"
+        - name: tag_id
+          in: path
+          description: The name of the tag to remove
+          required: true
+          schema:
+            $ref: "#/components/schemas/TagId"
+        - name: content
+          in: path
+          description: The content of the tag to remove
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      security:
+        - bearer: [$hive:manage-tags]
+      responses:
+        "200":
+          description: Tag removed successfully
         default:
           $ref: "#/components/responses/UnknownError"
 
@@ -779,81 +1055,163 @@ components:
       examples:
         - example.com
         - hive.internal
+    AddMemberDto:
+      description: Info to add a new member
+      type: object
+      properties:
+        username:
+          description: The username associated with the user 
+          type: string
+          minLength: 1
+        manager:
+          description: If the user is a manager for the group
+          type: boolean
+        from:
+          description: The date the membership starts
+          type: string
+          format: date
+        until:
+          description: The date the membership ends
+          type: string
+          format: date
+      examples:
+        basic:
+          summary: Direct member of group
+          value:
+            - username: turetek
+              manager: false
+              from: 2000-01-01
+              until: 2001-01-01
+    AssignTagWithApiDto:
+      type: object
+      properties:
+        tag:
+          description: The tag to assign
+          type: string
+          minLength: 1
+        content:
+          description: The content of the tag to assign
+          type: string
+          minLength: 1
+      required: ["tag"]
+      examples:
+        without-content:
+          summary: Direct member of group
+          value:
+            - tag: internal
+        with-content:
+          summary: Direct member of group
+          value:
+            - tag: email
+              content: turetek@kth.se
+    DetailedMember:
+      type: object
+      properties:
+        id:
+          description: The users membership id
+          type: ["string", "null"]
+          format: uuid
+        username:
+          description: The username associated with the user 
+          type: string
+          minLength: 1
+        manager:
+          description: If the user is a manager for the group
+          type: bool
+        from:
+          description: The date the membership starts
+          type: string
+          format: date
+        until:
+          description: The date the membership ends
+          type: string
+          format: date
+      examples:
+        with-id:
+          summary: Direct member of group
+          value:
+            - id: a1225570-4076-4e36-8f84-37eb5a33d6ac
+              username: turetek
+              manager: false
+              from: 2000-01-01
+              until: 2001-01-01
+        without-id:
+          summary: Indirect member of group
+          value:
+            - id: null
+              username: turetek
+              manager: false
+              from: 2000-01-01
+              until: 2001-01-01
+    TaggedGroup:
+      type: object
+      properties:
+        group_name:
+          description: Group name in specified language
+          type: string
+          minLength: 1
+        group_description:
+          description: Group description in specified language
+          type: string
+          minLength: 1
+        group_id:
+          $ref: "#/components/schemas/GroupId"
+        group_domain:
+          $ref: "#/components/schemas/GroupDomain"
+          description: Group domain
+        tag_content:
+          description: Assigned tag content
+          oneOf:
+            - description: Tag with content
+              type: string
+              minLength: 1
+            - description: Tag without content
+              type: "null"
+      required:
+        - group_name
+        - group_id
+        - group_domain
+        - tag_content
+      examples:
+        some-with-content:
+          summary: Tag with content
+          value:
+            - group_name: Systemansvarig
+              group_id: d-sys
+              group_domain: example.com
+              tag_content: D-Sys
+            - group_name: Internationella Nämnden
+              group_id: in
+              group_domain: example.com
+              tag_content: Int. Nämnden
+        some-no-content:
+          summary: Tag with no content
+          value:
+            - group_name: Kassör
+              group_id: kassor
+              group_domain: example.com
+              tag_content: null
+            - group_name: International Committee Leadership
+              group_id: int
+              group_domain: example.com
+              tag_content: null
+        some-with-content-and-description:
+          summary: Tag with content and description
+          value:
+            - group_name: Systemansvarig
+              group_description: Ansvarig för utveckling och drift av sektionens system. Leder systemgruppen.
+              group_id: d-sys
+              group_domain: example.com
+              tag_content: D-Sys
+            - group_name: Internationella Nämnden
+              group_description: Ansvarig för alla internationella aktiviteter på Datasektionen och är delad med Sektionen för Medieteknik.
+              group_id: in
+              group_domain: example.com
+              tag_content: Int. Nämnden
+        none:
+          summary: No groups with tag
+          value: []
   responses:
-    TaggedGroups:
-      description: The groups tagged with the specified tag.
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              type: object
-              properties:
-                group_name:
-                  description: Group name in specified language
-                  type: string
-                  minLength: 1
-                group_description:
-                  description: Group description in specified language
-                  type: string
-                  minLength: 1
-                group_id:
-                  $ref: "#/components/schemas/GroupId"
-                group_domain:
-                  $ref: "#/components/schemas/GroupDomain"
-                  description: Group domain
-                tag_content:
-                  description: Assigned tag content
-                  oneOf:
-                    - description: Tag with content
-                      type: string
-                      minLength: 1
-                    - description: Tag without content
-                      type: "null"
-              required:
-                - group_name
-                - group_id
-                - group_domain
-                - tag_content
-          examples:
-            some-with-content:
-              summary: Tag with content
-              value:
-                - group_name: Systemansvarig
-                  group_id: d-sys
-                  group_domain: example.com
-                  tag_content: D-Sys
-                - group_name: Internationella Nämnden
-                  group_id: in
-                  group_domain: example.com
-                  tag_content: Int. Nämnden
-            some-no-content:
-              summary: Tag with no content
-              value:
-                - group_name: Kassör
-                  group_id: kassor
-                  group_domain: example.com
-                  tag_content: null
-                - group_name: International Committee Leadership
-                  group_id: int
-                  group_domain: example.com
-                  tag_content: null
-            some-with-content-and-description:
-              summary: Tag with content and description
-              value:
-                - group_name: Systemansvarig
-                  group_description: Ansvarig för utveckling och drift av sektionens system. Leder systemgruppen.
-                  group_id: d-sys
-                  group_domain: example.com
-                  tag_content: D-Sys
-                - group_name: Internationella Nämnden
-                  group_description: Ansvarig för alla internationella aktiviteter på Datasektionen och är delad med Sektionen för Medieteknik.
-                  group_id: in
-                  group_domain: example.com
-                  tag_content: Int. Nämnden
-            none:
-              summary: No groups with tag
-              value: []
     UnknownError:
       description: Generic API error
       content:
